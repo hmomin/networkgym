@@ -8,9 +8,9 @@ import sys
 from gymnasium import spaces
 import numpy as np
 import math
-import time
-import pandas as pd
-import json
+from momin.full_observation import *
+from typing import List
+
 from pathlib import Path
 
 class Adapter(network_gym_client.adapter.Adapter):
@@ -30,7 +30,9 @@ class Adapter(network_gym_client.adapter.Adapter):
 
         self.env = Path(__file__).resolve().parent.name
         self.action_max_value = 32
-        self.num_features = 3
+        # NOTE: adding more features is controlled here
+        self.num_features = 14
+        # self.num_features = 3
         self.num_users = int(self.config_json['env_config']['num_users'])
         self.end_ts = 0
 
@@ -68,7 +70,10 @@ class Adapter(network_gym_client.adapter.Adapter):
         Returns:
             spaces: observation spaces
         """
-        #print (df)
+        # with pd.option_context(
+        #     "display.max_rows", None, "display.max_columns", None
+        # ):
+        #     print(df)
         if not df.empty:
             self.end_ts = int(df['end_ts'][0])
         #data_recv_flat = df.explode(column=['user', 'value'])
@@ -124,7 +129,17 @@ class Adapter(network_gym_client.adapter.Adapter):
         phy_wifi_max_rate = self.fill_empty_feature(df_phy_wifi_max_rate, -1)
         flow_rate = self.fill_empty_feature(df_rate, -1)
 
-        observation = np.vstack([phy_lte_max_rate, phy_wifi_max_rate, flow_rate])
+        # NOTE: adding more features here
+        df_list = turn_df_into_list(df)
+        full_list = get_full_observation(df_list)
+        # print_full_observation(full_list)
+        # full_list = [phy_lte_max_rate, phy_wifi_max_rate, flow_rate]
+        # log_full_observation(df)
+
+        # observation = np.vstack(full_list)
+        # NOTE: avoiding normalizing, just dividing by a constant!
+        observation = np.vstack(full_list) / 100
+        # observation = np.vstack([phy_lte_max_rate, phy_wifi_max_rate, flow_rate])
 
         # add a check that the size of observation equals the prepared observation space.
         if len(observation) != self.num_features:
@@ -141,7 +156,7 @@ class Adapter(network_gym_client.adapter.Adapter):
             json: network policy
         """
 
-        if action.size != self.num_users:
+        if hasattr(action, "size") and action.size != self.num_users:
             sys.exit("The action size: " + str(action.size()) +" does not match with the number of users:" + self.num_users)
         # you may also check other constraints for action... e.g., min, max.
 
@@ -193,6 +208,10 @@ class Adapter(network_gym_client.adapter.Adapter):
         reward = 0
         if self.config_json["rl_config"]["reward_type"] == "utility":
             reward = self.netowrk_util(ave_rate, avg_delay)
+        elif self.config_json["rl_config"]["reward_type"] == "throughput":
+            reward = ave_rate
+        elif self.config_json["rl_config"]["reward_type"] == "delay":
+            reward = -avg_delay
         else:
             sys.exit("[ERROR] reward type not supported yet")
 

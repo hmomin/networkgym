@@ -8,6 +8,10 @@ from gymnasium import spaces
 from gymnasium.spaces import Box
 import pandas as pd
 
+# NOTE: importing for buffer and previous action recording
+from momin.buffer import Buffer
+from momin.full_observation import get_previous_action
+
 import time
 import importlib
 import pathlib
@@ -92,6 +96,8 @@ class Env(gym.Env):
         if self.steps_per_episode < 2:
             sys.exit('In crease the "steps_per_episode", the min value is 2!')
         self.episodes_per_session = int(config_json['env_config']['episodes_per_session'])
+        # NOTE: need to include num_users
+        self.num_users = int(config_json['env_config']['num_users'])
 
         step_length = config_json['env_config']['measurement_interval_ms']
         if 'measurement_guard_interval_ms' in config_json['env_config']:
@@ -121,6 +127,11 @@ class Env(gym.Env):
         self.first_episode = True
 
         self.last_policy = []
+        
+        # NOTE: recording rl_alg and setting up buffer
+        self.rl_alg: str = config_json["rl_config"]["agent"]
+        filename: str = self.rl_alg + time.strftime("_%Y_%m_%d_%H_%M_%S", time.localtime())
+        self.buffer = Buffer(filename)
 
         
     def reset(self, seed=None, options=None):
@@ -161,7 +172,8 @@ class Env(gym.Env):
 
         # print(observation.shape)
 
-
+        # NOTE: need to record previous state
+        self.previous_state = observation.astype(np.float32)
         return observation.astype(np.float32), {"network_stats": network_stats}
 
     def step(self, action):
@@ -196,7 +208,7 @@ class Env(gym.Env):
         print("----------| step() at episode:" + str(self.current_ep) + ", step:" + str(self.current_step) + " |----------")
 
         #1.) Get action from RL agent and send to network gym server
-        if not self.enable_rl_agent or action.size == 0:
+        if not self.enable_rl_agent or (hasattr(action, "size") and action.size == 0):
             #empty action
             self.northbound_interface_client.send([]) #send empty action to network gym server
         else:
@@ -210,7 +222,13 @@ class Env(gym.Env):
         
         observation = self.adapter.get_observation(network_stats)
 
-        # print(observation)
+        # NOTE: system_default doesn't always show split_ratio
+        if self.rl_alg == "system_default":
+            # NOTE: this action should be the previous action based off of the current
+            # state
+            action = get_previous_action(network_stats)
+
+        print(observation)
 
         #Get reward
         reward = self.adapter.get_reward(network_stats)
@@ -233,4 +251,14 @@ class Env(gym.Env):
                 time.sleep(1) # sleep 1 second to let the server disconnect client and env worker. In case the client restart connection right after a env termination.
         #4.) return observation, reward, done, info
         # print("terminated:" + str(terminated) + " truncated:" + str(truncated))
+        
+        # NOTE: storing to buffer
+        self.buffer.store(
+            self.previous_state,
+            action,
+            reward,
+            observation.astype(np.float32)
+        )
+        self.previous_state = observation.astype(np.float32)
+        
         return observation.astype(np.float32), reward, terminated, truncated, {"network_stats": network_stats}
