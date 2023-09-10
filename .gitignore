@@ -1,6 +1,5 @@
-/wandb
-/runs
-/models
+NetworkAgent/stable-baselines3/models
+NetworkAgent/stable-baselines3/wandb
 *.pyc
 network_gym_accounts.csv
 /docs/_build
