@@ -32,7 +32,6 @@ class Adapter(network_gym_client.adapter.Adapter):
         self.action_max_value = 32
         # NOTE: adding more features is controlled here
         self.num_features = 14
-        # self.num_features = 3
         self.num_users = int(self.config_json['env_config']['num_users'])
         self.end_ts = 0
 
@@ -70,14 +69,8 @@ class Adapter(network_gym_client.adapter.Adapter):
         Returns:
             spaces: observation spaces
         """
-        # with pd.option_context(
-        #     "display.max_rows", None, "display.max_columns", None
-        # ):
-        #     print(df)
         if not df.empty:
             self.end_ts = int(df['end_ts'][0])
-        #data_recv_flat = df.explode(column=['user', 'value'])
-        #print(data_recv_flat)
 
         df_rate = None
         df_phy_wifi_max_rate = None
@@ -102,13 +95,6 @@ class Adapter(network_gym_client.adapter.Adapter):
             elif row['name'] == 'y_loc':
                 df_y_loc = row
 
-        #print(df_rate)
-        #print(df_phy_lte_max_rate)
-        #print(df_phy_wifi_max_rate)
-        #print(df_wifi_split_ratio)
-        #print(df_x_loc)
-        #Print(df_y_loc)
-
         # if not empty and send to wanDB database
         self.wandb_log_buffer_append(self.df_to_dict(df_phy_wifi_max_rate, "max-wifi-rate"))
     
@@ -123,20 +109,13 @@ class Adapter(network_gym_client.adapter.Adapter):
         self.wandb_log_buffer_append(self.df_to_dict(df_x_loc, "x_loc"))
 
         self.wandb_log_buffer_append(self.df_to_dict(df_y_loc, "y_loc"))
-        
-        # Fill the empy features with -1
-        phy_lte_max_rate = self.fill_empty_feature(df_phy_lte_max_rate, -1)
-        phy_wifi_max_rate = self.fill_empty_feature(df_phy_wifi_max_rate, -1)
-        flow_rate = self.fill_empty_feature(df_rate, -1)
 
         # NOTE: adding more features here
         df_list = turn_df_into_list(df)
         full_list = get_full_observation(df_list)
         # print_full_observation(full_list)
-        # full_list = [phy_lte_max_rate, phy_wifi_max_rate, flow_rate]
         # log_full_observation(df)
 
-        # observation = np.vstack(full_list)
         # NOTE: avoiding normalizing, just dividing by a constant!
         observation = np.vstack(full_list) / 100
         # observation = np.vstack([phy_lte_max_rate, phy_wifi_max_rate, flow_rate])

@@ -127,9 +127,10 @@ def main():
     # Create the environment
     print("[" + args.env + "] environment selected.")
     env = NetworkGymEnv(client_id, config_json) # make a network env using pass client id, adatper and configure file arguements.
-    # NOTE: avoiding normalization
+    # NOTE: disabling normalization
     normal_obs_env = env
     # normal_obs_env = NormalizeObservation(env)
+
     # It will check your custom environment and output additional warnings if needed
     # only use this function for debug, 
     # check_env(env)
@@ -162,11 +163,6 @@ def main():
 
             evaluate(agent, normal_obs_env, num_steps)
         else:
-            # NOTE: larger network for on-policy agents - disabling...
-            # if rl_alg in ["PPO", "A2C"]:
-            #     policy_kwargs = dict(net_arch=[256, 256])
-            #     agent = agent_class(config_json['rl_config']['policy'], normal_obs_env, policy_kwargs=policy_kwargs, verbose=1)
-            # jdcklsfj
             # NOTE: action noise for off-policy networks - num users hardcoded!
             if rl_alg in ["DDPG", "TD3"]:
                 action_noise = NormalActionNoise(
@@ -176,29 +172,6 @@ def main():
             else:
                 agent = agent_class(config_json['rl_config']['policy'], normal_obs_env, verbose=1)
             print(agent.policy)
-            
-            # policy_kwargs = dict(	
-            #     activation_fn=torch.nn.ReLU,	
-            #     net_arch=dict(pi=[256, 256], vf=[256, 256])	
-            # )	
-            # agent = agent_class(	
-            #     config_json['rl_agent_config']['policy'],	
-            #     env,	
-            #     verbose=1,	
-            #     tensorboard_log=f"runs/{run.id}",	
-            #     policy_kwargs=policy_kwargs,	
-            #     n_steps=2048,	
-            #     batch_size=256,	
-            #     n_epochs=10,	
-            #     gamma=0.99,	
-            #     gae_lambda=0.95,	
-            #     clip_range=0.2,	
-            #     clip_range_vf=None,	
-            #     normalize_advantage=True,	
-            #     ent_coef=0.0,	
-            #     vf_coef=0.5,	
-            #     max_grad_norm=0.5,	
-            # )
             
             train(agent, config_json)
     else:
