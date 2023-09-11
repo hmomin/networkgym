@@ -20,7 +20,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.noise import NormalActionNoise
 from gymnasium.wrappers import NormalizeObservation
 
-from momin.heuristic_policies import argmax_policy, argmin_policy, random_policy
+from NetworkAgent.heuristic_policies import argmax_policy, argmin_policy, random_policy
 
 def train(agent, config_json):
 

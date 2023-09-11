@@ -9,8 +9,8 @@ from gymnasium.spaces import Box
 import pandas as pd
 
 # NOTE: importing for buffer and previous action recording
-from momin.buffer import Buffer
-from momin.full_observation import get_previous_action
+from NetworkAgent.buffer import Buffer
+from NetworkAgent.full_observation import get_previous_action
 
 import time
 import importlib

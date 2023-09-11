@@ -8,7 +8,7 @@ import sys
 from gymnasium import spaces
 import numpy as np
 import math
-from momin.full_observation import *
+from NetworkAgent.full_observation import *
 from typing import List
 
 from pathlib import Path
