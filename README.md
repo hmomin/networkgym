@@ -17,6 +17,8 @@ If this repository is ever out-of-sync with updates to either [NetworkGym](https
 
 📧 **[Contact Us](mailto:netaigym@gmail.com)**
 
+💻 **[Slack](https://join.slack.com/t/networkgym/shared_invite/zt-23c6nvd5s-1l1m5iVtDZj3LcMgVspdNg)**
+
 The NetworkGym Client stands as a Python-centric client library created for NetworkGym, an innovative Simulation-as-a-Service framework crafted to democratize network AI research and development. This Client establishes a remote connection to the NetworkGym Server/Environment hosted on the cloud, facilitating agent training.
 At present, Network Gym Client supports three environments: `nqos_split`, `qos_steer`, and `network_slicing`.
 
