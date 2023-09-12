@@ -1,4 +1,13 @@
-# NetworkGym Client
+# NetworkGym + NetworkAgent Client for Offline Reinforcement Learning
+
+IMPORTANT NOTE: this repository contains BOTH [NetworkGym](https://github.com/IntelLabs/networkgym) and [NetworkAgent](https://github.com/pinyaras/GMAClient) with some modifications to support offline reinforcement learning:
+
+- Many more metrics have been included in the input state vector for RL agent training.
+- The state vectors are not normalized by default.
+  - Instead, all values in the state are divided by 100 to keep the range of values roughly between 0-1.
+- More reward functions have been added (throughput and delay).
+- (`state`, `action`, `reward`, `next_state`) data can be stored offline whether training or testing using the `"store_offline"` parameter in [nqos_split/config.json](https://github.com/hmomin/networkgym/blob/main/network_gym_client/envs/nqos_split/config.json).
+- Recent work is focusing on constructing agents that can effectively learn baseline-comparable or near-optimal policies using completely offline data.
 
 📋 **[NetworkGym Docs Website](https://intellabs.github.io/networkgym)**
 
@@ -32,6 +41,7 @@ pip install pandas
 pip install pyzmq
 pip install wandb
 pip install tensorboard
+pip install stable-baselines3
 ```
 - Request access to the [vLab](https://registration.intel-research.net/) machine.
 

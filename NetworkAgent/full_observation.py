@@ -78,7 +78,7 @@ def get_full_observation(df_list: List[pd.DataFrame]) -> List[np.ndarray]:
                 values = row["value"].values[0]
                 for user, value in zip(users, values):
                     previous_row[user] = value
-            # FIXME: fix for access point ID being too small relative to other values
+            # NOTE: fix for access point ID being too small relative to other values
             if name == "cell_id":
                 previous_row *= 100
             full_observation.append(previous_row)
@@ -96,7 +96,7 @@ def repopulate_previous_entries(df_list: List[pd.DataFrame]) -> None:
                 users = row["user"]
                 values = row["value"]
                 for user, value in zip(users, values):
-                    # FIXME: fix for rate or traffic ratio being absent
+                    # NOTE: fix for rate or traffic ratio being absent
                     if "rate" in name or "traffic_ratio" in name:
                         previous_values[user] = 0
                     else:

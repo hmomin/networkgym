@@ -32,9 +32,9 @@ def edit_dict(json_dict: Dict, agent: str, testing: bool = False) -> None:
     json_dict["rl_config"]["agent"] = agent
     training: bool = not testing
     json_dict["rl_config"]["train"] = training
-    # FIXME: trying 200k steps to see if PPO learns better (or worse?)
+    # NOTE: steps can be changed here to be large for training and small for testing
     json_dict["env_config"]["steps_per_episode"] = 400_000 if training else 10_000
-    # FIXME: be careful with seeds
+    # NOTE: be careful with choosing seeds!
     json_dict["env_config"]["random_seed"] = 15 if training else 13
 
 
