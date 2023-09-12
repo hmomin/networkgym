@@ -9,6 +9,10 @@ IMPORTANT NOTE: this repository contains BOTH [NetworkGym](https://github.com/In
 - (`state`, `action`, `reward`, `next_state`) data can be stored offline whether training or testing using the `"store_offline"` parameter in [nqos_split/config.json](https://github.com/hmomin/networkgym/blob/main/network_gym_client/envs/nqos_split/config.json).
 - Recent work is focusing on constructing agents that can effectively learn baseline-comparable or near-optimal policies using completely offline data.
 
+If this repository is ever out-of-sync with updates to either [NetworkGym](https://github.com/IntelLabs/networkgym) or [NetworkAgent](https://github.com/pinyaras/GMAClient), please feel free to let me know via email: [momin@ucsb.edu](mailto:momin@ucsb.edu).
+
+---
+
 📋 **[NetworkGym Docs Website](https://intellabs.github.io/networkgym)**
 
 📧 **[Contact Us](mailto:netaigym@gmail.com)**
