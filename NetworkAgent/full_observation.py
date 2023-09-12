@@ -26,14 +26,17 @@ PREVIOUS_SPLIT_RATIOS: List[float] = []
 
 
 def get_previous_action(df: pd.DataFrame) -> List[float]:
+    global PREVIOUS_SPLIT_RATIOS
     split_ratio_df = df[df["name"] == "split_ratio"]
     split_ratio_lte_df = split_ratio_df[split_ratio_df["cid"] == "Wi-Fi"]
+    previous_split_ratios = deepcopy(PREVIOUS_SPLIT_RATIOS)
     if not split_ratio_lte_df.empty:
         new_users = split_ratio_lte_df["user"].values[0]
         new_values = split_ratio_lte_df["value"].values[0]
         for user, value in zip(new_users, new_values):
-            PREVIOUS_SPLIT_RATIOS[user] = value / 32.0
-    return PREVIOUS_SPLIT_RATIOS
+            previous_split_ratios[user] = value / 32.0
+    PREVIOUS_SPLIT_RATIOS = deepcopy(previous_split_ratios)
+    return previous_split_ratios
 
 
 def turn_df_into_list(df: pd.DataFrame) -> List[pd.DataFrame]:

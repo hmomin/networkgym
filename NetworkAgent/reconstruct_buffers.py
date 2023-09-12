@@ -1,15 +1,15 @@
+# NOTE: this script might not actually be necessary - think about it...
+
 import numpy as np
 import os
 import pickle
 from time import sleep
 
-# reconstruct each buffer
-# store the new buffer in a reconstructed zone
-
 
 def get_buffer_filenames() -> list[str]:
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    buffer_dir = os.path.join(script_dir, "buffers")
+    # NOTE: adding an extra directory for testing
+    buffer_dir = os.path.join(script_dir, "buffers", "test")
     buffer_dir_contents = os.listdir(buffer_dir)
     buffer_filenames: list[str] = []
     for buffer_dir_content in buffer_dir_contents:
@@ -22,23 +22,26 @@ def get_buffer_filenames() -> list[str]:
 
 def open_buffer(
     file_path: str,
-) -> list[tuple[np.ndarray, np.ndarray, np.float64, np.ndarray]]:
+) -> tuple[list[np.ndarray], list[np.ndarray], list[np.float64], list[np.ndarray],]:
     with open(file_path, "rb") as f:
-        buffer: list[
-            tuple[np.ndarray, np.ndarray, np.float64, np.ndarray]
+        buffer: tuple[
+            list[np.ndarray],
+            list[np.ndarray],
+            list[np.float64],
+            list[np.ndarray],
         ] = pickle.load(f)
     return buffer
 
 
 def reconstruct_buffer(
-    buffer: list[tuple[np.ndarray, np.ndarray, np.float64, np.ndarray]]
+    buffer: tuple[
+        list[np.ndarray],
+        list[np.ndarray],
+        list[np.float64],
+        list[np.ndarray],
+    ]
 ) -> None:
-    for tupe in buffer:
-        state, action, reward, next_state = tupe
-        print(state)
-        print(action)
-        sleep(1)
-        # FIXME: fill out the rest of this!
+    print(buffer[1])
 
 
 def main() -> None:
