@@ -11,30 +11,48 @@ class Buffer:
             with open(self.filename, "rb") as f:
                 self.container: tuple[
                     list[np.ndarray],
-                    list[np.ndarray],
+                    list[list[float]],
                     list[np.float64],
                     list[np.ndarray],
                 ] = pickle.load(f)
+                (
+                    self.states,
+                    self.actions,
+                    self.rewards,
+                    self.next_states,
+                ) = self.container
                 self.construct_finalized_buffer()
         else:
             self.container: tuple[
-                list[np.ndarray], list[np.ndarray], list[np.float64], list[np.ndarray]
+                list[np.ndarray], list[list[float]], list[np.float64], list[np.ndarray]
             ] = ([], [], [], [])
-    
+            self.states, self.actions, self.rewards, self.next_states = self.container
+
+    def flatten_states(self) -> None:
+        for state_list in (self.states, self.next_states):
+            for idx, element in enumerate(state_list):
+                state_list[idx] = element.flatten()
+
     def construct_finalized_buffer(self) -> None:
-        # FIXME: fill this out!
-        pass
+        self.flatten_states()
+        self.numpy_states = np.vstack(self.states)
+        self.numpy_actions = np.array(self.actions)
+        self.numpy_rewards = np.array(self.rewards)
+        self.numpy_next_states = np.vstack(self.next_states)
+        self.numpy_size = self.numpy_states.shape[0]
 
     def store(
         self,
         state: np.ndarray,
-        action: np.ndarray,
+        action: list[float],
         reward: np.float64,
         next_state: np.ndarray,
     ) -> None:
-        for idx, item in enumerate((state, action, reward, next_state)):
-            self.container[idx].append(item)
-        if len(self.container[0]) % 100 == 0:
+        self.states.append(state)
+        self.actions.append(action)
+        self.rewards.append(reward)
+        self.next_states.append(next_state)
+        if len(self.states) % 100 == 0:
             self.write_to_disk()
 
     def write_to_disk(self) -> None:
@@ -44,15 +62,12 @@ class Buffer:
     def get_mini_batch(
         self,
         size: int,
-    ) -> tuple[np.ndarray, np.ndarray, np.float64, np.ndarray]:
-        current_size = len(self.container[0])
-        size = min(size, current_size)
-        indices = np.random.choice(current_size, size, replace=False)
-        # FIXME: need to convert the lists to numpy arrays to do efficient
-        # mini-batch index selection
-        # return {
-        #     "states": self.states[indices],
-        #     "actions": self.actions[indices],
-        #     "rewards": self.rewards[indices],
-        #     "nextStates": self.nextStates[indices],
-        # }
+    ) -> dict[str, np.ndarray]:
+        buffer_size = self.numpy_size
+        indices = np.random.choice(buffer_size, size, replace=False)
+        return {
+            "states": self.numpy_states[indices],
+            "actions": self.numpy_actions[indices],
+            "rewards": self.numpy_rewards[indices],
+            "next_states": self.numpy_next_states[indices],
+        }

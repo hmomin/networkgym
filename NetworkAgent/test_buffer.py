@@ -1,13 +1,16 @@
 from random import randint
 from buffer import Buffer
 
-buffer_name = "system_default_2023_09_08_23_13_27"
+buffer_name = "system_default_utility_seed_00"
 
 
 def main() -> None:
     buffer = Buffer(buffer_name)
     idx = randint(0, len(buffer.container) - 1)
-    state, action, reward, next_state = buffer.container[idx]
+    state = buffer.container[0][idx]
+    action = buffer.container[1][idx]
+    reward = buffer.container[2][idx]
+    next_state = buffer.container[3][idx]
     print("STATE")
     print(type(state))
     print(state)
