@@ -2,40 +2,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
-filename = "seed_3_throughput_good_state_minus_apid_test.csv"
-# filename = "seed_2_throughput_good_state_minus_apid_no_normalize_long.csv"
-# filename = "seed_3_delay_good_state_test.csv"
-# filename = "seed_2_delay_good_state_no_normalize_long.csv"
-# filename = "seed_3_utility_good_state_test.csv"
-# filename = "seed_2_utility_good_state_no_normalize_long.csv"
-# filename = "seed_2_utility_good_state_PPO_normalize_net_size_testing.csv"
+# filename = "seed_4_test_utility_good_state_no_normalize.csv"
+filename = "seed_06_test_LONG_utility_good_state_no_normalize.csv"
 
-title = "Throughput Reward Function - Testing"
-# title = "Throughput Reward Function - Training"
-# title = "Delay Reward Function - Testing"
-# title = "Delay Reward Function - Training"
-# title = "Utility Reward Function - Testing"
-# title = "Utility Reward Function - Training"
-# title = "PPO Training - Utility Reward Function"
+title = "Seed 6 Utility Reward Function - Testing"
 
 period_value = 1000 if "Training" in title else 100
 
-ignore_losers = True
-losers = ["Random", "TD3", "ArgMin", "DDPG"]
-
-use_label_map = False
-label_map = {
-    "PPO_small_net": "no normalize - [64, 64]",
-    "PPO_raw": "normalize - [64, 64]",
-    "PPO_normalize": "normalize - [256, 256]",
-    "PPO": "no normalize - [256, 256]",
-}
+ignore_losers = False
+losers = ["A2C", "ArgMax", "Random", "TD3", "ArgMin", "DDPG"]
 
 color_map = {
     "A2C": "#e41a1c",
-    "SAC": "#377eb8",
+    "SAC": "#3700b8",
     "Random": "#999999",
     "TD3": "#984ea3",
     "ArgMin": "#aaaa33",
@@ -83,10 +64,6 @@ def split_by_section(values: List[float], period: int) -> List[Tuple[float, floa
     return mean_stdev_values
 
 
-def get_indices(lst: List[Any], value: Any) -> List[int]:
-    return [index for index, element in enumerate(lst) if element == value]
-
-
 def plot_data(mean_std_dict: Dict[str, List[Tuple[float, float]]]) -> None:
     plt.figure(figsize=(19, 9))
     plt.rc("font", weight="normal", size=20)
@@ -107,11 +84,7 @@ def plot_data(mean_std_dict: Dict[str, List[Tuple[float, float]]]) -> None:
         lower_bounds = [mean_val - stdev for mean_val, stdev in mean_std_list]
         upper_bounds = [mean_val + stdev for mean_val, stdev in mean_std_list]
         line_color = color_map[parsed_name] if parsed_name in color_map else (0, 0, 0)
-        label = (
-            label_map[parsed_name]
-            if parsed_name in label_map and use_label_map
-            else parsed_name
-        )
+        label = parsed_name
         plt.plot(counts, mean_rewards, color=line_color, label=label)
         plt.fill_between(
             counts,
@@ -135,6 +108,7 @@ def plot_data(mean_std_dict: Dict[str, List[Tuple[float, float]]]) -> None:
     # plt.tight_layout(rect=(0, 0, 0.99, 1))
     # plt.xlim(xmin=0.0)
     # plt.ylim(ymin=0.0)
+    plt.ylim(ymin=-2.5, ymax=1.5)
     plt.title(title)
     plt.xlabel(f"Step (x {period_value})")
     plt.ylabel("Reward")

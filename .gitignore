@@ -8,4 +8,4 @@ network_gym_accounts.csv
 *.sh
 .vscode
 *logs
-network_gym_client/common_config.json
+*.png
