@@ -6,7 +6,7 @@ import torch.nn as nn
 from copy import deepcopy
 from gym.core import Env
 from ..buffer import Buffer
-from Network import Network
+from network import Network
 
 
 class Agent:

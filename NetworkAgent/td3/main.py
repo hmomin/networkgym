@@ -1,6 +1,6 @@
 import csv
 import gym
-from Agent import Agent
+from agent import Agent
 from os import path
 
 # HYPERPARAMETERS BELOW
