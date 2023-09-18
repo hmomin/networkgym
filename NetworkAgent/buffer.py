@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import pickle
+import torch as T
 from tqdm import tqdm
 
 
@@ -89,9 +90,33 @@ class CombinedBuffer(Buffer):
         print("Combining buffers...")
         for buffer in tqdm(buffers):
             self.fill_from_buffer(buffer)
+        # NOTE: it's possible that calling requires_grad on the full tensor might
+        # be too computationally expensive and unnecessary. Verify this...
+        self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
+        self.tensor_states = T.tensor(self.states, device=self.device)
+        self.tensor_actions = T.tensor(self.actions, device=self.device)
+        self.tensor_rewards = T.tensor(self.rewards, device=self.device)
+        self.tensor_next_states = T.tensor(self.next_states, device=self.device)
 
     def fill_from_buffer(self, buffer: Buffer) -> None:
         self.states = safe_concat(self.states, buffer.states)
         self.actions = safe_concat(self.actions, buffer.actions)
         self.rewards = safe_concat(self.rewards, buffer.rewards)
         self.next_states = safe_concat(self.next_states, buffer.next_states)
+
+    def get_mini_batch(
+        self,
+        size: int,
+    ) -> dict[str, T.Tensor]:
+        buffer_size = self.states.shape[0]
+        indices = T.randint(0, buffer_size, (size,), device=self.device)
+        # NOTE: an environment never actually terminates in the way that the MDP
+        # framework expects...
+        dones = T.zeros_like(self.tensor_rewards[indices], device=self.device)
+        return {
+            "states": self.tensor_states[indices, :],
+            "actions": self.tensor_actions[indices, :],
+            "rewards": self.tensor_rewards[indices],
+            "next_states": self.tensor_next_states[indices, :],
+            "dones": dones,
+        }

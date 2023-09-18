@@ -4,7 +4,7 @@ import pickle
 import torch as T
 import torch.nn as nn
 from copy import deepcopy
-from buffer import Buffer
+from buffer import CombinedBuffer
 from td3_bc.network import Network
 from offline_env import OfflineEnv
 
@@ -20,9 +20,12 @@ class Agent:
         should_load: bool = True,
         save_folder: str = "saved",
     ):
-        self.buffer: Buffer = env.buffer
+        self.buffer: CombinedBuffer = env.buffer
         self.observation_dim = self.buffer.states.shape[1]
         self.action_dim = self.buffer.actions.shape[1]
+        # NOTE: low_action_bound can be -1 depending on the environment
+        self.low_action_bound = 0
+        self.high_action_bound = +1
         self.gamma = gamma
         self.tau = tau
         self.behavioral_cloning = enable_behavioral_cloning
@@ -35,6 +38,7 @@ class Agent:
         self.env_name = os.path.join(save_dir, f"{env.algo_name}_{bc_string}.")
         name = self.env_name
         self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
+        print(f"Using {self.device} device...")
         # initialize the actor and critics
         # NOTE: actor activation is sigmoid instead of tanh (from the paper)
         # to satisfy the action bounds requirement
@@ -88,7 +92,9 @@ class Agent:
     def get_noisy_action(self, state: np.ndarray, sigma: float) -> np.ndarray:
         deterministic_action = self.get_deterministic_action(state)
         noise = np.random.normal(0, sigma, deterministic_action.shape)
-        return np.clip(deterministic_action + noise, -1, +1)
+        return np.clip(
+            deterministic_action + noise, self.low_action_bound, self.high_action_bound
+        )
 
     def get_deterministic_action(self, state: np.ndarray) -> np.ndarray:
         state_tensor = T.tensor(state, device=self.device)
@@ -105,34 +111,26 @@ class Agent:
         # randomly sample a mini-batch from the replay buffer
         mini_batch = self.buffer.get_mini_batch(mini_batch_size)
         # create tensors to start generating computational graph
-        states = T.tensor(mini_batch["states"], requires_grad=True, device=self.device)
-        actions = T.tensor(
-            mini_batch["actions"], requires_grad=True, device=self.device
-        )
-        rewards = T.tensor(
-            mini_batch["rewards"], requires_grad=True, device=self.device
-        )
-        next_states = T.tensor(
-            mini_batch["next_states"], requires_grad=True, device=self.device
-        )
-        dones = T.tensor(
-            mini_batch["dones"], requires_grad=True, device=self.device
-        )
+        states = mini_batch["states"]
+        actions = mini_batch["actions"]
+        rewards = mini_batch["rewards"]
+        next_states = mini_batch["next_states"]
+        dones = mini_batch["dones"]
         # compute the targets
         targets = self.compute_targets(
             rewards, next_states, dones, training_sigma, training_clip
         )
         # do a single step on each critic network
         Q1_loss = self.compute_Q_loss(self.critic1, states, actions, targets)
-        print(f"\tQ1_loss: {Q1_loss.item()}")
+        # print(f"\tQ1_loss: {Q1_loss.item()}")
         self.critic1.gradient_descent_step(Q1_loss, True)
         Q2_loss = self.compute_Q_loss(self.critic2, states, actions, targets)
-        print(f"\tQ2_loss: {Q2_loss.item()}")
+        # print(f"\tQ2_loss: {Q2_loss.item()}")
         self.critic2.gradient_descent_step(Q2_loss)
         if update_policy:
             # do a single step on the actor network
             policy_loss = self.compute_policy_loss(states, actions)
-            print(f"\tpi_loss: {policy_loss.item()}")
+            # print(f"\tpi_loss: {policy_loss.item()}")
             self.actor.gradient_descent_step(policy_loss)
             # update target networks
             self.update_target_network(self.target_actor, self.actor)
@@ -149,11 +147,13 @@ class Agent:
     ) -> T.Tensor:
         target_actions = self.target_actor.forward(next_states.float())
         # create additive noise for target actions
-        noise = np.random.normal(0, training_sigma, target_actions.shape)
-        clipped_noise = T.tensor(
-            np.clip(noise, -training_clip, +training_clip), device=self.device
+        noise = T.normal(0, training_sigma, target_actions.shape, device=self.device)
+        clipped_noise = T.clip(noise, -training_clip, +training_clip)
+        target_actions = T.clip(
+            target_actions + clipped_noise,
+            self.low_action_bound,
+            self.high_action_bound,
         )
-        target_actions = T.clip(target_actions + clipped_noise, -1, +1)
         # compute targets
         target_Q1_values = T.squeeze(
             self.target_critic1.forward(T.hstack([next_states, target_actions]).float())
@@ -177,7 +177,6 @@ class Agent:
             self.critic1.forward(T.hstack([states, policy_actions]).float())
         )
         Q_term = Q_values.mean()
-        # FIXME HIGH: here is where behavioral cloning should be implemented!
         if self.behavioral_cloning:
             mean_absolute_Q_values = T.abs(Q_values).mean().detach()
             # NOTE: alpha can be implemented as a tunable hyperparameter
