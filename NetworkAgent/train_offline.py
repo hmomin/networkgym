@@ -19,7 +19,7 @@ def main() -> None:
 
     env = OfflineEnv("system_default")
 
-    agent = Agent(env, learning_rate, gamma, tau, resume)
+    agent = Agent(env, learning_rate, gamma, tau, behavioral_cloning, resume)
     agent.save()
 
     for step in range(training_steps):

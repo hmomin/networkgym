@@ -16,6 +16,7 @@ class Agent:
         learning_rate: float,
         gamma: float,
         tau: float,
+        enable_behavioral_cloning: bool = False,
         should_load: bool = True,
         save_folder: str = "saved",
     ):
@@ -24,12 +25,14 @@ class Agent:
         self.action_dim = self.buffer.actions.shape[1]
         self.gamma = gamma
         self.tau = tau
+        self.behavioral_cloning = enable_behavioral_cloning
         # check if the save_folder path exists
         script_dir = os.path.dirname(os.path.abspath(__file__))
         save_dir = os.path.join(script_dir, save_folder)
         if not os.path.isdir(save_dir):
             os.mkdir(save_dir)
-        self.env_name = os.path.join(save_dir, env.algo_name + ".")
+        bc_string = "bc" if self.behavioral_cloning else "normal"
+        self.env_name = os.path.join(save_dir, f"{env.algo_name}_{bc_string}.")
         name = self.env_name
         self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
         # initialize the actor and critics
@@ -126,7 +129,7 @@ class Agent:
         self.critic2.gradient_descent_step(Q2_loss)
         if update_policy:
             # do a single step on the actor network
-            policy_loss = self.compute_policy_loss(states)
+            policy_loss = self.compute_policy_loss(states, actions)
             self.actor.gradient_descent_step(policy_loss)
             # update target networks
             self.update_target_network(self.target_actor, self.actor)
@@ -165,11 +168,23 @@ class Agent:
         Q_values = T.squeeze(network.forward(T.hstack([states, actions]).float()))
         return T.square(Q_values - targets).mean()
 
-    def compute_policy_loss(self, states: T.Tensor):
+    def compute_policy_loss(self, states: T.Tensor, actions: T.Tensor):
+        policy_actions = self.actor.forward(states.float())
+        Q_values = T.squeeze(self.critic1.forward(T.hstack([states, policy_actions]).float()))
+        Q_term = Q_values.mean()
         # FIXME HIGH: here is where behavioral cloning should be implemented!
-        actions = self.actor.forward(states.float())
-        Q_values = T.squeeze(self.critic1.forward(T.hstack([states, actions]).float()))
-        return -Q_values.mean()
+        if self.behavioral_cloning:
+            mean_absolute_Q_values = T.abs(Q_values).mean().detach()
+            # NOTE: alpha can be implemented as a tunable hyperparameter
+            # here, we divide it by 4.0 to preserve the shift in action disparity range
+            # (1^2 vs. 2^2)
+            alpha = 2.5 / 4.0
+            lambda_bc = alpha / mean_absolute_Q_values
+            behavioral_cloning_term = (policy_actions - actions).square().mean()
+            policy_loss = -(lambda_bc * Q_term - behavioral_cloning_term)
+        else:
+            policy_loss = -Q_term
+        return policy_loss
 
     def update_target_network(self, target_network: Network, network: Network):
         with T.no_grad():
