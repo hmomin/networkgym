@@ -5,14 +5,16 @@ import torch as T
 import torch.nn as nn
 from copy import deepcopy
 from gym.core import Env
-from ..buffer import Buffer
-from network import Network
+from buffer import Buffer
+from td3.network import Network
+from NetworkAgent.offline_env import OfflineEnv
 
 
 class Agent:
+    # FIXME: a lot of the saving/loading needs to be reworked!
     def __init__(
         self,
-        env: Env,
+        env: OfflineEnv,
         learning_rate: float,
         gamma: float,
         tau: float,
