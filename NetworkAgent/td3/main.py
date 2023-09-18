@@ -3,6 +3,9 @@ import gym
 from agent import Agent
 from os import path
 
+# FIXME LOW: a lot of this needs to be reworked if we want to do online training with it.
+# For offline training, see train_offline.py one level up.
+
 # HYPERPARAMETERS BELOW
 gamma = 0.99  # discount factor for rewards
 learning_rate = 0.001  # learning rate for actor and critic networks
@@ -16,8 +19,6 @@ resume = False  # resume from previous checkpoint if possible?
 
 
 def main() -> None:
-    # FIXME: this environment should be an offline environment for now.
-    # we can transfer to the online environment later.
     env = gym.make(env_name)
     env.name = env_name + "_" + str(trial)
     csv_name = env.name + "-data.csv"

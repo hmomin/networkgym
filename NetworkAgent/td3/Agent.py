@@ -4,14 +4,12 @@ import pickle
 import torch as T
 import torch.nn as nn
 from copy import deepcopy
-from gym.core import Env
 from buffer import Buffer
 from td3.network import Network
 from offline_env import OfflineEnv
 
 
 class Agent:
-    # FIXME: a lot of the saving/loading needs to be reworked!
     def __init__(
         self,
         env: OfflineEnv,
@@ -21,28 +19,28 @@ class Agent:
         should_load: bool = True,
         save_folder: str = "saved",
     ):
-        self.observation_dim = env.observation_space.shape[0]
-        self.action_dim = env.action_space.shape[0]
+        self.buffer: Buffer = env.buffer
+        self.observation_dim = self.buffer.states.shape[1]
+        self.action_dim = self.buffer.actions.shape[1]
         self.gamma = gamma
         self.tau = tau
         # check if the save_folder path exists
-        if not os.path.isdir(save_folder):
-            os.mkdir(save_folder)
-        self.env_name = os.path.join(save_folder, env.name + ".")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        save_dir = os.path.join(script_dir, save_folder)
+        if not os.path.isdir(save_dir):
+            os.mkdir(save_dir)
+        self.env_name = os.path.join(save_dir, env.algo_name + ".")
         name = self.env_name
         self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
-        self.buffer = (
-            pickle.load(open(name + "Replay", "rb"))
-            if should_load and os.path.exists(name + "Replay")
-            else Buffer(self.observation_dim, self.action_dim)
-        )
         # initialize the actor and critics
+        # NOTE: actor activation is sigmoid instead of tanh (from the paper)
+        # to satisfy the action bounds requirement
         self.actor = (
             pickle.load(open(name + "Actor", "rb"))
             if should_load and os.path.exists(name + "Actor")
             else Network(
-                [self.observation_dim, 256, 256, self.action_dim],
-                nn.Tanh,
+                [self.observation_dim, 400, 300, self.action_dim],
+                nn.Sigmoid,
                 learning_rate,
                 self.device,
             )
@@ -51,7 +49,7 @@ class Agent:
             pickle.load(open(name + "Critic1", "rb"))
             if should_load and os.path.exists(name + "Critic1")
             else Network(
-                [self.observation_dim + self.action_dim, 256, 256, 1],
+                [self.observation_dim + self.action_dim, 400, 300, 1],
                 nn.Identity,
                 learning_rate,
                 self.device,
@@ -61,7 +59,7 @@ class Agent:
             pickle.load(open(name + "Critic2", "rb"))
             if should_load and os.path.exists(name + "Critic2")
             else Network(
-                [self.observation_dim + self.action_dim, 256, 256, 1],
+                [self.observation_dim + self.action_dim, 400, 300, 1],
                 nn.Identity,
                 learning_rate,
                 self.device,
@@ -90,7 +88,8 @@ class Agent:
         return np.clip(deterministic_action + noise, -1, +1)
 
     def get_deterministic_action(self, state: np.ndarray) -> np.ndarray:
-        actions: T.Tensor = self.actor.forward(T.tensor(state, device=self.device))
+        state_tensor = T.tensor(state, device=self.device)
+        actions: T.Tensor = self.actor.forward(state_tensor)
         return actions.cpu().detach().numpy()
 
     def update(
@@ -167,6 +166,7 @@ class Agent:
         return T.square(Q_values - targets).mean()
 
     def compute_policy_loss(self, states: T.Tensor):
+        # FIXME: here is where behavioral cloning should be implemented!
         actions = self.actor.forward(states.float())
         Q_values = T.squeeze(self.critic1.forward(T.hstack([states, actions]).float()))
         return -Q_values.mean()

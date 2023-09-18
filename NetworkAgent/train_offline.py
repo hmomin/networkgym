@@ -14,20 +14,16 @@ def main() -> None:
     mini_batch_size = 100  # how large a mini-batch should be when updating
     policy_delay = 2  # how many steps to wait before updating the policy
     resume = False  # resume from previous checkpoint if possible?
-    # FIXME: implement behavioral cloning!
     behavioral_cloning = False  # whether or not to include behavioral cloning
     # -------------------------------------------------------------------
 
     env = OfflineEnv("system_default")
-    # FIXME: how is agent gonna get the mini-batches?
-    mini_batch = env.get_mini_batch(100)
 
     agent = Agent(env, learning_rate, gamma, tau, resume)
     agent.save()
 
     for step in range(training_steps):
         should_update_policy = step % policy_delay == 0
-        agent.buffer = env.buffer
         agent.update(
             mini_batch_size, training_sigma, training_clip, should_update_policy
         )

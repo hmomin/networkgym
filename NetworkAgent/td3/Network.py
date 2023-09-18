@@ -28,7 +28,7 @@ class Network(nn.Module):
         self.device = device
         self.to(self.device)
 
-    def forward(self, state: object) -> object:
+    def forward(self, state: T.Tensor) -> T.Tensor:
         return self.network(state)
 
     def gradient_descent_step(self, loss: T.Tensor, retain_graph: bool = False):
