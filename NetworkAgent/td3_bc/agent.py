@@ -5,7 +5,7 @@ import torch as T
 import torch.nn as nn
 from copy import deepcopy
 from buffer import Buffer
-from td3.network import Network
+from td3_bc.network import Network
 from offline_env import OfflineEnv
 
 
@@ -166,7 +166,7 @@ class Agent:
         return T.square(Q_values - targets).mean()
 
     def compute_policy_loss(self, states: T.Tensor):
-        # FIXME: here is where behavioral cloning should be implemented!
+        # FIXME HIGH: here is where behavioral cloning should be implemented!
         actions = self.actor.forward(states.float())
         Q_values = T.squeeze(self.critic1.forward(T.hstack([states, actions]).float()))
         return -Q_values.mean()

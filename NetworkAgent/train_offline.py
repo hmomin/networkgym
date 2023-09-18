@@ -1,4 +1,4 @@
-from td3.agent import Agent
+from td3_bc.agent import Agent
 from offline_env import OfflineEnv
 
 
