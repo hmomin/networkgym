@@ -116,7 +116,7 @@ class Agent:
             mini_batch["next_states"], requires_grad=True, device=self.device
         )
         dones = T.tensor(
-            mini_batch["done_flags"], requires_grad=True, device=self.device
+            mini_batch["dones"], requires_grad=True, device=self.device
         )
         # compute the targets
         targets = self.compute_targets(
@@ -124,12 +124,15 @@ class Agent:
         )
         # do a single step on each critic network
         Q1_loss = self.compute_Q_loss(self.critic1, states, actions, targets)
+        print(f"\tQ1_loss: {Q1_loss.item()}")
         self.critic1.gradient_descent_step(Q1_loss, True)
         Q2_loss = self.compute_Q_loss(self.critic2, states, actions, targets)
+        print(f"\tQ2_loss: {Q2_loss.item()}")
         self.critic2.gradient_descent_step(Q2_loss)
         if update_policy:
             # do a single step on the actor network
             policy_loss = self.compute_policy_loss(states, actions)
+            print(f"\tpi_loss: {policy_loss.item()}")
             self.actor.gradient_descent_step(policy_loss)
             # update target networks
             self.update_target_network(self.target_actor, self.actor)
@@ -170,7 +173,9 @@ class Agent:
 
     def compute_policy_loss(self, states: T.Tensor, actions: T.Tensor):
         policy_actions = self.actor.forward(states.float())
-        Q_values = T.squeeze(self.critic1.forward(T.hstack([states, policy_actions]).float()))
+        Q_values = T.squeeze(
+            self.critic1.forward(T.hstack([states, policy_actions]).float())
+        )
         Q_term = Q_values.mean()
         # FIXME HIGH: here is where behavioral cloning should be implemented!
         if self.behavioral_cloning:
@@ -196,7 +201,6 @@ class Agent:
 
     def save(self):
         name = self.env_name
-        pickle.dump(self.buffer, open(name + "Replay", "wb"))
         pickle.dump(self.actor, open(name + "Actor", "wb"))
         pickle.dump(self.critic1, open(name + "Critic1", "wb"))
         pickle.dump(self.critic2, open(name + "Critic2", "wb"))
