@@ -7,7 +7,7 @@ from copy import deepcopy
 from gym.core import Env
 from buffer import Buffer
 from td3.network import Network
-from NetworkAgent.offline_env import OfflineEnv
+from offline_env import OfflineEnv
 
 
 class Agent:

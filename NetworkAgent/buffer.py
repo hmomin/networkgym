@@ -1,8 +1,18 @@
 import numpy as np
 import os
 import pickle
-from pprint import pprint
-from typing import Any
+from tqdm import tqdm
+
+
+def safe_stack(array_1: np.ndarray, array_2: np.ndarray) -> np.ndarray:
+    return np.vstack((array_1, array_2)) if array_1.size else array_2
+
+
+def safe_concat(array_1: np.ndarray, array_2: np.ndarray) -> np.ndarray:
+    concatenated_array = (
+        np.concatenate((array_1, array_2), axis=0) if array_1.size else array_2
+    )
+    return concatenated_array
 
 
 class Buffer:
@@ -14,37 +24,22 @@ class Buffer:
         self.filename = os.path.join(buffer_dir, name)
         if os.path.exists(self.filename):
             with open(self.filename, "rb") as f:
-                self.container: tuple[
+                # NOTE: pickle will save each element as a list of 1-D arrays
+                container: tuple[
                     list[np.ndarray],
-                    list[list[float]],
-                    list[np.float64],
+                    list[np.ndarray],
+                    list[np.ndarray],
                     list[np.ndarray],
                 ] = pickle.load(f)
-                (
-                    self.states,
-                    self.actions,
-                    self.rewards,
-                    self.next_states,
-                ) = self.container
-                self.construct_finalized_buffer()
+                self.states = np.array(container[0])
+                self.actions = np.array(container[1])
+                self.rewards = np.array(container[2])
+                self.next_states = np.array(container[3])
         else:
-            self.container: tuple[
-                list[np.ndarray], list[list[float]], list[np.float64], list[np.ndarray]
-            ] = ([], [], [], [])
-            self.states, self.actions, self.rewards, self.next_states = self.container
-
-    def flatten_states(self) -> None:
-        for state_list in (self.states, self.next_states):
-            for idx, element in enumerate(state_list):
-                state_list[idx] = element.flatten()
-
-    def construct_finalized_buffer(self) -> None:
-        self.flatten_states()
-        # FIXME: can we do this on store? it would make things a lot simpler...
-        self.numpy_states = np.vstack(self.states)
-        self.numpy_actions = np.array(self.actions)
-        self.numpy_rewards = np.array(self.rewards)
-        self.numpy_next_states = np.vstack(self.next_states)
+            self.states = np.array([])
+            self.actions = np.array([])
+            self.rewards = np.array([])
+            self.next_states = np.array([])
 
     def store(
         self,
@@ -53,64 +48,50 @@ class Buffer:
         reward: np.float64,
         next_state: np.ndarray,
     ) -> None:
-        self.states.append(state)
-        self.actions.append(action)
-        self.rewards.append(reward)
-        self.next_states.append(next_state)
-        if len(self.states) % 100 == 0:
-            self.write_to_disk()
+        state = state.flatten()
+        next_state = next_state.flatten()
+        np_action = np.array(action)
+        self.states = safe_stack(self.states, state)
+        self.actions = safe_stack(self.actions, np_action)
+        self.rewards = np.concatenate((self.rewards, np.array([reward])))
+        self.next_states = safe_stack(self.next_states, next_state)
+        self.write_to_disk()
 
     def write_to_disk(self) -> None:
+        print(f"states:      {self.states.shape}")
+        print(f"actions:     {self.actions.shape}")
+        print(f"rewards:     {self.rewards.shape}")
+        print(f"next_states: {self.next_states.shape}")
         with open(self.filename, "wb") as f:
-            pickle.dump(self.container, f)
+            pickle.dump((self.states, self.actions, self.rewards, self.next_states), f)
 
     def get_mini_batch(
         self,
         size: int,
     ) -> dict[str, np.ndarray]:
-        buffer_size = self.numpy_states.shape[0]
+        buffer_size = self.states.shape[0]
         indices = np.random.choice(buffer_size, size, replace=False)
         # NOTE: an environment never actually terminates in the way that the MDP
         # framework expects...
-        dones = np.zeros_like(self.numpy_rewards[indices])
+        dones = np.zeros_like(self.rewards[indices])
         return {
-            "states": self.numpy_states[indices],
-            "actions": self.numpy_actions[indices],
-            "rewards": self.numpy_rewards[indices],
-            "next_states": self.numpy_next_states[indices],
+            "states": self.states[indices],
+            "actions": self.actions[indices],
+            "rewards": self.rewards[indices],
+            "next_states": self.next_states[indices],
             "dones": dones,
         }
 
 
 class CombinedBuffer(Buffer):
     def __init__(self, buffers: list[Buffer]) -> None:
-        for buffer in buffers:
+        super().__init__("this_buffer_doesn't_exist")
+        print("Combining buffers...")
+        for buffer in tqdm(buffers):
             self.fill_from_buffer(buffer)
 
     def fill_from_buffer(self, buffer: Buffer) -> None:
-        # NOTE: buffer is expected to contain numpy variables
-        # FIXME: this can be made more efficient using eval()?
-        if hasattr(self, "numpy_states"):
-            self.numpy_states = np.concatenate(
-                (self.numpy_states, buffer.numpy_states), axis=0
-            )
-        else:
-            self.numpy_states = buffer.numpy_states
-        if hasattr(self, "numpy_actions"):
-            self.numpy_actions = np.concatenate(
-                (self.numpy_actions, buffer.numpy_actions), axis=0
-            )
-        else:
-            self.numpy_actions = buffer.numpy_actions
-        if hasattr(self, "numpy_rewards"):
-            self.numpy_rewards = np.concatenate(
-                (self.numpy_rewards, buffer.numpy_rewards), axis=0
-            )
-        else:
-            self.numpy_rewards = buffer.numpy_rewards
-        if hasattr(self, "numpy_next_states"):
-            self.numpy_next_states = np.concatenate(
-                (self.numpy_next_states, buffer.numpy_next_states), axis=0
-            )
-        else:
-            self.numpy_next_states = buffer.numpy_next_states
+        self.states = safe_concat(self.states, buffer.states)
+        self.actions = safe_concat(self.actions, buffer.actions)
+        self.rewards = safe_concat(self.rewards, buffer.rewards)
+        self.next_states = safe_concat(self.next_states, buffer.next_states)

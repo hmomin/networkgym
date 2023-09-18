@@ -48,6 +48,7 @@ pip install pyzmq
 pip install wandb
 pip install tensorboard
 pip install stable-baselines3
+pip install tqdm
 ```
 - Request access to the [vLab](https://registration.intel-research.net/) machine.
 
