@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import os
+import pickle
 import sys
 import time
 
@@ -123,8 +124,6 @@ def main():
 
     # Choose the agent
     agent_class = alg_map.get(rl_alg, None)
-    if agent_class is None:
-        raise ValueError(f"Invalid RL algorithm name: {rl_alg}")
     client_id = args.client_id
     # Create the environment
     print("[" + args.env + "] environment selected.")
@@ -139,57 +138,53 @@ def main():
     # only use this function for debug,
     # check_env(env)
 
-    if rl_alg != "system_default":
+    heuristic_algorithms = ["system_default", "ArgMax", "ArgMin", "Random"]
 
-        if rl_alg == "ArgMax":
-            argmax_policy(env, config_json)
-            return
-        if rl_alg == "ArgMin":
-            argmin_policy(env, config_json)
-            return
-        if rl_alg == "Random":
-            random_policy(env, config_json)
-            return
+    if rl_alg in heuristic_algorithms:
+        agent_class(normal_obs_env, config_json)
+        return
 
-        train_flag = config_json["rl_config"]["train"]
+    train_flag = config_json["rl_config"]["train"]
 
-        # Load the model if eval is True
-        if not train_flag:
-            # Testing/Evaluation
-            this_dir = os.path.dirname(os.path.abspath(__file__))
-            model_path = os.path.join(this_dir, "models", rl_alg)
+    # Load the model if eval is True
+    if not train_flag:
+        # Testing/Evaluation
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(this_dir, "models", rl_alg)
+
+        if agent_class is None:
+            print(
+                f"WARNING: rl_alg ({rl_alg}) not found in alg_map. Trying personal mode..."
+            )
+            agent = pickle.load(open(model_path + ".Actor", "rb"))
+        else:
             agent = agent_class.load(model_path)
 
-            steps_per_episode = int(config_json["env_config"]["steps_per_episode"])
-            episodes_per_session = int(
-                config_json["env_config"]["episodes_per_session"]
-            )
-            num_steps = steps_per_episode * episodes_per_session
-            # n_episodes = config_json['rl_config']['timesteps'] / 100
+        steps_per_episode = int(config_json["env_config"]["steps_per_episode"])
+        episodes_per_session = int(config_json["env_config"]["episodes_per_session"])
+        num_steps = steps_per_episode * episodes_per_session
+        # n_episodes = config_json['rl_config']['timesteps'] / 100
 
-            evaluate(agent, normal_obs_env, num_steps)
-        else:
-            # NOTE: action noise for off-policy networks - num users hardcoded!
-            if rl_alg in ["DDPG", "TD3"]:
-                action_noise = NormalActionNoise(
-                    mean=np.zeros(4), sigma=0.3 * np.ones(4)
-                )
-                agent = agent_class(
-                    config_json["rl_config"]["policy"],
-                    normal_obs_env,
-                    action_noise=action_noise,
-                    verbose=1,
-                )
-            else:
-                agent = agent_class(
-                    config_json["rl_config"]["policy"], normal_obs_env, verbose=1
-                )
-            print(agent.policy)
-
-            train(agent, config_json)
+        evaluate(agent, normal_obs_env, num_steps)
     else:
-        # use the system_default algorithm...
-        agent_class(normal_obs_env, config_json)
+        if agent_class is None:
+            raise Exception(f"ERROR: rl_alg ({rl_alg}) not found in alg_map!")
+        # NOTE: action noise for off-policy networks - num users hardcoded!
+        if rl_alg in ["DDPG", "TD3"]:
+            action_noise = NormalActionNoise(mean=np.zeros(4), sigma=0.3 * np.ones(4))
+            agent = agent_class(
+                config_json["rl_config"]["policy"],
+                normal_obs_env,
+                action_noise=action_noise,
+                verbose=1,
+            )
+        else:
+            agent = agent_class(
+                config_json["rl_config"]["policy"], normal_obs_env, verbose=1
+            )
+        print(agent.policy)
+
+        train(agent, config_json)
 
 
 def arg_parser():
