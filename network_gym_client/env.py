@@ -130,13 +130,14 @@ class Env(gym.Env):
         
         # NOTE: recording rl_alg and setting up buffer
         self.rl_alg: str = config_json["rl_config"]["agent"]
+        random_seed: int = config_json["env_config"]["random_seed"]
+        seed_str = str(random_seed).zfill(2)
+        reward_type: str = config_json["rl_config"]["reward_type"]
         self.store_offline: bool = config_json["rl_config"]["store_offline"]\
             if "store_offline" in config_json["rl_config"]\
                 else False
         if self.store_offline:
-            filename: str = self.rl_alg + time.strftime(
-                "_%Y_%m_%d_%H_%M_%S", time.localtime()
-            )
+            filename: str = f"{self.rl_alg}_{reward_type}_seed_{seed_str}"
             self.buffer = Buffer(filename)
 
         

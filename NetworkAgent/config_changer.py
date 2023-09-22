@@ -1,41 +1,78 @@
 import argparse
 import json
 import os
-from typing import Dict, Tuple
+from pprint import pprint
 
 config_location = os.path.join(
     "network_gym_client", "envs", "nqos_split", "config.json"
 )
 
 
-def get_agent_from_args() -> Tuple[str, bool]:
-    parser = argparse.ArgumentParser(description="Agent to Use")
+def get_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="For changing nqos_split/config.json")
     parser.add_argument(
-        "--agent", help="Specify an agent to train with", default="system_default"
+        "--agent", help="rl_config['agent'] in config.json", required=False, type=str
     )
-    parser.add_argument("--test", action=argparse.BooleanOptionalAction)
+    parser.add_argument(
+        "--train",
+        action="store_true",
+        help="set rl_config['train'] = true in config.json",
+        required=False,
+    )
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="set rl_config['train'] = false in config.json",
+        required=False,
+    )
+    parser.add_argument(
+        "--steps",
+        help="env_config['steps_per_episode'] in config.json",
+        required=False,
+        type=int,
+    )
+    parser.add_argument(
+        "--seed",
+        help="env_config['random_seed'] in config.json",
+        required=False,
+        type=int,
+    )
     args = parser.parse_args()
-    agent_type: str = args.agent
-    testing: bool = args.test
-    return (agent_type, testing)
+    return args
 
 
-def load_json_file(filename: str) -> Dict:
+def load_json_file(filename: str) -> dict:
     this_file_dir = os.path.dirname(os.path.abspath(__file__))
     full_config_filename = os.path.join(this_file_dir, "..", filename)
     with open(full_config_filename, "r") as json_file:
-        json_dict: Dict = json.load(json_file)
+        json_dict: dict = json.load(json_file)
     return json_dict
 
 
-def edit_dict(json_dict: Dict, agent: str, testing: bool = False) -> None:
-    json_dict["rl_config"]["agent"] = agent
-    training: bool = not testing
-    json_dict["rl_config"]["train"] = training
-    # NOTE: steps can be changed here to be large for training and small for testing
-    json_dict["env_config"]["steps_per_episode"] = 400_000 if training else 10_000
-    # NOTE: be careful with choosing seeds!
-    json_dict["env_config"]["random_seed"] = 15 if training else 13
+def edit_dict(json_dict: dict, args: argparse.Namespace) -> None:
+    agent: str | None = args.agent
+    training: bool = args.train
+    testing: bool = args.test
+    steps: int | None = args.steps
+    seed: int | None = args.seed
+
+    if agent != None:
+        json_dict["rl_config"]["agent"] = agent
+
+    if training and testing:
+        raise Exception(
+            "--train and --test can't both be supplied to config_changer.py"
+        )
+    elif training:
+        json_dict["rl_config"]["train"] = True
+    elif testing:
+        json_dict["rl_config"]["train"] = False
+
+    if steps != None:
+        json_dict["env_config"]["steps_per_episode"] = steps
+
+    if seed != None:
+        json_dict["env_config"]["random_seed"] = seed
 
 
 def remove_file(filename: str) -> None:
@@ -43,15 +80,15 @@ def remove_file(filename: str) -> None:
         os.remove(filename)
 
 
-def save_json(config_location: str, json_dict: Dict) -> None:
+def save_json(config_location: str, json_dict: dict) -> None:
     with open(config_location, "w") as file:
         json.dump(json_dict, file, indent=4)
 
 
 def main() -> None:
-    agent, testing = get_agent_from_args()
+    args = get_args()
     json_dict = load_json_file(config_location)
-    edit_dict(json_dict, agent, testing)
+    edit_dict(json_dict, args)
     remove_file(config_location)
     save_json(config_location, json_dict)
 
