@@ -39,6 +39,7 @@ class Agent:
         name = self.env_name
         self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
         print(f"Using {self.device} device...")
+        self.training_stats: list[list[float]] = []
         # initialize the actor and critics
         # NOTE: actor activation is sigmoid instead of tanh (from the paper)
         # to satisfy the action bounds requirement
@@ -108,6 +109,7 @@ class Agent:
         training_clip: float,
         update_policy: bool,
     ):
+        self.training_stats.append([])
         # randomly sample a mini-batch from the replay buffer
         mini_batch = self.buffer.get_mini_batch(mini_batch_size)
         # create tensors to start generating computational graph
@@ -122,14 +124,17 @@ class Agent:
         )
         # do a single step on each critic network
         Q1_loss = self.compute_Q_loss(self.critic1, states, actions, targets)
+        self.training_stats[-1].append(Q1_loss.item())
         # print(f"\tQ1_loss: {Q1_loss.item()}")
         self.critic1.gradient_descent_step(Q1_loss, True)
         Q2_loss = self.compute_Q_loss(self.critic2, states, actions, targets)
+        self.training_stats[-1].append(Q2_loss.item())
         # print(f"\tQ2_loss: {Q2_loss.item()}")
         self.critic2.gradient_descent_step(Q2_loss)
         if update_policy:
             # do a single step on the actor network
             policy_loss = self.compute_policy_loss(states, actions)
+            self.training_stats[-1].append(policy_loss.item())
             # print(f"\tpi_loss: {policy_loss.item()}")
             self.actor.gradient_descent_step(policy_loss)
             # update target networks
@@ -200,6 +205,7 @@ class Agent:
 
     def save(self):
         name = self.env_name
+        pickle.dump(self.training_stats, open(name + "training_stats", "wb"))
         pickle.dump(self.actor, open(name + "Actor", "wb"))
         pickle.dump(self.critic1, open(name + "Critic1", "wb"))
         pickle.dump(self.critic2, open(name + "Critic2", "wb"))
