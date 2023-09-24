@@ -1,20 +1,24 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import os
 import pickle
-from pprint import pprint
+import numpy as np
 
 data_dir = "2023_09_20_training_stats"
 
-title = "Training Stats"
-
 color_map = {
-    "system_default_bc_Q1_loss": "#ff0000",
-    "system_default_bc_Q2_loss": "#00ff00",
-    "system_default_td3_normal": "#0000ff",
+    "system_default_td3_Q1_loss": "#ff0000",
+    "system_default_td3_Q2_loss": "#0000ff",
+    "system_default_td3_policy_loss": "#000000",
+    "system_default_td3_bc_Q1_loss": "#0000ff",
+    "system_default_td3_bc_Q2_loss": "#ff0000",
+    "system_default_td3_bc_policy_loss": "#000000",
 }
 
+period_value = 1000
+
 loss_index_map = ["Q1_loss", "Q2_loss", "policy_loss"]
+
+COUNTER = 0
 
 
 def get_data_dir() -> str:
@@ -75,11 +79,50 @@ def get_xy_data(
     return xy_data
 
 
+def construct_means_and_stds(
+    data_dict: dict[str, dict[str, list]]
+) -> dict[str, list[tuple[float, float]]]:
+    parsed_dict: dict[str, list[tuple[float, float]]] = {}
+    for algorithm_name, algorithm_data in data_dict.items():
+        x_values: list[int] = algorithm_data["x"]
+        y_values: list[float] = algorithm_data["y"]
+        mean_std_values = split_by_section(x_values, y_values, period_value)
+        parsed_dict[algorithm_name] = mean_std_values
+    return parsed_dict
+
+
+def split_by_section(
+    x_values: list[int], y_values: list[float], period: int
+) -> list[tuple[float, float]]:
+    end_idx = period
+    mean_stdev_values = []
+    sectioned_values: list[float] = []
+    for x_val, y_val in zip(x_values, y_values):
+        if x_val < end_idx:
+            sectioned_values.append(y_val)
+        else:
+            mean_val, stdev = get_mean_std_from_section(sectioned_values)
+            mean_stdev_values.append((mean_val, stdev))
+            sectioned_values = []
+            end_idx += period
+    if len(sectioned_values) > 0:
+        mean_val, stdev = get_mean_std_from_section(sectioned_values)
+        mean_stdev_values.append((mean_val, stdev))
+    return mean_stdev_values
+
+
+def get_mean_std_from_section(values: list[float]) -> tuple[float, float]:
+    mean_value = np.mean(values)
+    stdev = np.std(values)
+    return mean_value, stdev
+
+
 def plot_data(
     algorithm_name: str,
     labels: list[str],
     algorithm_dict: dict[str, tuple[list[float], list[float]]],
 ) -> None:
+    global COUNTER
     xy_data = get_xy_data(labels, algorithm_dict)
     plt.figure(figsize=(19, 9))
     plt.rc("font", weight="normal", size=20)
@@ -109,11 +152,14 @@ def plot_data(
     # plt.tight_layout(rect=(0, 0, 0.99, 1))
     # plt.xlim(xmin=0.0)
     # plt.ylim(ymin=0.0)
-    # plt.ylim(ymin=-2.5, ymax=1.5)
+    plt.ylim(ymin=-10, ymax=110)
+    # plt.ylim(ymin=-10, ymax=260)
+    title = algorithm_name
     plt.title(title)
     plt.xlabel(f"Step")
-    plt.ylabel("Reward")
-    plt.savefig(os.path.join(get_data_dir(), f"{title}.png"))
+    plt.ylabel("Loss")
+    plt.savefig(os.path.join(get_data_dir(), f"{title}_{COUNTER}.png"))
+    COUNTER += 1
     plt.show()
 
 
