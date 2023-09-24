@@ -6,7 +6,6 @@ network_gym_accounts.csv
 /docs/_build
 *.pickle
 *.csv
-*.sh
 .vscode
 *logs
 *.png
