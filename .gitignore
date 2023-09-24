@@ -9,3 +9,4 @@ network_gym_accounts.csv
 .vscode
 *logs
 *.png
+*.training_stats
