@@ -23,15 +23,13 @@ def main() -> None:
 
     print("Training agent with offline data...")
     for step in tqdm(range(training_steps)):
-        # for step in range(training_steps):
-        # print(f"Step {step}:")
         should_update_policy = step % policy_delay == 0
         agent.update(
             mini_batch_size, training_sigma, training_clip, should_update_policy
         )
         if step % 10_000 == 0:
-            agent.save()
-    agent.save()
+            agent.save(step, training_steps)
+    agent.save(training_steps, training_steps)
 
 
 if __name__ == "__main__":
