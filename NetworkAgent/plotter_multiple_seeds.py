@@ -5,11 +5,11 @@ import pandas as pd
 
 data_dir = "2023_09_23_preliminary_offline_RL_testing_48_to_55"
 
-title = "Offline RL Testing"
+title = ""
 
 color_map = {
     "system_default": "#ff0000",
-    "system_default_td3_bc": "#00cc00",
+    "system_default_td3_bc": "#00aa00",
     "system_default_td3_normal": "#0000ff",
 }
 
@@ -113,7 +113,8 @@ def plot_data(mean_std_dict: dict[str, list[tuple[float, float]]]) -> None:
     # plt.xlim(xmin=0.0)
     # plt.ylim(ymin=0.0)
     # plt.ylim(ymin=-1.5, ymax=0.5)
-    plt.title(title)
+    if title:
+        plt.title(title)
     plt.xlabel(f"Step")
     plt.ylabel("Reward")
     plt.savefig(os.path.join(get_data_dir(), f"{title}.png"))
