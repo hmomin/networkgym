@@ -21,9 +21,10 @@ def request_lock(seed: int) -> None:
         send_to(get_server_address(), "REQUEST", client)
         bytes_message, return_address = client.recvfrom(2048)
         message = pickle.loads(bytes_message)
+        print(f"Message '{message}' received from {return_address}.")
         if message != "GRANTED":
             raise Exception(
-                f"ERROR: message '{message}' received from config lock server at {return_address}."
+                "Invalid message received from config lock server!"
             )
 
 

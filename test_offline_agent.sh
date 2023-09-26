@@ -2,11 +2,9 @@
 
 set -e
 
-agent_basename="system_default_normal"
-# define the range of values for the agent suffix
-start_val=0
-end_val=1000000
-step=10000
+agent_basename="system_default_bc"
+# define the range of starting values for the agent suffix (depending on client id)
+start_vals=(0 0 0 0 0 0 0 0)
 
 # exactly one argument must be provided
 if [ $# -ne 1 ]; then
@@ -14,6 +12,9 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 client_id=$1
+start_val=${start_vals[$client_id]}
+end_val=1000000
+step=10000
 
 let "seed = $client_id + 56"
 
