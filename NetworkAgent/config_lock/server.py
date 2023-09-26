@@ -1,7 +1,7 @@
 import socket
 from threading import Thread
 from typing import Any
-from message_utils import general_message_handler, send_to
+from message_utils import general_connection_handler, send_to
 
 SERVER_PORT = 4000
 LOCK_REQUESTS: list[tuple[str, int]] = []
@@ -11,13 +11,15 @@ def initialize_server(server: socket.socket) -> None:
     local_IP = socket.gethostbyname(socket.gethostname())
     address = (local_IP, SERVER_PORT)
     server.bind(address)
-    print(f"Config locking server bound to port {SERVER_PORT}.")
+    server.listen()
+    print(f"Config locking server listening on port {SERVER_PORT}...")
 
 
 def handle_message_for_server(
     server: socket.socket,
     message: Any,
     return_address: tuple[str, int],
+    client_socket: socket.socket,
 ):
     if type(message) == str and "REQUEST" in message:
         handle_lock_request(server, return_address)
@@ -25,6 +27,7 @@ def handle_message_for_server(
         handle_lock_release(server, return_address)
     else:
         print("Invalid request sent.")
+    client_socket.close()
 
 
 def handle_lock_request(server: socket.socket, return_address: tuple[str, int]) -> None:
@@ -56,11 +59,11 @@ def should_server_close(user_input: str) -> bool:
 
 
 def main() -> None:
-    with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as server:
+    with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as server:
         initialize_server(server)
         # daemon thread handles messages while main thread handles user input
         Thread(
-            target=general_message_handler,
+            target=general_connection_handler,
             args=(server, handle_message_for_server),
             daemon=True,
         ).start()

@@ -1,5 +1,6 @@
 import pickle
 import socket
+from threading import Thread
 from typing import Any, Callable
 
 
@@ -8,17 +9,48 @@ def send_to(
     data: Any,
     source_socket: socket.socket,
 ) -> None:
-    bytes_data = pickle.dumps(data)
-    source_socket.sendto(bytes_data, address)
+    client_address = source_socket.getsockname()
+    message_dict: dict[str, Any] = {"address": client_address, "data": data}
+    bytes_data = pickle.dumps(message_dict)
+    with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as dummy_source:
+        dummy_source.connect(address)
+        dummy_source.sendall(bytes_data)
     print(f"Message '{data}' sent to {address}.")
 
 
-def general_message_handler(
+def general_connection_handler(
     in_socket: socket.socket,
-    specific_message_handler: Callable[[socket.socket, Any, tuple[str, int]], None],
+    specific_message_handler: Callable[
+        [socket.socket, Any, tuple[str, int], socket.socket], None
+    ],
 ) -> None:
     while True:
-        bytes_message, return_address = in_socket.recvfrom(2048)
-        message = pickle.loads(bytes_message)
-        print(f"Message '{message}' received from {return_address}.")
-        specific_message_handler(in_socket, message, return_address)
+        client_socket, _ = in_socket.accept()
+        bytes_message = client_socket.recv(2048)
+        # new thread handles message while current thread accepts incoming
+        # connections
+        Thread(
+            target=general_message_handler,
+            args=(
+                bytes_message,
+                in_socket,
+                specific_message_handler,
+                client_socket,
+            ),
+            daemon=True,
+        ).start()
+
+
+def general_message_handler(
+    bytes_message: bytes,
+    in_socket: socket.socket,
+    specific_message_handler: Callable[
+        [socket.socket, Any, tuple[str, int], socket.socket], None
+    ],
+    client_socket: socket.socket,
+) -> None:
+    message_dict: dict[str, Any] = pickle.loads(bytes_message)
+    return_address: tuple[str, int] = message_dict["address"]
+    message: str = message_dict["data"]
+    print(f"Message '{message}' received from {return_address}.")
+    specific_message_handler(in_socket, message, return_address, client_socket)
