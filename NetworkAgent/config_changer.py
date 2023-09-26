@@ -1,7 +1,8 @@
 import argparse
 import json
 import os
-from pprint import pprint
+from config_lock.client_utils import request_lock, release_lock
+from time import sleep
 
 config_location = os.path.join(
     "network_gym_client", "envs", "nqos_split", "config.json"
@@ -87,6 +88,9 @@ def save_json(config_location: str, json_dict: dict) -> None:
 
 def main() -> None:
     args = get_args()
+    seed: int | None = args.seed
+    if seed != None:
+        request_lock(seed)
     json_dict = load_json_file(config_location)
     edit_dict(json_dict, args)
     remove_file(config_location)

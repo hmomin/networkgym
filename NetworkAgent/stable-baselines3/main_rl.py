@@ -23,6 +23,7 @@ from stable_baselines3.common.noise import NormalActionNoise
 from gymnasium.wrappers import NormalizeObservation
 
 from NetworkAgent.heuristic_policies import argmax_policy, argmin_policy, random_policy
+from NetworkAgent.config_lock.client_utils import release_lock
 
 
 def train(agent, config_json):
@@ -90,6 +91,9 @@ def main():
     # load config files
     config_json = load_config_file(args.env)
     config_json["env_config"]["env"] = args.env
+
+    seed: int = config_json["env_config"]["random_seed"]
+    release_lock(seed)
 
     if args.lte_rb != -1:
         config_json["env_config"]["LTE"]["resource_block_num"] = args.lte_rb

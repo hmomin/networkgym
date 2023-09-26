@@ -21,10 +21,11 @@ let "seed = $client_id + 56"
 if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then
     for ((i=start_val; i<=end_val; i+=step)); do
         agent="$agent_basename.$(printf "%07d" $i)"
-        # python NetworkAgent/config_changer.py --test --agent $agent --seed $seed --steps 2000
-        # cd NetworkAgent/stable-baselines3
-        # python main_rl.py --env nqos_split --client_id $client_id
-        # cd ../..
+        echo "SEED: $seed --- AGENT: $agent"
+        python NetworkAgent/config_changer.py --test --agent $agent --seed $seed --steps 2000
+        cd NetworkAgent/stable-baselines3
+        python main_rl.py --env nqos_split --client_id $client_id
+        cd ../..
     done
 else
     echo "ERROR: client_id must be an int between 0 and 7, inclusive. ($client_id provided)"
