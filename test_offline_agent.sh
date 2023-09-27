@@ -4,7 +4,7 @@ set -e
 
 agent_basename="system_default_bc"
 # define the range of starting values for the agent suffix (depending on client id)
-start_vals=(0 0 0 0 0 0 0 0)
+start_vals=(690000 650000 600000 610000 630000 650000 620000 650000)
 
 # exactly one argument must be provided
 if [ $# -ne 1 ]; then
