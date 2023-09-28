@@ -35,9 +35,7 @@ class Adapter:
         }
 
         self.wandb.init(
-            # name=rl_alg + "_" + str(config_json['env_config']['num_users']) + "_LTE_" +  str(config_json['env_config']['LTE']['resource_block_num']),
-            #name=rl_alg + "_" + str(config_json['env_config']['num_users']) + "_" +  str(config_json['env_config']['LTE']['resource_block_num']),
-            name=rl_alg,
+            name=f"{rl_alg}_seed_{config_json['env_config']['random_seed']}",
             project="network_gym_client",
             config=config,
             sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
