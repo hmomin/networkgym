@@ -5,8 +5,9 @@ from offline_env import OfflineEnv
 
 def main() -> None:
     # ------------------------- HYPERPARAMETERS -------------------------
-    behavioral_cloning = True  # whether or not to include behavioral cloning
-    training_steps = 1_000_000  # number of mini-batch steps for training
+    behavioral_cloning = False  # whether or not to include behavioral cloning
+    training_steps = 100_000  # number of mini-batch steps for training
+    save_step = int(training_steps / 100)  # how frequently models should update
     gamma = 0.99  # discount factor for rewards
     learning_rate = 0.001  # learning rate for actor and critic networks
     tau = 0.005  # tracking parameter used to update target networks slowly
@@ -27,7 +28,7 @@ def main() -> None:
         agent.update(
             mini_batch_size, training_sigma, training_clip, should_update_policy
         )
-        if step % 10_000 == 0:
+        if step % save_step == 0:
             agent.save(step, training_steps)
     agent.save(training_steps, training_steps)
 
