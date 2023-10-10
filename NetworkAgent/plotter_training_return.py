@@ -3,15 +3,19 @@ import numpy as np
 import os
 import pandas as pd
 
-title = "Rollout Cumulative Return during Training Process"
+TITLE = "Rollout Cumulative Return during Training Process"
+# DATA_DIR = "2023_09_27_td3_with(out)_bc_1000000"
+# DATA_DIR = "2023_10_08_21_00_td3_bc_1000000"
+# DATA_DIR = "2023_10_08_21_10_td3_bc_10000"
+DATA_DIR = "2023_10_08_21_20_td3_bc_100000"
 
-color_map = {
+COLOR_MAP = {
     "system_default": "#e41a1c",
     "system_default_td3": "#3700b8",
     "system_default_td3_bc": "#4daf4a",
 }
 
-name_map = {
+NAME_MAP = {
     "system_default_normal": "system_default_td3",
     "system_default_bc": "system_default_td3_bc",
 }
@@ -19,7 +23,7 @@ name_map = {
 
 def get_data_dir() -> str:
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(script_dir, "data", "2023_09_27_td3_with(out)_bc_testing")
+    data_dir = os.path.join(script_dir, "data", DATA_DIR)
     return data_dir
 
 
@@ -52,7 +56,7 @@ def process_data_for_plotting(
     algorithm_name = algorithm_name.split(".")[0]
     # NOTE: treat system_default case separately
     if len(data_dict.keys()) == 1:
-        x_vals = list(range(0, 1_000_001, 10_000))
+        x_vals = get_x_vals()
         mean_std_vals = data_dict[algorithm_name]
         y_vals = [mean_std_vals] * len(x_vals)
     else:
@@ -63,6 +67,14 @@ def process_data_for_plotting(
             x_vals.append(x_val)
             y_vals.append(value)
     return algorithm_name, x_vals, y_vals
+
+
+def get_x_vals() -> list[int]:
+    end_val_str = DATA_DIR.split("_")[-1]
+    end_val = int(end_val_str)
+    step_val = int(end_val / 100)
+    x_vals = list(range(0, end_val + 1, step_val))
+    return x_vals
 
 
 def plot_data(
@@ -79,11 +91,11 @@ def plot_data(
         linewidth=0.1,
     )
     for name, (x_vals, mean_std_list) in plotter_dict.items():
-        parsed_name = name_map[name] if name in name_map else name
+        parsed_name = NAME_MAP[name] if name in NAME_MAP else name
         mean_rewards = [mean_val for mean_val, stdev in mean_std_list]
         lower_bounds = [mean_val - stdev for mean_val, stdev in mean_std_list]
         upper_bounds = [mean_val + stdev for mean_val, stdev in mean_std_list]
-        line_color = color_map[parsed_name] if parsed_name in color_map else (0, 0, 0)
+        line_color = COLOR_MAP[parsed_name] if parsed_name in COLOR_MAP else (0, 0, 0)
         plt.plot(x_vals, mean_rewards, color=line_color, label=parsed_name)
         plt.fill_between(
             x_vals,
@@ -105,12 +117,10 @@ def plot_data(
     plt.legend(good_handles, good_labels, loc="upper left", bbox_to_anchor=(1, 0.75))
     plt.tight_layout(rect=(0.02, 0.02, 0.99, 0.98))
     # plt.tight_layout(rect=(0, 0, 0.99, 1))
-    # plt.xlim(xmin=0.0)
-    # plt.ylim(ymin=-2.5, ymax=1.5)
-    plt.title(title)
+    plt.title(TITLE)
     plt.xlabel("Training Iteration")
     plt.ylabel("Cumulative Rollout Return")
-    plt.savefig(os.path.join(get_data_dir(), f"../{title}.png"))
+    plt.savefig(os.path.join(get_data_dir(), f"../{DATA_DIR}.png"))
     plt.show()
 
 
