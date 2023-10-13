@@ -205,7 +205,7 @@ class Agent:
 
     def save(self, step: int = 0, max_steps: int = 1_000_000):
         step_str = str(step).zfill(len(str(max_steps)))
-        name = f"{self.env_name}{step_str}."
+        name = f"{self.env_name}{step_str}.{self.buffer.num_buffers}."
         pickle.dump(self.training_stats, open(name + "training_stats", "wb"))
         pickle.dump(self.actor, open(name + "Actor", "wb"))
         pickle.dump(self.critic1, open(name + "Critic1", "wb"))

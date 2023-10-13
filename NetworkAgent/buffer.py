@@ -86,6 +86,7 @@ class Buffer:
 
 class CombinedBuffer(Buffer):
     def __init__(self, buffers: list[Buffer]) -> None:
+        self.num_buffers = len(buffers)
         super().__init__("this_buffer_doesn't_exist")
         print("Combining buffers...")
         for buffer in tqdm(buffers):

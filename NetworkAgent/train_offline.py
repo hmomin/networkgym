@@ -5,9 +5,10 @@ from offline_env import OfflineEnv
 
 def main() -> None:
     # ------------------------- HYPERPARAMETERS -------------------------
-    behavioral_cloning = False  # whether or not to include behavioral cloning
-    training_steps = 100_000  # number of mini-batch steps for training
-    save_step = int(training_steps / 100)  # how frequently models should update
+    env_name = "PPO_50000_step"
+    behavioral_cloning = True  # whether or not to include behavioral cloning
+    training_steps = 10_000  # number of mini-batch steps for training
+    save_step = training_steps  # int(training_steps / 100)  # how frequently models should update
     gamma = 0.99  # discount factor for rewards
     learning_rate = 0.001  # learning rate for actor and critic networks
     tau = 0.005  # tracking parameter used to update target networks slowly
@@ -18,7 +19,7 @@ def main() -> None:
     resume = False  # resume from previous checkpoint if possible?
     # -------------------------------------------------------------------
 
-    env = OfflineEnv("system_default")
+    env = OfflineEnv(env_name)
 
     agent = Agent(env, learning_rate, gamma, tau, behavioral_cloning, resume)
 
