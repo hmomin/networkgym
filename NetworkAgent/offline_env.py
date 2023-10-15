@@ -7,7 +7,9 @@ from tqdm import tqdm
 
 
 class OfflineEnv:
-    def __init__(self, algo_name: str = "system_default", buffer_max_size: int = -1) -> None:
+    def __init__(
+        self, algo_name: str = "system_default", buffer_max_size: int = -1
+    ) -> None:
         self.algo_name = algo_name
         buffers = self.get_buffers()
         self.buffer = CombinedBuffer(buffers, buffer_max_size)

@@ -12,11 +12,13 @@ def safe_stack(array_1: np.ndarray, array_2: np.ndarray) -> np.ndarray:
 def safe_concat(array_1: np.ndarray, array_2: np.ndarray, max_size: int) -> np.ndarray:
     if max_size > 0:
         if len(array_2.shape) == 1:
-            array_2 = array_2[:max_size - 1]
+            array_2 = array_2[: max_size - 1]
         elif len(array_2.shape) == 2:
-            array_2 = array_2[:max_size - 1, :]
+            array_2 = array_2[: max_size - 1, :]
         else:
-            raise Exception(f"array_2 with shape {array_2.shape} has too many dimensions!")
+            raise Exception(
+                f"array_2 with shape {array_2.shape} has too many dimensions!"
+            )
     concatenated_array = (
         np.concatenate((array_1, array_2), axis=0) if array_1.size else array_2
     )
