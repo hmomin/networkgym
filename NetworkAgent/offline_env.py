@@ -7,10 +7,10 @@ from tqdm import tqdm
 
 
 class OfflineEnv:
-    def __init__(self, algo_name: str = "system_default") -> None:
+    def __init__(self, algo_name: str = "system_default", buffer_max_size: int = -1) -> None:
         self.algo_name = algo_name
         buffers = self.get_buffers()
-        self.buffer = CombinedBuffer(buffers)
+        self.buffer = CombinedBuffer(buffers, buffer_max_size)
 
     def get_buffers(self) -> list[Buffer]:
         script_dir = os.path.dirname(os.path.abspath(__file__))

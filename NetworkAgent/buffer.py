@@ -9,7 +9,14 @@ def safe_stack(array_1: np.ndarray, array_2: np.ndarray) -> np.ndarray:
     return np.vstack((array_1, array_2)) if array_1.size else array_2
 
 
-def safe_concat(array_1: np.ndarray, array_2: np.ndarray) -> np.ndarray:
+def safe_concat(array_1: np.ndarray, array_2: np.ndarray, max_size: int) -> np.ndarray:
+    if max_size > 0:
+        if len(array_2.shape) == 1:
+            array_2 = array_2[:max_size - 1]
+        elif len(array_2.shape) == 2:
+            array_2 = array_2[:max_size - 1, :]
+        else:
+            raise Exception(f"array_2 with shape {array_2.shape} has too many dimensions!")
     concatenated_array = (
         np.concatenate((array_1, array_2), axis=0) if array_1.size else array_2
     )
@@ -85,12 +92,12 @@ class Buffer:
 
 
 class CombinedBuffer(Buffer):
-    def __init__(self, buffers: list[Buffer]) -> None:
+    def __init__(self, buffers: list[Buffer], max_size: int = -1) -> None:
         self.num_buffers = len(buffers)
         super().__init__("this_buffer_doesn't_exist")
         print("Combining buffers...")
         for buffer in tqdm(buffers):
-            self.fill_from_buffer(buffer)
+            self.fill_from_buffer(buffer, max_size)
         # NOTE: it's possible that calling requires_grad on the full tensor might
         # be too computationally expensive and unnecessary. Verify this...
         self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
@@ -99,11 +106,11 @@ class CombinedBuffer(Buffer):
         self.tensor_rewards = T.tensor(self.rewards, device=self.device)
         self.tensor_next_states = T.tensor(self.next_states, device=self.device)
 
-    def fill_from_buffer(self, buffer: Buffer) -> None:
-        self.states = safe_concat(self.states, buffer.states)
-        self.actions = safe_concat(self.actions, buffer.actions)
-        self.rewards = safe_concat(self.rewards, buffer.rewards)
-        self.next_states = safe_concat(self.next_states, buffer.next_states)
+    def fill_from_buffer(self, buffer: Buffer, max_size: int) -> None:
+        self.states = safe_concat(self.states, buffer.states, max_size)
+        self.actions = safe_concat(self.actions, buffer.actions, max_size)
+        self.rewards = safe_concat(self.rewards, buffer.rewards, max_size)
+        self.next_states = safe_concat(self.next_states, buffer.next_states, max_size)
 
     def get_mini_batch(
         self,

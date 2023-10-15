@@ -126,7 +126,7 @@ def main() -> None:
     csv_filenames = get_csv_filenames(full_data_dir)
     data_dict = get_data_from_csvs(csv_filenames)
     mean_std_dict = construct_means_and_stds(data_dict)
-    # FIXME HIGH: figure out an easy way to smooth the curves
+    # FIXME LOW: figure out an easy way to smooth the curves
     # otherwise, looks good/expected
     plot_data(mean_std_dict)
 
