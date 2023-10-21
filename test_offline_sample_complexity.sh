@@ -11,21 +11,19 @@ client_id=$1
 
 let "seed = $client_id + 128"
 
-steps=("20000" "50000")
-training=("normal" "bc")
+algorithm="PPO_95_test_20000_steps_buffers"
+training=("bc" "normal")
 
 # check if client_id is within valid range
 if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then
-    for step in "${steps[@]}"; do
-        for train in "${training[@]}"; do
-            for ((b=1; b<=64; b*=2)); do
-                agent="PPO_${step}_steps_training_${train}.10000.$b"
-                echo "SEED: $seed --- AGENT: $agent"
-                python NetworkAgent/config_changer.py --test --agent $agent --seed $seed --steps 2000
-                cd NetworkAgent/stable-baselines3
-                python main_rl.py --env nqos_split --client_id $client_id
-                cd ../..
-            done
+    for train in "${training[@]}"; do
+        for ((b=1; b<=64; b*=2)); do
+            agent="${algorithm}_${train}.10000.$b"
+            echo "SEED: $seed --- AGENT: $agent"
+            python NetworkAgent/config_changer.py --test --agent $agent --seed $seed --steps 2000
+            cd NetworkAgent/stable-baselines3
+            python main_rl.py --env nqos_split --client_id $client_id
+            cd ../..
         done
     done
 else

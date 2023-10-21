@@ -5,6 +5,8 @@ import pickle
 import sys
 import time
 
+import torch
+
 import sys
 
 sys.path.append(".")
@@ -93,7 +95,12 @@ def main():
     config_json["env_config"]["env"] = args.env
 
     seed: int = config_json["env_config"]["random_seed"]
-    release_lock(seed)
+    try:
+        release_lock(seed)
+    except Exception as e:
+        print("WARNING: Exception occurred while trying to release lock!")
+        print(e)
+        print("Continuing from here...")
 
     if args.lte_rb != -1:
         config_json["env_config"]["LTE"]["resource_block_num"] = args.lte_rb
@@ -151,11 +158,11 @@ def main():
     train_flag = config_json["rl_config"]["train"]
 
     # Load the model if eval is True
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(this_dir, "models", rl_alg)
+    
+    # Testing/Evaluation
     if not train_flag:
-        # Testing/Evaluation
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path = os.path.join(this_dir, "models", rl_alg)
-
         if agent_class is None:
             print(
                 f"WARNING: rl_alg ({rl_alg}) not found in alg_map. Trying personal mode..."
@@ -173,14 +180,48 @@ def main():
     else:
         if agent_class is None:
             raise Exception(f"ERROR: rl_alg ({rl_alg}) not found in alg_map!")
+        elif "load_model" in config_json["rl_config"] and config_json["rl_config"]["load_model"]:
+            print("LOADING MODEL FROM MODEL_PATH")
+            agent = agent_class.load(
+                model_path,
+                normal_obs_env,
+                verbose=1,
+                n_steps=8192,
+                batch_size=256,
+                n_epochs=10,
+                learning_rate=1e-4
+            )
+            # agent = agent_class.load(
+            #     model_path,
+            #     normal_obs_env,
+            #     verbose=1,
+            #     n_steps=8192,
+            #     batch_size=256,
+            #     n_epochs=10
+            # )
         # NOTE: action noise for off-policy networks - num users hardcoded!
-        if rl_alg in ["DDPG", "TD3"]:
+        elif rl_alg in ["DDPG", "TD3"]:
             action_noise = NormalActionNoise(mean=np.zeros(4), sigma=0.3 * np.ones(4))
             agent = agent_class(
                 config_json["rl_config"]["policy"],
                 normal_obs_env,
                 action_noise=action_noise,
                 verbose=1,
+            )
+        elif rl_alg == "PPO":
+            # FIXME: this is not standard baselines training - much beefier!
+            policy_kwargs = dict(
+                activation_fn=torch.nn.ReLU,
+                net_arch=[512, 512]
+            )	
+            agent = agent_class(
+                config_json["rl_config"]["policy"],
+                normal_obs_env,
+                verbose=1,
+                policy_kwargs=policy_kwargs
+                # n_steps=8192,
+                # batch_size=256,
+                # n_epochs=10
             )
         else:
             agent = agent_class(
