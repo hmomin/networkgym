@@ -18,29 +18,43 @@ NOTE (times should be GMT!):
 - 100_000 steps
     CREATED_AFTER = datetime(2023, 10, 3, 16, 11, 0)
     CREATED_BEFORE = datetime(2023, 10, 5, 22, 34, 0)
-
-PT
-1_000_000 normal: 9/24 18:55 --> 9/26 09:18
-1_000_000 bc:     9/26 11:27 --> 9/27 03:45
-10_000 bc:        9/27 21:52 --> 9/28 13:16
-10_000 normal:    9/28 13:50 --> 9/29 04:02
-100_000 bc:       10/3 09:12 --> 10/4 18:22
-100_000 normal:   10/4 21:15 --> 10/5 15:33
-
-GMT
-1_000_000 normal: 9/26 00:36 --> 9/26 16:18
-1_000_000 bc:     9/26 18:27 --> 9/27 10:45
-10_000 bc:        9/28 04:52 --> 9/28 20:16
-10_000 normal:    9/28 20:50 --> 9/29 11:02
-100_000 bc:       10/3 16:12 --> 10/5 01:22
-100_000 normal:   10/5 04:15 --> 10/5 22:33
+- PPO_20000_steps_training_normal
+    CREATED_AFTER = datetime(2023, 10, 14, 4, 41, 0)
+    CREATED_BEFORE = datetime(2023, 10, 14, 5, 43, 0)
+- PPO_20000_steps_training_bc
+    CREATED_AFTER = datetime(2023, 10, 14, 5, 43, 0)
+    CREATED_BEFORE = datetime(2023, 10, 14, 6, 47, 0)
+- PPO_50000_steps_training_normal
+    CREATED_AFTER = datetime(2023, 10, 14, 6, 48, 0)
+    CREATED_BEFORE = datetime(2023, 10, 14, 7, 49, 0)
+- PPO_50000_steps_training_bc
+    CREATED_AFTER = datetime(2023, 10, 14, 7, 44, 0)
+    CREATED_BEFORE = datetime(2023, 10, 14, 8, 52, 0)
+- system_default_20000_steps_training_bc
+    CREATED_AFTER = datetime(2023, 10, 16, 5, 28, 0)
+    CREATED_BEFORE = datetime(2023, 10, 16, 16, 7, 0)
+- system_default_20000_steps_training_normal
+    CREATED_AFTER = datetime(2023, 10, 16, 6, 24, 0)
+    CREATED_BEFORE = datetime(2023, 10, 16, 7, 37, 0)
+- system_default_50000_steps_training_bc
+    CREATED_AFTER = datetime(2023, 10, 16, 7, 25, 0)
+    CREATED_BEFORE = datetime(2023, 10, 16, 8, 42, 0)
+- system_default_50000_steps_training_normal
+    CREATED_AFTER = datetime(2023, 10, 16, 14, 44, 0)
+    CREATED_BEFORE = datetime(2023, 10, 16, 15, 40, 0)
+- PPO
+    CREATED_AFTER = datetime(2023, 10, 16, 16, 53, 0)
+    CREATED_BEFORE = datetime(2023, 10, 16, 16, 57, 0)
+- system_default
+    CREATED_AFTER = datetime(2023, 10, 16, 19, 36, 0)
+    CREATED_BEFORE = datetime(2023, 10, 16, 19, 39, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "system_default_normal."
-CREATED_AFTER = datetime(2023, 9, 26, 0, 35, 0)
-CREATED_BEFORE = datetime(2023, 9, 27, 10, 46, 0)
+RUN_NAME = "system_default"
+CREATED_AFTER = datetime(2023, 10, 16, 19, 36, 0)
+CREATED_BEFORE = datetime(2023, 10, 16, 19, 39, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 
 
@@ -56,7 +70,6 @@ def get_runs() -> list:
     }
     runs: list = api.runs(path=PROJECT_NAME, filters=filters)
     print(f"Found {len(runs)} runs with these filters...")
-    assert len(runs) == 808
     return runs
 
 
