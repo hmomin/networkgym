@@ -14,7 +14,8 @@ NAME_MAP = {
     "owd": ["LTE", "Wi-Fi"],
     "max_owd": ["LTE", "Wi-Fi"],
     "cell_id": ["Wi-Fi"],
-    "traffic_ratio": ["LTE", "Wi-Fi"],
+    # FIXME: removing traffic_ratio for now (testing)
+    # "traffic_ratio": ["LTE", "Wi-Fi"],
     "x_loc": ["All"],
     "y_loc": ["All"],
 }

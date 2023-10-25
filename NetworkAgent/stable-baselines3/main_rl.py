@@ -200,29 +200,30 @@ def main():
             #     n_epochs=10
             # )
         # NOTE: action noise for off-policy networks - num users hardcoded!
-        elif rl_alg in ["DDPG", "TD3"]:
-            action_noise = NormalActionNoise(mean=np.zeros(4), sigma=0.3 * np.ones(4))
-            agent = agent_class(
-                config_json["rl_config"]["policy"],
-                normal_obs_env,
-                action_noise=action_noise,
-                verbose=1,
-            )
-        elif rl_alg == "PPO":
-            # FIXME: this is not standard baselines training - much beefier!
-            policy_kwargs = dict(
-                activation_fn=torch.nn.ReLU,
-                net_arch=[512, 512]
-            )	
-            agent = agent_class(
-                config_json["rl_config"]["policy"],
-                normal_obs_env,
-                verbose=1,
-                policy_kwargs=policy_kwargs
-                # n_steps=8192,
-                # batch_size=256,
-                # n_epochs=10
-            )
+        # FIXME: removing mods for now (testing)
+        # elif rl_alg in ["DDPG", "TD3"]:
+        #     action_noise = NormalActionNoise(mean=np.zeros(4), sigma=0.3 * np.ones(4))
+        #     agent = agent_class(
+        #         config_json["rl_config"]["policy"],
+        #         normal_obs_env,
+        #         action_noise=action_noise,
+        #         verbose=1,
+        #     )
+        # elif rl_alg == "PPO":
+        #     # FIXME: this is not standard baselines training - much beefier!
+        #     policy_kwargs = dict(
+        #         activation_fn=torch.nn.ReLU,
+        #         net_arch=[512, 512]
+        #     )	
+        #     agent = agent_class(
+        #         config_json["rl_config"]["policy"],
+        #         normal_obs_env,
+        #         verbose=1,
+        #         policy_kwargs=policy_kwargs
+        #         # n_steps=8192,
+        #         # batch_size=256,
+        #         # n_epochs=10
+        #     )
         else:
             agent = agent_class(
                 config_json["rl_config"]["policy"], normal_obs_env, verbose=1

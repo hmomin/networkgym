@@ -30,8 +30,8 @@ class Adapter(network_gym_client.adapter.Adapter):
 
         self.env = Path(__file__).resolve().parent.name
         self.action_max_value = 32
-        # NOTE: adding more features is controlled here
-        self.num_features = 14
+        # FIXME: adding more features is controlled here
+        self.num_features = 12
         self.num_users = int(self.config_json['env_config']['num_users'])
         self.end_ts = 0
 
