@@ -1,13 +1,13 @@
 import numpy as np
 import os.path as path
 from csv import reader
-from pprint import pprint
-from scipy.stats import ttest_ind, ttest_rel
+from scipy.stats import ttest_ind
 from typing import Dict, List, Tuple
 
 
-data_filename = "data/t_test_ppo_bc.csv"
-benchmark = "sys_default"
+data_filename = "data/seed_3_delay_good_state_test.csv"
+benchmark = "ArgMax"
+# benchmark = "system_default"
 
 
 def read_csv(filepath: str) -> Tuple[List[str], List[List[str]]]:
@@ -17,10 +17,13 @@ def read_csv(filepath: str) -> Tuple[List[str], List[List[str]]]:
     with open(true_filepath, "r") as csvfile:
         csv_reader = reader(csvfile)
         for idx, row in enumerate(csv_reader):
+            # NOTE: remove step value (monotonic counter)
+            row.pop(0)
             if idx == 0:
                 categories = row
             else:
                 data.append(row)
+    parse_categories(categories)
     return categories, data
 
 
@@ -29,6 +32,11 @@ def get_full_path(filename: str) -> str:
     script_dir = path.dirname(script_path)
     data_path = path.join(script_dir, filename)
     return data_path
+
+
+def parse_categories(categories: List[str]) -> None:
+    for idx, category in enumerate(categories):
+        categories[idx] = category.split()[0]
 
 
 def construct_data_dict(
@@ -59,18 +67,10 @@ def main() -> None:
             nan_policy="raise",
             alternative="greater",
         )
-        paired_t_test_result = ttest_rel(
-            values,
-            benchmark_values,
-            nan_policy="raise",
-            alternative="greater",
-        )
         print(f"{category}:")
+
         print(
-            f"    t_statistic = {t_test_result.statistic:.6f} | p-value = {t_test_result.pvalue:.6f} | df = {int(t_test_result.df)}"
-        )
-        print(
-            f"    paired_statistic = {paired_t_test_result.statistic:.6f} | p-value = {paired_t_test_result.pvalue:.6f} | df = {int(paired_t_test_result.df)}"
+            f"    t_statistic = {t_test_result.statistic:.2f} | p-value = {t_test_result.pvalue:.2f} | df = {int(t_test_result.df)}"
         )
 
 

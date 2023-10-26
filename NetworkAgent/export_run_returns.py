@@ -48,13 +48,28 @@ NOTE (times should be GMT!):
 - system_default
     CREATED_AFTER = datetime(2023, 10, 16, 19, 36, 0)
     CREATED_BEFORE = datetime(2023, 10, 16, 19, 39, 0)
+- PPO_95_test_20000_steps_buffers_bc
+    CREATED_AFTER = datetime(2023, 10, 20, 4, 28, 0)
+    CREATED_BEFORE = datetime(2023, 10, 20, 5, 31, 0)
+- PPO_95_test_20000_steps_buffers_normal
+    CREATED_AFTER = datetime(2023, 10, 20, 5, 32, 0)
+    CREATED_BEFORE = datetime(2023, 10, 20, 6, 31, 0)
+- PPO (95% convergence test (2048 batch, 64 mini, 80000 steps, 3e-4 lr))
+    CREATED_AFTER = datetime(2023, 10, 20, 21, 50, 0)
+    CREATED_BEFORE = datetime(2023, 10, 20, 21, 53, 0)
+- PPO (higher convergence test (8192 batch, 256 mini, 100000 steps, 3e-4 lr))
+    CREATED_AFTER = datetime(2023, 10, 20, 22, 5, 0)
+    CREATED_BEFORE = datetime(2023, 10, 20, 22, 8, 0)
+- PPO (even higher convergence test (8192 batch, 256 mini, 81920 steps, 1e-4 lr))
+    CREATED_AFTER = datetime(2023, 10, 20, 22, 16, 0)
+    CREATED_BEFORE = datetime(2023, 10, 20, 22, 18, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "system_default"
-CREATED_AFTER = datetime(2023, 10, 16, 19, 36, 0)
-CREATED_BEFORE = datetime(2023, 10, 16, 19, 39, 0)
+RUN_NAME = "PPO"
+CREATED_AFTER = datetime(2023, 10, 20, 22, 16, 0)
+CREATED_BEFORE = datetime(2023, 10, 20, 22, 18, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 
 

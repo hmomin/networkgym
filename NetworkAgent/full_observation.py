@@ -101,10 +101,12 @@ def repopulate_previous_entries(df_list: List[pd.DataFrame]) -> None:
                 values = row["value"]
                 for user, value in zip(users, values):
                     # NOTE: fix for rate or traffic ratio being absent
-                    if "rate" in name or "traffic_ratio" in name:
-                        previous_values[user] = 0
-                    else:
-                        previous_values[user] = value
+                    # FIXME: trying without this fix for a sec
+                    # if "rate" in name or "traffic_ratio" in name:
+                    #     previous_values[user] = 0
+                    # else:
+                    #     previous_values[user] = value
+                    previous_values[user] = value
 
 
 def log_full_observation(df: pd.DataFrame) -> None:

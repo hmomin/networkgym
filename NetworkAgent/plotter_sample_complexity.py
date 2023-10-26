@@ -4,26 +4,19 @@ import os
 import pandas as pd
 from pprint import pprint
 
-# DATA_DIR = "2023_10_16_10_20_20000_steps_bc"
-# DATA_DIR = "2023_10_16_10_21_20000_steps_normal"
-# DATA_DIR = "2023_10_16_10_22_50000_steps_bc"
-DATA_DIR = "2023_10_16_10_23_50000_steps_normal"
+DATA_DIR = "2023_10_23_09_16_PPO_95_testing_bc"
 
 COLOR_MAP = {
     "PPO": "#e41a1c",
-    "PPO_20000_bc": "#3700b8",
-    "PPO_20000_normal": "#3700b8",
-    "PPO_50000_bc": "#3700b8",
-    "PPO_50000_normal": "#3700b8",
-    "system_default": "#000000",
-    "system_default_20000_bc": "#4daf4a",
-    "system_default_20000_normal": "#4daf4a",
-    "system_default_50000_bc": "#4daf4a",
-    "system_default_50000_normal": "#4daf4a",
+    "PPO_20000_TD3": "#3700b8",
+    "PPO_20000_TD3_BC": "#3700b8",
+    "sys_default": "#000000",
+    "sys_default_20000_TD3_BC": "#4daf4a",
+    "sys_default_20000_TD3": "#4daf4a",
 }
 
-Y_MIN = -4423
-Y_MAX = -764
+# Y_MIN = -4711
+# Y_MAX = -631
 
 
 def get_data_dir() -> str:
@@ -137,7 +130,9 @@ def plot_data(
     plt.legend(good_handles, good_labels, loc="upper left", bbox_to_anchor=(1, 0.75))
     plt.legend(good_handles, good_labels, loc="upper left", bbox_to_anchor=(1, 0.75))
     plt.tight_layout(rect=(0.02, 0.02, 0.99, 0.98))
-    plt.ylim(Y_MIN, Y_MAX)
+    y_min, y_max = plt.ylim()
+    print(f"y_min: {y_min}, y_max: {y_max}")
+    # plt.ylim(Y_MIN, Y_MAX)
     # plt.tight_layout(rect=(0, 0, 0.99, 1))
     # plt.title(TITLE)
     plt.xlabel("Number of Training Buffers")
