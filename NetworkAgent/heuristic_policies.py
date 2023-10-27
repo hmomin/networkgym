@@ -51,6 +51,20 @@ def get_num_steps_from_config(config_json: Dict) -> int:
         )
 
 
+def sigmoid(x: np.ndarray) -> np.ndarray:
+    return 1 / (1 + np.exp(-x))
+
+
+def get_utilities(obs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    lte_rate = obs[3, :]
+    wifi_rate = obs[4, :]
+    lte_owd = obs[5, :]
+    wifi_owd = obs[6, :]
+    lte_utilities = np.log(lte_rate) - np.log(lte_owd)
+    wifi_utilities = np.log(wifi_rate) - np.log(wifi_owd)
+    return (lte_utilities, wifi_utilities)
+
+
 def arg_action(obs: np.ndarray, max_link: bool) -> List[float]:
     first_two_rows = obs[:2, :]
     argmax_values = np.argmax(first_two_rows, axis=0)
@@ -58,6 +72,32 @@ def arg_action(obs: np.ndarray, max_link: bool) -> List[float]:
     if not max_link:
         ratio_vals = [1 - val for val in ratio_vals]
     return ratio_vals
+
+
+def utility_argmax_action(obs: np.ndarray) -> List[float]:
+    lte_utilities, wifi_utilities = get_utilities(obs)
+    actions = []
+    for lte_utility, wifi_utility in zip(lte_utilities, wifi_utilities):
+        if np.isnan(lte_utility):
+            actions.append(0)
+        elif np.isnan(wifi_utility):
+            actions.append(1)
+        else:
+            actions.append(int(wifi_utility > lte_utility))
+    return actions
+
+
+def utility_logistic_action(obs: np.ndarray) -> List[float]:
+    lte_utilities, wifi_utilities = get_utilities(obs)
+    actions = []
+    for lte_utility, wifi_utility in zip(lte_utilities, wifi_utilities):
+        if np.isnan(lte_utility):
+            actions.append(0)
+        elif np.isnan(wifi_utility):
+            actions.append(1)
+        else:
+            actions.append(sigmoid(wifi_utility - lte_utility))
+    return actions
 
 
 def argmax_action(obs: np.ndarray) -> List[float]:
@@ -83,3 +123,11 @@ def argmin_policy(env: Env, config_json: Dict) -> None:
 
 def random_policy(env: Env, config_json: Dict) -> None:
     generic_policy(env, config_json, random_action)
+
+
+def utility_argmax_policy(env: Env, config_json: Dict) -> None:
+    generic_policy(env, config_json, utility_argmax_action)
+
+
+def utility_logistic_policy(env: Env, config_json: Dict) -> None:
+    generic_policy(env, config_json, utility_logistic_action)

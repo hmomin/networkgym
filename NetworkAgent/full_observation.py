@@ -14,8 +14,7 @@ NAME_MAP = {
     "owd": ["LTE", "Wi-Fi"],
     "max_owd": ["LTE", "Wi-Fi"],
     "cell_id": ["Wi-Fi"],
-    # FIXME: removing traffic_ratio for now (testing)
-    # "traffic_ratio": ["LTE", "Wi-Fi"],
+    "traffic_ratio": ["LTE", "Wi-Fi"],
     "x_loc": ["All"],
     "y_loc": ["All"],
 }
@@ -100,13 +99,10 @@ def repopulate_previous_entries(df_list: List[pd.DataFrame]) -> None:
                 users = row["user"]
                 values = row["value"]
                 for user, value in zip(users, values):
-                    # NOTE: fix for rate or traffic ratio being absent
-                    # FIXME: trying without this fix for a sec
-                    # if "rate" in name or "traffic_ratio" in name:
-                    #     previous_values[user] = 0
-                    # else:
-                    #     previous_values[user] = value
                     previous_values[user] = value
+                    # FIXME: toggle fix for rate or traffic ratio being absent
+                    if "rate" in name or "traffic_ratio" in name:
+                        previous_values[user] = 0
 
 
 def log_full_observation(df: pd.DataFrame) -> None:

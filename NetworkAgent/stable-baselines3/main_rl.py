@@ -24,7 +24,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.noise import NormalActionNoise
 from gymnasium.wrappers import NormalizeObservation
 
-from NetworkAgent.heuristic_policies import argmax_policy, argmin_policy, random_policy
+from NetworkAgent.heuristic_policies import argmax_policy, argmin_policy, random_policy, utility_argmax_policy, utility_logistic_policy
 from NetworkAgent.config_lock.client_utils import release_lock
 
 
@@ -131,6 +131,8 @@ def main():
         "ArgMin": argmin_policy,
         "Random": random_policy,
         "system_default": system_default_policy,
+        "UtilityFull": utility_argmax_policy,
+        "UtilityLogistic": utility_logistic_policy,
     }
 
     # Choose the agent
@@ -149,7 +151,7 @@ def main():
     # only use this function for debug,
     # check_env(env)
 
-    heuristic_algorithms = ["system_default", "ArgMax", "ArgMin", "Random"]
+    heuristic_algorithms = ["system_default", "ArgMax", "ArgMin", "Random", "UtilityFull", "UtilityLogistic"]
 
     if rl_alg in heuristic_algorithms:
         agent_class(normal_obs_env, config_json)
@@ -163,6 +165,7 @@ def main():
     
     # Testing/Evaluation
     if not train_flag:
+        print("Testing model...")
         if agent_class is None:
             print(
                 f"WARNING: rl_alg ({rl_alg}) not found in alg_map. Trying personal mode..."
@@ -178,9 +181,10 @@ def main():
 
         evaluate(agent, normal_obs_env, num_steps)
     else:
+        print("Training model...")
         if agent_class is None:
             raise Exception(f"ERROR: rl_alg ({rl_alg}) not found in alg_map!")
-        elif "load_model" in config_json["rl_config"] and config_json["rl_config"]["load_model"]:
+        elif "load_model_for_training" in config_json["rl_config"] and config_json["rl_config"]["load_model_for_training"]:
             print("LOADING MODEL FROM MODEL_PATH")
             agent = agent_class.load(
                 model_path,

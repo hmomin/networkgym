@@ -3,7 +3,7 @@
         "type": "env-start",
         "steps_per_episode": 100000,
         "episodes_per_session": 1,
-        "random_seed": 16,
+        "random_seed": 0,
         "downlink": true,
         "max_wait_time_for_action_ms": -1,
         "enb_locations": {
@@ -47,7 +47,7 @@
         "GMA": {
             "downlink_mode": "split",
             "uplink_mode": "auto",
-            "enable_dynamic_flow_prioritization": false,
+            "enable_dynamic_flow_prioritization": true,
             "measurement_interval_ms": 100,
             "measurement_guard_interval_ms": 0
         },
@@ -64,9 +64,10 @@
         }
     },
     "rl_config": {
-        "agent": "system_default",
+        "agent": "PPO",
         "train": true,
-        "store_offline": true,
+        "store_offline": false,
+        "load_model_for_training": false,
         "policy": "MlpPolicy",
         "reward_type": "utility"
     },
