@@ -11,8 +11,8 @@ client_id=$1
 
 # check if client_id is within valid range
 if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then
-    for ((seed = client_id + 16 + 8; seed <= client_id + 64 + 8; seed += 8)); do
-        python NetworkAgent/config_changer.py --test --seed $seed --agent PPO --steps 20000
+    for ((seed = client_id + 8; seed <= client_id + 64; seed += 8)); do
+        python NetworkAgent/config_changer.py --test --store_offline --seed $seed --agent PPO --steps 10000
         cd NetworkAgent/stable-baselines3
         python main_rl.py --env nqos_split --client_id $client_id
         cd ../..

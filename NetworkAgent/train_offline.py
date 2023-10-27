@@ -1,12 +1,26 @@
+import argparse
 from td3_bc.agent import Agent
 from tqdm import tqdm
 from offline_env import OfflineEnv
 
 
+def get_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="For changing hyperparameters in train_offline.py")
+    parser.add_argument(
+        "--alpha",
+        help="alpha >= 0 (larger alpha means less behavioral cloning influence)",
+        required=False,
+        default=0.625,
+        type=float,
+    )
+    args = parser.parse_args()
+    return args
+
+
 def main() -> None:
     # ------------------------- HYPERPARAMETERS -------------------------
-    env_name = "system_default"
-    buffer_max_size = 50_000
+    env_name = "PPO_95_test_10000_step_buffers"
+    buffer_max_size = 10_000
     behavioral_cloning = True  # whether or not to include behavioral cloning
     training_steps = 10_000  # number of mini-batch steps for training
     save_step = training_steps  # int(training_steps / 100)  # how frequently models should update
@@ -21,8 +35,11 @@ def main() -> None:
     # -------------------------------------------------------------------
 
     env = OfflineEnv(env_name, buffer_max_size)
+    
+    args = get_args()
+    alpha_bc: float = args.alpha
 
-    agent = Agent(env, learning_rate, gamma, tau, behavioral_cloning, resume)
+    agent = Agent(env, learning_rate, gamma, tau, alpha_bc, behavioral_cloning, resume)
 
     print("Training agent with offline data...")
     for step in tqdm(range(training_steps)):

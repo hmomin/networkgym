@@ -16,6 +16,9 @@ class Agent:
         learning_rate: float,
         gamma: float,
         tau: float,
+        # NOTE: here, we divide the standard literature value for alpha (2.5) by 4.0 to
+        # preserve the shift in action disparity range (1^2 vs. 2^2)
+        alpha_bc: float = 2.5 / 4.0,
         enable_behavioral_cloning: bool = False,
         should_load: bool = True,
         save_folder: str = "saved",
@@ -28,6 +31,7 @@ class Agent:
         self.high_action_bound = +1
         self.gamma = gamma
         self.tau = tau
+        self.alpha_bc = alpha_bc
         self.behavioral_cloning = enable_behavioral_cloning
         # check if the save_folder path exists
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -184,11 +188,7 @@ class Agent:
         Q_term = Q_values.mean()
         if self.behavioral_cloning:
             mean_absolute_Q_values = T.abs(Q_values).mean().detach()
-            # NOTE: alpha can be implemented as a tunable hyperparameter
-            # here, we divide it by 4.0 to preserve the shift in action disparity range
-            # (1^2 vs. 2^2)
-            alpha = 2.5 / 4.0
-            lambda_bc = alpha / mean_absolute_Q_values
+            lambda_bc = self.alpha_bc / mean_absolute_Q_values
             behavioral_cloning_term = (policy_actions - actions).square().mean()
             policy_loss = -(lambda_bc * Q_term - behavioral_cloning_term)
         else:
@@ -205,7 +205,7 @@ class Agent:
 
     def save(self, step: int = 0, max_steps: int = 1_000_000):
         step_str = str(step).zfill(len(str(max_steps)))
-        name = f"{self.env_name}{step_str}.{self.buffer.num_buffers}."
+        name = f"{self.env_name}{step_str}.{self.buffer.num_buffers}.{self.alpha_bc}."
         pickle.dump(self.training_stats, open(name + "training_stats", "wb"))
         pickle.dump(self.actor, open(name + "Actor", "wb"))
         pickle.dump(self.critic1, open(name + "Critic1", "wb"))

@@ -1,8 +1,7 @@
 import argparse
 import json
 import os
-from config_lock.client_utils import request_lock, release_lock
-from time import sleep
+from config_lock.client_utils import request_lock
 
 config_location = os.path.join(
     "network_gym_client", "envs", "nqos_split", "config.json"
@@ -38,6 +37,12 @@ def get_args() -> argparse.Namespace:
         required=False,
         type=int,
     )
+    parser.add_argument(
+        "--store_offline",
+        action="store_true",
+        help="set rl_config['store_offline'] = true in config.json",
+        required=False,
+    )
     args = parser.parse_args()
     return args
 
@@ -54,6 +59,7 @@ def edit_dict(json_dict: dict, args: argparse.Namespace) -> None:
     agent: str | None = args.agent
     training: bool = args.train
     testing: bool = args.test
+    store_offline: bool = args.store_offline
     steps: int | None = args.steps
     seed: int | None = args.seed
 
@@ -68,6 +74,9 @@ def edit_dict(json_dict: dict, args: argparse.Namespace) -> None:
         json_dict["rl_config"]["train"] = True
     elif testing:
         json_dict["rl_config"]["train"] = False
+        
+    if store_offline:
+        json_dict["rl_config"]["store_offline"] = True
 
     if steps != None:
         json_dict["env_config"]["steps_per_episode"] = steps
