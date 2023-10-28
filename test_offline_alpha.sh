@@ -20,9 +20,9 @@ if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then
         for alpha in "${alphas[@]}"; do
             agent="${algorithm}_bc.10000.64.$alpha"
             echo "SEED: $seed --- AGENT: $agent"
-            python NetworkAgent/config_changer.py --test --agent $agent --seed $seed --steps 2000
+            python -u NetworkAgent/config_changer.py --test --agent $agent --seed $seed --steps 2000
             cd NetworkAgent/stable-baselines3
-            python main_rl.py --env nqos_split --client_id $client_id
+            python -u main_rl.py --env nqos_split --client_id $client_id
             cd ../..
         done
     done

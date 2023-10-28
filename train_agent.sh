@@ -14,9 +14,9 @@ client_id=$1
 if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then
     agent=${agents[$client_id]}
     echo "Selected Agent: $agent"
-    python NetworkAgent/config_changer.py --agent $agent --train
+    python -u NetworkAgent/config_changer.py --agent $agent --train
     cd NetworkAgent/stable-baselines3
-    python main_rl.py --env nqos_split --client_id $client_id
+    python -u main_rl.py --env nqos_split --client_id $client_id
     cd ../..
 else
     echo "ERROR: client_id must be an int between 0 and 7, inclusive. ($client_id provided)"
