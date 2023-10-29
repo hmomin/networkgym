@@ -94,12 +94,14 @@ class Buffer:
 
 
 class CombinedBuffer(Buffer):
-    def __init__(self, buffers: list[Buffer], max_size: int = -1) -> None:
+    def __init__(self, buffers: list[Buffer], max_size: int = -1, normalize: bool = True) -> None:
         self.num_buffers = len(buffers)
         super().__init__("this_buffer_doesn't_exist")
         print("Combining buffers...")
         for buffer in tqdm(buffers):
             self.fill_from_buffer(buffer, max_size)
+        if normalize:
+            self.normalize_states()
         # NOTE: it's possible that calling requires_grad on the full tensor might
         # be too computationally expensive and unnecessary. Verify this...
         self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
@@ -113,6 +115,12 @@ class CombinedBuffer(Buffer):
         self.actions = safe_concat(self.actions, buffer.actions, max_size)
         self.rewards = safe_concat(self.rewards, buffer.rewards, max_size)
         self.next_states = safe_concat(self.next_states, buffer.next_states, max_size)
+    
+    def normalize_states(self, eps: float = 1e-3) -> None:
+        self.mean_state = self.states.mean(0,keepdims=True)
+        self.stdev_state = self.states.std(0,keepdims=True) + eps
+        self.states = (self.states - self.mean_state)/self.stdev_state
+        self.next_states = (self.next_states - self.mean_state)/self.stdev_state
 
     def get_mini_batch(
         self,

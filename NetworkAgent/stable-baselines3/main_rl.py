@@ -74,7 +74,7 @@ def system_default_policy(env, config_json):
         # print(obs)
 
 
-def evaluate(model, env, num_steps):
+def evaluate(model, env, num_steps, mean_state = None, stdev_state = None):
     done = True
     for _ in range(num_steps):
         if done:
@@ -82,6 +82,12 @@ def evaluate(model, env, num_steps):
         if type(obs) == tuple:
             obs = obs[0]
         # at this point, obs should be a numpy array
+        if type(mean_state) == torch.Tensor and type(stdev_state) == torch.Tensor:
+            mean_state = mean_state.cpu().numpy()
+            stdev_state = stdev_state.cpu().numpy()
+            obs = (obs - mean_state)/stdev_state
+        elif type(mean_state) != None or type(stdev_state) != None:
+            raise Exception(f"mean_state type ({type(mean_state)}) and/or stdev_state type ({type(stdev_state)}) incompatible.")
         action, _ = model.predict(obs, deterministic=True)
         obs, reward, done, truncated, info = env.step(action)
 
@@ -166,11 +172,17 @@ def main():
     # Testing/Evaluation
     if not train_flag:
         print("Testing model...")
+        mean_state, stdev_state = None, None
         if agent_class is None:
             print(
                 f"WARNING: rl_alg ({rl_alg}) not found in alg_map. Trying personal mode..."
             )
             agent = pickle.load(open(model_path + ".Actor", "rb"))
+            try:
+                normalizers: tuple[torch.Tensor, torch.Tensor] = pickle.load(open(model_path + ".Normalizers", "rb"))
+                mean_state, stdev_state = normalizers
+            except:
+                print("No normalizers found for this agent...")
         else:
             agent = agent_class.load(model_path)
 
@@ -179,7 +191,7 @@ def main():
         num_steps = steps_per_episode * episodes_per_session
         # n_episodes = config_json['rl_config']['timesteps'] / 100
 
-        evaluate(agent, normal_obs_env, num_steps)
+        evaluate(agent, normal_obs_env, num_steps, mean_state, stdev_state)
     else:
         print("Training model...")
         if agent_class is None:
@@ -195,39 +207,6 @@ def main():
                 n_epochs=10,
                 learning_rate=1e-4
             )
-            # agent = agent_class.load(
-            #     model_path,
-            #     normal_obs_env,
-            #     verbose=1,
-            #     n_steps=8192,
-            #     batch_size=256,
-            #     n_epochs=10
-            # )
-        # NOTE: action noise for off-policy networks - num users hardcoded!
-        # FIXME: removing mods for now (testing)
-        # elif rl_alg in ["DDPG", "TD3"]:
-        #     action_noise = NormalActionNoise(mean=np.zeros(4), sigma=0.3 * np.ones(4))
-        #     agent = agent_class(
-        #         config_json["rl_config"]["policy"],
-        #         normal_obs_env,
-        #         action_noise=action_noise,
-        #         verbose=1,
-        #     )
-        # elif rl_alg == "PPO":
-        #     # FIXME: this is not standard baselines training - much beefier!
-        #     policy_kwargs = dict(
-        #         activation_fn=torch.nn.ReLU,
-        #         net_arch=[512, 512]
-        #     )	
-        #     agent = agent_class(
-        #         config_json["rl_config"]["policy"],
-        #         normal_obs_env,
-        #         verbose=1,
-        #         policy_kwargs=policy_kwargs
-        #         # n_steps=8192,
-        #         # batch_size=256,
-        #         # n_epochs=10
-        #     )
         else:
             agent = agent_class(
                 config_json["rl_config"]["policy"], normal_obs_env, verbose=1
