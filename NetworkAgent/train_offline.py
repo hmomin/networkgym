@@ -15,13 +15,19 @@ def get_args() -> argparse.Namespace:
         default=0.625,
         type=float,
     )
+    parser.add_argument(
+        "--env_name",
+        help="algorithm with offline buffers to train from",
+        required=False,
+        default="system_default",
+        type=str,
+    )
     args = parser.parse_args()
     return args
 
 
 def main() -> None:
     # ------------------------- HYPERPARAMETERS -------------------------
-    env_name = "PPO_95_test_10000_step_buffers"
     buffer_max_size = 10_000
     behavioral_cloning = True  # whether or not to include behavioral cloning
     training_steps = 10_000  # number of mini-batch steps for training
@@ -35,11 +41,11 @@ def main() -> None:
     policy_delay = 2  # how many steps to wait before updating the policy
     resume = False  # resume from previous checkpoint if possible?
     # -------------------------------------------------------------------
-
-    env = OfflineEnv(env_name, buffer_max_size)
-
     args = get_args()
     alpha_bc: float = args.alpha
+    env_name: str = args.env_name
+    
+    env = OfflineEnv(env_name, buffer_max_size)
 
     agent = Agent(env, learning_rate, gamma, tau, alpha_bc, behavioral_cloning, resume)
 
