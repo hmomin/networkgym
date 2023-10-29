@@ -24,7 +24,13 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.noise import NormalActionNoise
 from gymnasium.wrappers import NormalizeObservation
 
-from NetworkAgent.heuristic_policies import argmax_policy, argmin_policy, random_policy, utility_argmax_policy, utility_logistic_policy
+from NetworkAgent.heuristic_policies import (
+    argmax_policy,
+    argmin_policy,
+    random_policy,
+    utility_argmax_policy,
+    utility_logistic_policy,
+)
 from NetworkAgent.config_lock.client_utils import release_lock
 
 
@@ -74,7 +80,7 @@ def system_default_policy(env, config_json):
         # print(obs)
 
 
-def evaluate(model, env, num_steps, mean_state = None, stdev_state = None):
+def evaluate(model, env, num_steps, mean_state=None, stdev_state=None):
     done = True
     for _ in range(num_steps):
         if done:
@@ -85,9 +91,11 @@ def evaluate(model, env, num_steps, mean_state = None, stdev_state = None):
         if type(mean_state) == torch.Tensor and type(stdev_state) == torch.Tensor:
             mean_state = mean_state.cpu().numpy()
             stdev_state = stdev_state.cpu().numpy()
-            obs = (obs - mean_state)/stdev_state
+            obs = (obs - mean_state) / stdev_state
         elif type(mean_state) != None or type(stdev_state) != None:
-            raise Exception(f"mean_state type ({type(mean_state)}) and/or stdev_state type ({type(stdev_state)}) incompatible.")
+            raise Exception(
+                f"mean_state type ({type(mean_state)}) and/or stdev_state type ({type(stdev_state)}) incompatible."
+            )
         action, _ = model.predict(obs, deterministic=True)
         obs, reward, done, truncated, info = env.step(action)
 
@@ -157,7 +165,14 @@ def main():
     # only use this function for debug,
     # check_env(env)
 
-    heuristic_algorithms = ["system_default", "ArgMax", "ArgMin", "Random", "UtilityFull", "UtilityLogistic"]
+    heuristic_algorithms = [
+        "system_default",
+        "ArgMax",
+        "ArgMin",
+        "Random",
+        "UtilityFull",
+        "UtilityLogistic",
+    ]
 
     if rl_alg in heuristic_algorithms:
         agent_class(normal_obs_env, config_json)
@@ -168,7 +183,7 @@ def main():
     # Load the model if eval is True
     this_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(this_dir, "models", rl_alg)
-    
+
     # Testing/Evaluation
     if not train_flag:
         print("Testing model...")
@@ -179,7 +194,9 @@ def main():
             )
             agent = pickle.load(open(model_path + ".Actor", "rb"))
             try:
-                normalizers: tuple[torch.Tensor, torch.Tensor] = pickle.load(open(model_path + ".Normalizers", "rb"))
+                normalizers: tuple[torch.Tensor, torch.Tensor] = pickle.load(
+                    open(model_path + ".Normalizers", "rb")
+                )
                 mean_state, stdev_state = normalizers
             except:
                 print("No normalizers found for this agent...")
@@ -196,7 +213,10 @@ def main():
         print("Training model...")
         if agent_class is None:
             raise Exception(f"ERROR: rl_alg ({rl_alg}) not found in alg_map!")
-        elif "load_model_for_training" in config_json["rl_config"] and config_json["rl_config"]["load_model_for_training"]:
+        elif (
+            "load_model_for_training" in config_json["rl_config"]
+            and config_json["rl_config"]["load_model_for_training"]
+        ):
             print("LOADING MODEL FROM MODEL_PATH")
             agent = agent_class.load(
                 model_path,
@@ -205,7 +225,7 @@ def main():
                 n_steps=8192,
                 batch_size=256,
                 n_epochs=10,
-                learning_rate=1e-4
+                learning_rate=1e-4,
             )
         else:
             agent = agent_class(

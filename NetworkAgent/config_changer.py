@@ -74,7 +74,7 @@ def edit_dict(json_dict: dict, args: argparse.Namespace) -> None:
         json_dict["rl_config"]["train"] = True
     elif testing:
         json_dict["rl_config"]["train"] = False
-        
+
     if store_offline:
         json_dict["rl_config"]["store_offline"] = True
 

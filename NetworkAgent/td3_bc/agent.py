@@ -208,7 +208,10 @@ class Agent:
         name = f"{self.env_name}{step_str}.{self.buffer.num_buffers}.{self.alpha_bc}."
         pickle.dump(self.training_stats, open(name + "training_stats", "wb"))
         pickle.dump(self.actor, open(name + "Actor", "wb"))
-        pickle.dump((self.buffer.mean_state, self.buffer.stdev_state), open(name + "Normalizers", "wb"))
+        pickle.dump(
+            (self.buffer.mean_state, self.buffer.stdev_state),
+            open(name + "Normalizers", "wb"),
+        )
         pickle.dump(self.critic1, open(name + "Critic1", "wb"))
         pickle.dump(self.critic2, open(name + "Critic2", "wb"))
         pickle.dump(self.target_actor, open(name + "TargetActor", "wb"))

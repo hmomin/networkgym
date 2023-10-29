@@ -5,7 +5,9 @@ from offline_env import OfflineEnv
 
 
 def get_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="For changing hyperparameters in train_offline.py")
+    parser = argparse.ArgumentParser(
+        description="For changing hyperparameters in train_offline.py"
+    )
     parser.add_argument(
         "--alpha",
         help="alpha >= 0 (larger alpha means less behavioral cloning influence)",
@@ -35,7 +37,7 @@ def main() -> None:
     # -------------------------------------------------------------------
 
     env = OfflineEnv(env_name, buffer_max_size)
-    
+
     args = get_args()
     alpha_bc: float = args.alpha
 
