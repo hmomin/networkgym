@@ -92,7 +92,7 @@ def evaluate(model, env, num_steps, mean_state=None, stdev_state=None):
             mean_state = mean_state.cpu().numpy()
             stdev_state = stdev_state.cpu().numpy()
             obs = (obs - mean_state) / stdev_state
-        elif type(mean_state) != None or type(stdev_state) != None:
+        elif mean_state is not None or stdev_state is not None:
             raise Exception(
                 f"mean_state type ({type(mean_state)}) and/or stdev_state type ({type(stdev_state)}) incompatible."
             )

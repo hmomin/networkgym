@@ -63,13 +63,25 @@ NOTE (times should be GMT!):
 - PPO (even higher convergence test (8192 batch, 256 mini, 81920 steps, 1e-4 lr))
     CREATED_AFTER = datetime(2023, 10, 20, 22, 16, 0)
     CREATED_BEFORE = datetime(2023, 10, 20, 22, 18, 0)
+- system_default_dfp_bc
+    CREATED_AFTER = datetime(2023, 10, 29, 2, 52, 0)
+    CREATED_BEFORE = datetime(2023, 10, 29, 7, 48, 0)
+- PPO_dfp_95_test_10000_step_buffers_bc
+    CREATED_AFTER = datetime(2023, 10, 29, 2, 52, 0)
+    CREATED_BEFORE = datetime(2023, 10, 29, 7, 48, 0)
+- system_default (with dfp)
+    CREATED_AFTER = datetime(2023, 10, 30, 4, 10, 0)
+    CREATED_BEFORE = datetime(2023, 10, 30, 4, 13, 0)
+- PPO (with dfp)
+    CREATED_AFTER = datetime(2023, 10, 30, 4, 21, 0)
+    CREATED_BEFORE = datetime(2023, 10, 30, 4, 23, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
 RUN_NAME = "PPO"
-CREATED_AFTER = datetime(2023, 10, 20, 22, 16, 0)
-CREATED_BEFORE = datetime(2023, 10, 20, 22, 18, 0)
+CREATED_AFTER = datetime(2023, 10, 30, 4, 21, 0)
+CREATED_BEFORE = datetime(2023, 10, 30, 4, 23, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 
 
