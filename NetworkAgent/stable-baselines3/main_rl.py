@@ -88,9 +88,13 @@ def evaluate(model, env, num_steps, mean_state=None, stdev_state=None):
         if type(obs) == tuple:
             obs = obs[0]
         # at this point, obs should be a numpy array
+        obs = obs.flatten()
         if type(mean_state) == torch.Tensor and type(stdev_state) == torch.Tensor:
             mean_state = mean_state.cpu().numpy()
             stdev_state = stdev_state.cpu().numpy()
+        if type(mean_state) == np.ndarray and type(stdev_state) == np.ndarray:
+            mean_state = mean_state.flatten()
+            stdev_state = stdev_state.flatten()
             obs = (obs - mean_state) / stdev_state
         elif mean_state is not None or stdev_state is not None:
             raise Exception(
