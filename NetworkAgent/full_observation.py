@@ -3,7 +3,6 @@ import os
 import pandas as pd
 from copy import deepcopy
 from typing import Dict, List
-from time import sleep
 
 COUNTER = 0
 FILENAME = "shape_log.txt"
@@ -41,8 +40,6 @@ def get_previous_action(df: pd.DataFrame) -> List[float]:
         for user, value in zip(new_users, new_values):
             previous_split_ratios[user - 1] = value / 100.0
     PREVIOUS_SPLIT_RATIOS = deepcopy(previous_split_ratios)
-    print(previous_split_ratios)
-    sleep(1)
     return previous_split_ratios
 
 
