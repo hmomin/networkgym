@@ -3,20 +3,25 @@ import os
 import pandas as pd
 from copy import deepcopy
 from typing import Dict, List
+from time import sleep
 
 COUNTER = 0
 FILENAME = "shape_log.txt"
 
 NAME_MAP = {
-    "max_rate": ["LTE", "Wi-Fi"],
-    "tx_rate": ["All"],
-    "rate": ["LTE", "Wi-Fi"],
-    "owd": ["LTE", "Wi-Fi"],
-    "max_owd": ["LTE", "Wi-Fi"],
-    "cell_id": ["Wi-Fi"],
-    "traffic_ratio": ["LTE", "Wi-Fi"],
-    "x_loc": ["All"],
-    "y_loc": ["All"],
+    "dl::max_rate": ["lte", "wifi"],
+    "dl::tx_rate": ["gma"],
+    "lte::dl::rate": ["gma"],
+    "wifi::dl::rate": ["gma"],
+    "lte::dl::owd": ["gma"],
+    "wifi::dl::owd": ["gma"],
+    "lte::dl::max_owd": ["gma"],
+    "wifi::dl::max_owd": ["gma"],
+    "cell_id": ["wifi"],
+    "lte::dl::traffic_ratio": ["gma"],
+    "wifi::dl::traffic_ratio": ["gma"],
+    "x_loc": ["gma"],
+    "y_loc": ["gma"],
 }
 
 # name -> channel id -> values
@@ -26,24 +31,26 @@ PREVIOUS_SPLIT_RATIOS: List[float] = []
 
 
 def get_previous_action(df: pd.DataFrame) -> List[float]:
+    # FIXME: this needs to be reworked for sure!
     global PREVIOUS_SPLIT_RATIOS
-    split_ratio_df = df[df["name"] == "split_ratio"]
-    split_ratio_lte_df = split_ratio_df[split_ratio_df["cid"] == "Wi-Fi"]
+    split_ratio_wifi_df = df[df["name"] == "wifi::dl::split_ratio"]
     previous_split_ratios = deepcopy(PREVIOUS_SPLIT_RATIOS)
-    if not split_ratio_lte_df.empty:
-        new_users = split_ratio_lte_df["user"].values[0]
-        new_values = split_ratio_lte_df["value"].values[0]
+    if not split_ratio_wifi_df.empty:
+        new_users = split_ratio_wifi_df["id"].values[0]
+        new_values = split_ratio_wifi_df["value"].values[0]
         for user, value in zip(new_users, new_values):
-            previous_split_ratios[user] = value / 32.0
+            previous_split_ratios[user - 1] = value / 100.0
     PREVIOUS_SPLIT_RATIOS = deepcopy(previous_split_ratios)
+    print(previous_split_ratios)
+    sleep(1)
     return previous_split_ratios
 
 
 def turn_df_into_list(df: pd.DataFrame) -> List[pd.DataFrame]:
-    # with pd.option_context(
-    #     "display.max_rows", None, "display.max_columns", None
-    # ):
-    #     print(df)
+    with pd.option_context(
+        "display.max_rows", None, "display.max_columns", None
+    ):
+        print(df)
     df_list = [df[df["name"] == name] for name in NAME_MAP]
     return df_list
 
@@ -75,11 +82,10 @@ def get_full_observation(df_list: List[pd.DataFrame]) -> List[np.ndarray]:
             # start with the previous row by default and overwrite with new information
             previous_values = PREVIOUS_ENTRIES[name][channel]
             previous_row = np.array(previous_values)
-            row = df[df["cid"] == channel]
+            row = df[df["source"] == channel]
             if not row.empty:
-                users = row["user"].values[0]
                 values = row["value"].values[0]
-                for user, value in zip(users, values):
+                for user, value in enumerate(values):
                     previous_row[user] = value
             # NOTE: fix for access point ID being too small relative to other values
             if name == "cell_id":
@@ -93,12 +99,11 @@ def repopulate_previous_entries(df_list: List[pd.DataFrame]) -> None:
     for df in df_list:
         for _, row in df.iterrows():
             name: str = row["name"]
-            channel: str = row["cid"]
+            channel: str = row["source"]
             if name in PREVIOUS_ENTRIES and channel in PREVIOUS_ENTRIES[name]:
                 previous_values = PREVIOUS_ENTRIES[name][channel]
-                users = row["user"]
                 values = row["value"]
-                for user, value in zip(users, values):
+                for user, value in enumerate(values):
                     previous_values[user] = value
                     # FIXME: toggle fix for rate or traffic ratio being absent
                     if "rate" in name or "traffic_ratio" in name:

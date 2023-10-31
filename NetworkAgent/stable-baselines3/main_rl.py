@@ -126,11 +126,6 @@ def main():
     if config_json["rl_config"]["agent"] == "":
         config_json["rl_config"]["agent"] = "system_default"
 
-    if not config_json["env_config"]["respond_action_after_measurement"]:
-        sys.exit(
-            '[Error!] RL agent must set "respond_action_after_measurement" to true !'
-        )
-
     rl_alg = config_json["rl_config"]["agent"]
 
     config = {

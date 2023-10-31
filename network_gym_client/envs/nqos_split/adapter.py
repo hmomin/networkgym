@@ -4,12 +4,12 @@
 
 import network_gym_client.adapter
 
+import json
 import sys
 from gymnasium import spaces
 import numpy as np
 import math
 from NetworkAgent.full_observation import *
-from typing import List
 
 from pathlib import Path
 
@@ -151,8 +151,6 @@ class Adapter(network_gym_client.adapter.Adapter):
             json: network policy
         """
 
-        if hasattr(action, "size") and action.size != self.num_users:
-            sys.exit("The action size: " + str(action.size()) +" does not match with the number of users:" + self.num_users)
         # you may also check other constraints for action... e.g., min, max.
         # make sure you convert the action to list, e.g., using tolist(), before adding to policy["value"].
 
