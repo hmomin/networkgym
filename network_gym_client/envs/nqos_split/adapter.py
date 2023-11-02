@@ -155,7 +155,10 @@ class Adapter(network_gym_client.adapter.Adapter):
 
         policy1 = json.loads(self.action_data_format.to_json())
         policy1["name"] = "wifi::dl::split_ratio"
-        policy1["value"] = action.tolist() #convert to list type
+        if type(action) != list:
+            policy1["value"] = action.tolist() #convert to list type
+        else:
+            policy1["value"] = action
 
         policy = policy1
         print('Action --> ' + str(policy))

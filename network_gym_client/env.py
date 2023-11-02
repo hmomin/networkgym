@@ -222,7 +222,7 @@ class Env(gym.Env):
             self.northbound_interface_client.send(policy) #send network policy to network gym server
         else:
             # TODO: we need to have the same action format... e.g., [0, 1]
-            if (action.shape != self.adapter.get_action_space().shape):
+            if (hasattr(action, "shape") and action.shape != self.adapter.get_action_space().shape):
                 sys.exit("The shape of the observation and self.get_observation is not the same!")
             self.last_action = action
             policy = self.adapter.get_policy(action)

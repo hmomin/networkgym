@@ -68,9 +68,9 @@ def get_utilities(obs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 def arg_action(obs: np.ndarray, max_link: bool) -> List[float]:
     first_two_rows = obs[:2, :]
     argmax_values = np.argmax(first_two_rows, axis=0)
-    ratio_vals = list(argmax_values)
+    ratio_vals = list(float(val) for val in argmax_values)
     if not max_link:
-        ratio_vals = [1 - val for val in ratio_vals]
+        ratio_vals = [1.0 - val for val in ratio_vals]
     return ratio_vals
 
 
@@ -79,11 +79,11 @@ def utility_argmax_action(obs: np.ndarray) -> List[float]:
     actions = []
     for lte_utility, wifi_utility in zip(lte_utilities, wifi_utilities):
         if np.isnan(lte_utility):
-            actions.append(0)
+            actions.append(0.0)
         elif np.isnan(wifi_utility):
-            actions.append(1)
+            actions.append(1.0)
         else:
-            actions.append(int(wifi_utility > lte_utility))
+            actions.append(float(int(wifi_utility > lte_utility)))
     return actions
 
 
@@ -92,11 +92,11 @@ def utility_logistic_action(obs: np.ndarray) -> List[float]:
     actions = []
     for lte_utility, wifi_utility in zip(lte_utilities, wifi_utilities):
         if np.isnan(lte_utility):
-            actions.append(0)
+            actions.append(0.0)
         elif np.isnan(wifi_utility):
-            actions.append(1)
+            actions.append(1.0)
         else:
-            actions.append(sigmoid(wifi_utility - lte_utility))
+            actions.append(float(sigmoid(wifi_utility - lte_utility)))
     return actions
 
 
