@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # agents=("system_default" "ArgMax" "ArgMin" "Random" "A2C" "PPO" "DDPG" "TD3" "SAC")
-agents=("system_default" "ArgMax" "UtilityFull" "A2C" "PPO" "UtilityLogistic" "TD3" "SAC")
+# agents=("system_default" "ArgMax" "UtilityFull" "A2C" "PPO" "UtilityLogistic" "TD3" "SAC")
+agents=("SAC" "PPO")
 
 # exactly one argument must be provided
 if [ $# -ne 1 ]; then
