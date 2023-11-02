@@ -1,5 +1,4 @@
 import numpy as np
-import os
 import pandas as pd
 from copy import deepcopy
 from typing import Dict, List
@@ -82,8 +81,14 @@ def get_full_observation(df_list: List[pd.DataFrame]) -> List[np.ndarray]:
             row = df[df["source"] == channel]
             if not row.empty:
                 values = row["value"].values[0]
+                if len(values) != 4:
+                    print(name)
+                    print("VALUES")
+                    print(values)
+                    raise Exception(f"values cardinality not equal to 4!")
                 for user, value in enumerate(values):
-                    previous_row[user] = value
+                    if value >= 0:
+                        previous_row[user] = value
             # NOTE: fix for access point ID being too small relative to other values
             if name == "cell_id":
                 previous_row *= 100
@@ -101,26 +106,8 @@ def repopulate_previous_entries(df_list: List[pd.DataFrame]) -> None:
                 previous_values = PREVIOUS_ENTRIES[name][channel]
                 values = row["value"]
                 for user, value in enumerate(values):
-                    previous_values[user] = value
+                    if value >= 0:
+                        previous_values[user] = value
                     # FIXME: toggle fix for rate or traffic ratio being absent
                     if "rate" in name or "traffic_ratio" in name:
                         previous_values[user] = 0
-
-
-def log_full_observation(df: pd.DataFrame) -> None:
-    global COUNTER
-    log_line(f"COUNTER: {COUNTER}")
-    names = df["name"]
-    frequencies: Dict[str, int] = {}
-    for name in names:
-        frequencies[name] = frequencies.get(name, 0) + 1
-    for key, value in frequencies.items():
-        log_line(f"{key},{value}")
-    COUNTER += 1
-
-
-def log_line(line: str) -> None:
-    this_dir = os.path.dirname(os.path.abspath(__file__))
-    log_path = os.path.join(this_dir, "..", FILENAME)
-    with open(log_path, "a") as log:
-        log.write(line + "\n")

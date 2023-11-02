@@ -130,7 +130,6 @@ class Adapter(network_gym_client.adapter.Adapter):
         df_list = turn_df_into_list(df)
         full_list = get_full_observation(df_list)
         # print_full_observation(full_list)
-        # log_full_observation(df)
 
         # NOTE: avoiding normalizing, just dividing by a constant!
         observation = np.vstack(full_list) / 100
