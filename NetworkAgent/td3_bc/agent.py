@@ -20,6 +20,7 @@ class Agent:
         # preserve the shift in action disparity range (1^2 vs. 2^2)
         alpha_bc: float = 2.5 / 4.0,
         enable_behavioral_cloning: bool = False,
+        normalize: bool = True,
         should_load: bool = True,
         save_folder: str = "saved",
     ):
@@ -33,6 +34,7 @@ class Agent:
         self.tau = tau
         self.alpha_bc = alpha_bc
         self.behavioral_cloning = enable_behavioral_cloning
+        self.normalize = normalize
         # check if the save_folder path exists
         script_dir = os.path.dirname(os.path.abspath(__file__))
         save_dir = os.path.join(script_dir, save_folder)
@@ -205,13 +207,16 @@ class Agent:
 
     def save(self, step: int = 0, max_steps: int = 1_000_000):
         step_str = str(step).zfill(len(str(max_steps)))
-        name = f"{self.env_name}{step_str}.{self.buffer.num_buffers}.{self.alpha_bc}."
+        alpha_str = f"{self.alpha_bc:.3f}"
+        norm_str = "normalized" if self.normalize else "not_normalized"
+        name = f"{self.env_name}{step_str}.{self.buffer.num_buffers}.{alpha_str}.{norm_str}."
         pickle.dump(self.training_stats, open(name + "training_stats", "wb"))
         pickle.dump(self.actor, open(name + "Actor", "wb"))
-        pickle.dump(
-            (self.buffer.mean_state, self.buffer.stdev_state),
-            open(name + "Normalizers", "wb"),
-        )
+        if self.normalize:
+            pickle.dump(
+                (self.buffer.mean_state, self.buffer.stdev_state),
+                open(name + "Normalizers", "wb"),
+            )
         pickle.dump(self.critic1, open(name + "Critic1", "wb"))
         pickle.dump(self.critic2, open(name + "Critic2", "wb"))
         pickle.dump(self.target_actor, open(name + "TargetActor", "wb"))

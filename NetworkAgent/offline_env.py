@@ -8,16 +8,17 @@ from tqdm import tqdm
 
 class OfflineEnv:
     def __init__(
-        self, algo_name: str = "system_default", buffer_max_size: int = -1
+        self, algo_name: str = "system_default", buffer_max_size: int = -1, normalize: bool = True
     ) -> None:
         self.algo_name = algo_name
         buffers = self.get_buffers()
-        self.buffer = CombinedBuffer(buffers, buffer_max_size)
+        self.buffer = CombinedBuffer(buffers, buffer_max_size, normalize)
 
     def get_buffers(self) -> list[Buffer]:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         buffers_dir = os.path.join(script_dir, "buffers", self.algo_name)
-        buffer_locs = os.listdir(buffers_dir)
+        dir_contents = os.listdir(buffers_dir)
+        buffer_locs = [name for name in dir_contents if ".pickle" in name]
         buffers: list[Buffer] = []
         print("Loading buffers...")
         for buffer_loc in tqdm(buffer_locs):

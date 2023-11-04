@@ -22,6 +22,12 @@ def get_args() -> argparse.Namespace:
         default="system_default",
         type=str,
     )
+    parser.add_argument(
+        "--normalize",
+        action="store_true",
+        help="whether to do feature normalization or not",
+        required=False,
+    )
     args = parser.parse_args()
     return args
 
@@ -44,10 +50,11 @@ def main() -> None:
     args = get_args()
     alpha_bc: float = args.alpha
     env_name: str = args.env_name
+    normalize: bool = args.normalize
     
-    env = OfflineEnv(env_name, buffer_max_size)
+    env = OfflineEnv(env_name, buffer_max_size, normalize)
 
-    agent = Agent(env, learning_rate, gamma, tau, alpha_bc, behavioral_cloning, resume)
+    agent = Agent(env, learning_rate, gamma, tau, alpha_bc, behavioral_cloning, normalize, resume)
 
     print("Training agent with offline data...")
     for step in tqdm(range(training_steps)):

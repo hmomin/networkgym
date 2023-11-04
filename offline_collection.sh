@@ -2,7 +2,7 @@
 
 set -e
 
-algorithm="system_default"
+algorithm="SAC"
 
 # exactly one argument must be provided
 if [ $# -ne 1 ]; then
