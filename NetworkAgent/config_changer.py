@@ -75,8 +75,7 @@ def edit_dict(json_dict: dict, args: argparse.Namespace) -> None:
     elif testing:
         json_dict["rl_config"]["train"] = False
 
-    if store_offline:
-        json_dict["rl_config"]["store_offline"] = True
+    json_dict["rl_config"]["store_offline"] = store_offline
 
     if steps != None:
         json_dict["env_config"]["steps_per_episode"] = steps
