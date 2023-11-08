@@ -11,9 +11,9 @@ client_id=$1
 
 let "seed = $client_id + 128"
 
-algorithms=("system_default_deterministic_walk")
-alphas=($(seq 0.000 0.125 2.000))
-normalize_status=("not_normalized" "normalized")
+algorithms=("SAC_deterministic_walk")
+alphas=($(seq 0.250 0.125 2.000))
+normalize_status=("not_normalized")
 
 # check if client_id is within valid range
 if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then

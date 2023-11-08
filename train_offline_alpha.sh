@@ -2,7 +2,7 @@
 
 set -e
 
-env_names=("system_default_deterministic_walk")
+env_names=("SAC_deterministic_walk")
 alphas=($(seq 0.000 0.125 2.000))
 
 for env_name in "${env_names[@]}"; do
