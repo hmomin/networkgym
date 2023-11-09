@@ -8,7 +8,10 @@ from tqdm import tqdm
 
 class OfflineEnv:
     def __init__(
-        self, algo_name: str = "system_default", buffer_max_size: int = -1, normalize: bool = True
+        self,
+        algo_name: str = "system_default",
+        buffer_max_size: int = -1,
+        normalize: bool = True,
     ) -> None:
         self.algo_name = algo_name
         buffers = self.get_buffers()

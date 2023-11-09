@@ -51,10 +51,12 @@ def main() -> None:
     alpha_bc: float = args.alpha
     env_name: str = args.env_name
     normalize: bool = args.normalize
-    
+
     env = OfflineEnv(env_name, buffer_max_size, normalize)
 
-    agent = Agent(env, learning_rate, gamma, tau, alpha_bc, behavioral_cloning, normalize, resume)
+    agent = Agent(
+        env, learning_rate, gamma, tau, alpha_bc, behavioral_cloning, normalize, resume
+    )
 
     print("Training agent with offline data...")
     for step in tqdm(range(training_steps)):
