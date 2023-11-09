@@ -9,70 +9,7 @@ from tqdm import tqdm
 
 """
 NOTE (times should be GMT!):
-- 1_000_000 steps
-    CREATED_AFTER = datetime(2023, 9, 26, 0, 35, 0)
-    CREATED_BEFORE = datetime(2023, 9, 27, 10, 46, 0)
-- 10_000 steps
-    CREATED_AFTER = datetime(2023, 9, 28, 4, 51, 0)
-    CREATED_BEFORE = datetime(2023, 9, 29, 11, 3, 0)
-- 100_000 steps
-    CREATED_AFTER = datetime(2023, 10, 3, 16, 11, 0)
-    CREATED_BEFORE = datetime(2023, 10, 5, 22, 34, 0)
-- PPO_20000_steps_training_normal
-    CREATED_AFTER = datetime(2023, 10, 14, 4, 41, 0)
-    CREATED_BEFORE = datetime(2023, 10, 14, 5, 43, 0)
-- PPO_20000_steps_training_bc
-    CREATED_AFTER = datetime(2023, 10, 14, 5, 43, 0)
-    CREATED_BEFORE = datetime(2023, 10, 14, 6, 47, 0)
-- PPO_50000_steps_training_normal
-    CREATED_AFTER = datetime(2023, 10, 14, 6, 48, 0)
-    CREATED_BEFORE = datetime(2023, 10, 14, 7, 49, 0)
-- PPO_50000_steps_training_bc
-    CREATED_AFTER = datetime(2023, 10, 14, 7, 44, 0)
-    CREATED_BEFORE = datetime(2023, 10, 14, 8, 52, 0)
-- system_default_20000_steps_training_bc
-    CREATED_AFTER = datetime(2023, 10, 16, 5, 28, 0)
-    CREATED_BEFORE = datetime(2023, 10, 16, 16, 7, 0)
-- system_default_20000_steps_training_normal
-    CREATED_AFTER = datetime(2023, 10, 16, 6, 24, 0)
-    CREATED_BEFORE = datetime(2023, 10, 16, 7, 37, 0)
-- system_default_50000_steps_training_bc
-    CREATED_AFTER = datetime(2023, 10, 16, 7, 25, 0)
-    CREATED_BEFORE = datetime(2023, 10, 16, 8, 42, 0)
-- system_default_50000_steps_training_normal
-    CREATED_AFTER = datetime(2023, 10, 16, 14, 44, 0)
-    CREATED_BEFORE = datetime(2023, 10, 16, 15, 40, 0)
-- PPO
-    CREATED_AFTER = datetime(2023, 10, 16, 16, 53, 0)
-    CREATED_BEFORE = datetime(2023, 10, 16, 16, 57, 0)
-- system_default
-    CREATED_AFTER = datetime(2023, 10, 16, 19, 36, 0)
-    CREATED_BEFORE = datetime(2023, 10, 16, 19, 39, 0)
-- PPO_95_test_20000_steps_buffers_bc
-    CREATED_AFTER = datetime(2023, 10, 20, 4, 28, 0)
-    CREATED_BEFORE = datetime(2023, 10, 20, 5, 31, 0)
-- PPO_95_test_20000_steps_buffers_normal
-    CREATED_AFTER = datetime(2023, 10, 20, 5, 32, 0)
-    CREATED_BEFORE = datetime(2023, 10, 20, 6, 31, 0)
-- PPO (95% convergence test (2048 batch, 64 mini, 80000 steps, 3e-4 lr))
-    CREATED_AFTER = datetime(2023, 10, 20, 21, 50, 0)
-    CREATED_BEFORE = datetime(2023, 10, 20, 21, 53, 0)
-- PPO (higher convergence test (8192 batch, 256 mini, 100000 steps, 3e-4 lr))
-    CREATED_AFTER = datetime(2023, 10, 20, 22, 5, 0)
-    CREATED_BEFORE = datetime(2023, 10, 20, 22, 8, 0)
-- PPO (even higher convergence test (8192 batch, 256 mini, 81920 steps, 1e-4 lr))
-    CREATED_AFTER = datetime(2023, 10, 20, 22, 16, 0)
-    CREATED_BEFORE = datetime(2023, 10, 20, 22, 18, 0)
-- system_default_dfp_bc
-    CREATED_AFTER = datetime(2023, 10, 29, 2, 52, 0)
-    CREATED_BEFORE = datetime(2023, 10, 29, 7, 48, 0)
-- PPO_dfp_95_test_10000_step_buffers_bc
-    CREATED_AFTER = datetime(2023, 10, 29, 2, 52, 0)
-    CREATED_BEFORE = datetime(2023, 10, 29, 7, 48, 0)
-- system_default (with dfp)
-    CREATED_AFTER = datetime(2023, 10, 30, 4, 10, 0)
-    CREATED_BEFORE = datetime(2023, 10, 30, 4, 13, 0)
-- PPO (with dfp)
+- PPO_deterministic_walk_bc\.10000\.64\.\d\.\d\d\d\.normalized
     CREATED_AFTER = datetime(2023, 10, 30, 4, 21, 0)
     CREATED_BEFORE = datetime(2023, 10, 30, 4, 23, 0)
 """
