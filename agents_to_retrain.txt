@@ -5,10 +5,12 @@ PPO_deterministic_walk_bc.10000.64.0.125.not_normalized_seed_132
 PPO_deterministic_walk_bc.10000.64.0.375.not_normalized_seed_134
 PPO_deterministic_walk_bc.10000.64.0.875.normalized_seed_129
 PPO_deterministic_walk_bc.10000.64.1.000.normalized_seed_132
+
 PPO_deterministic_walk_bc.10000.64.1.000.not_normalized_seed_128
 PPO_deterministic_walk_bc.10000.64.1.000.not_normalized_seed_134
 PPO_deterministic_walk_bc.10000.64.1.125.normalized_seed_128
 PPO_deterministic_walk_bc.10000.64.1.125.normalized_seed_131
+
 PPO_deterministic_walk_bc.10000.64.1.125.normalized_seed_132
 PPO_deterministic_walk_bc.10000.64.1.125.not_normalized_seed_128
 PPO_deterministic_walk_bc.10000.64.1.375.normalized_seed_131
@@ -31,11 +33,13 @@ system_default_deterministic_walk_bc.10000.64.0.375.normalized_seed_133
 system_default_deterministic_walk_bc.10000.64.0.500.normalized_seed_129
 system_default_deterministic_walk_bc.10000.64.0.625.normalized_seed_129
 system_default_deterministic_walk_bc.10000.64.0.750.normalized_seed_129
+
 system_default_deterministic_walk_bc.10000.64.0.875.normalized_seed_129
 system_default_deterministic_walk_bc.10000.64.1.000.normalized_seed_129
 system_default_deterministic_walk_bc.10000.64.1.125.normalized_seed_129
 system_default_deterministic_walk_bc.10000.64.1.250.normalized_seed_129
 system_default_deterministic_walk_bc.10000.64.1.375.normalized_seed_129
+
 system_default_deterministic_walk_bc.10000.64.1.500.normalized_seed_129
 system_default_deterministic_walk_bc.10000.64.1.625.normalized_seed_129
 system_default_deterministic_walk_bc.10000.64.1.750.normalized_seed_129
