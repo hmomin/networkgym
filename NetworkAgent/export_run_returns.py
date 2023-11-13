@@ -9,17 +9,29 @@ from tqdm import tqdm
 
 """
 NOTE (times should be GMT!):
+- system_default
+- PPO
+- SAC
+    CREATED_AFTER = datetime(2023, 11, 9, 22, 44, 0)
+    CREATED_BEFORE = datetime(2023, 11, 11, 22, 44, 0)
+
+- system_default_deterministic_walk_bc\.10000\.64\.\d\.\d\d\d\.normalized
+- system_default_deterministic_walk_bc\.10000\.64\.\d\.\d\d\d\.not_normalized
 - PPO_deterministic_walk_bc\.10000\.64\.\d\.\d\d\d\.normalized
+- PPO_deterministic_walk_bc\.10000\.64\.\d\.\d\d\d\.not_normalized
+- SAC_deterministic_walk_bc\.10000\.64\.\d\.\d\d\d\.normalized
+- SAC_deterministic_walk_bc\.10000\.64\.\d\.\d\d\d\.not_normalized
     CREATED_AFTER = datetime(2023, 10, 30, 4, 21, 0)
-    CREATED_BEFORE = datetime(2023, 10, 30, 4, 23, 0)
+    CREATED_BEFORE = datetime(2023, 11, 9, 22, 44, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
 RUN_NAME = "PPO"
-CREATED_AFTER = datetime(2023, 10, 30, 4, 21, 0)
-CREATED_BEFORE = datetime(2023, 10, 30, 4, 23, 0)
+CREATED_AFTER = datetime(2023, 11, 9, 22, 44, 0)
+CREATED_BEFORE = datetime(2023, 11, 11, 22, 44, 0)
 MIN_RUNTIME = timedelta(minutes=1)
+TEST_EXPORT = False
 
 
 def get_runs() -> list:
@@ -74,15 +86,18 @@ def write_to_csv(returns_dict: dict[str, list[float]]) -> None:
 def get_csv_filename() -> str:
     this_file_dir = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.join(this_file_dir, "data")
+    truncated_name = "".join(RUN_NAME.split("\\"))
     csv_filename = os.path.join(
         data_dir,
-        f"{RUN_NAME}_{time.strftime('_%Y_%m_%d_%H_%M_%S', time.localtime())}.csv",
+        f"{truncated_name}_{time.strftime('_%Y_%m_%d_%H_%M_%S', time.localtime())}.csv",
     )
     return csv_filename
 
 
 def main() -> None:
     runs = get_runs()
+    if TEST_EXPORT:
+        return
     returns_dict = get_returns_from_runs(runs)
     pprint(returns_dict)
     write_to_csv(returns_dict)
