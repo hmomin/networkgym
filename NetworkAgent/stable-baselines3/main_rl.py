@@ -15,6 +15,7 @@ sys.path.append("../../")
 
 from network_gym_client import load_config_file
 from network_gym_client import Env as NetworkGymEnv
+from network_gym_client import PseudoParallelEnv
 from stable_baselines3.common.env_checker import check_env
 
 from stable_baselines3 import A2C, DDPG, PPO, SAC, TD3
@@ -84,9 +85,7 @@ def evaluate(model, env, num_steps, mean_state=None, stdev_state=None):
     done = True
     for _ in range(num_steps):
         if done:
-            obs = env.reset()
-        if type(obs) == tuple:
-            obs = obs[0]
+            obs, info = env.reset()
         # at this point, obs should be a numpy array
         if type(mean_state) == torch.Tensor and type(stdev_state) == torch.Tensor:
             mean_state = mean_state.cpu().numpy()
@@ -116,9 +115,9 @@ def main():
     try:
         release_lock(seed)
     except Exception as e:
-        print("WARNING: Exception occurred while trying to release lock!")
+        print("WARNING: Exception occurred while trying to release config lock!")
         print(e)
-        print("Continuing from here...")
+        print("Continuing anyway...")
 
     if args.lte_rb != -1:
         config_json["env_config"]["LTE"]["resource_block_num"] = args.lte_rb
@@ -127,12 +126,6 @@ def main():
         config_json["rl_config"]["agent"] = "system_default"
 
     rl_alg = config_json["rl_config"]["agent"]
-
-    config = {
-        "policy_type": "MlpPolicy",
-        "env_id": "network_gym_client",
-        "RL_algo": rl_alg,
-    }
 
     alg_map = {
         "PPO": PPO,
@@ -153,9 +146,11 @@ def main():
     client_id = args.client_id
     # Create the environment
     print("[" + args.env + "] environment selected.")
-    env = NetworkGymEnv(
-        client_id, config_json
-    )  # make a network env using pass client id, adatper and configure file arguements.
+    # FIXME: choosing parallel env for training
+    env = PseudoParallelEnv()
+    # env = NetworkGymEnv(
+    # client_id, config_json
+    # )  # make a network env using pass client id, adatper and configure file arguements.
     # NOTE: disabling normalization
     normal_obs_env = env
     # normal_obs_env = NormalizeObservation(env)

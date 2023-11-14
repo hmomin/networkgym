@@ -14,9 +14,7 @@ def generic_policy(
     done = True
     for _ in range(num_steps):
         if done:
-            obs = env.reset()
-        if type(obs) == tuple:
-            obs = obs[0]
+            obs, info = env.reset()
         # at this point, obs should be a numpy array
         actions = action_chooser(obs)
         obs, reward, done, truncated, info = env.step(actions)
