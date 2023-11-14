@@ -70,7 +70,7 @@
             "gma::wifi::ul::split_ratio",
             "gma::lte::ul::split_ratio"
         ],
-        "steps_per_episode": 12500,
+        "steps_per_episode": 100000,
         "episodes_per_session": 1,
         "random_seed": 0,
         "downlink_traffic": true,

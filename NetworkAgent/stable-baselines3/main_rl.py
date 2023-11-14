@@ -223,7 +223,7 @@ def main():
             )
         else:
             agent = agent_class(
-                config_json["rl_config"]["policy"], normal_obs_env, verbose=1
+                config_json["rl_config"]["policy"], normal_obs_env, verbose=1, n_steps=256
             )
         print(agent.policy)
 
