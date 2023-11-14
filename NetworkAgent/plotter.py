@@ -4,10 +4,9 @@ import os
 import pandas as pd
 from typing import Dict, List, Tuple
 
-# filename = "seed_4_test_utility_good_state_no_normalize.csv"
-filename = "seed_06_test_LONG_utility_good_state_no_normalize.csv"
+filename = "2023_11_13_normalization_testing/training_PPO_SAC_A2C.csv"
 
-title = "Seed 6 Utility Reward Function - Testing"
+title = "Training Utility Reward Curves (deterministic walk)"
 
 period_value = 1000 if "Training" in title else 100
 
@@ -15,15 +14,15 @@ ignore_losers = False
 losers = ["A2C", "ArgMax", "Random", "TD3", "ArgMin", "DDPG"]
 
 color_map = {
-    "A2C": "#e41a1c",
-    "SAC": "#3700b8",
+    "A2C_seed_0": "#e41a1c",
+    "SAC_seed_0": "#3700b8",
     "Random": "#999999",
     "TD3": "#984ea3",
     "ArgMin": "#aaaa33",
     "ArgMax": "#ff7f00",
     "DDPG": "#a65628",
-    "PPO": "#f781bf",
-    "system_default": "#4daf4a",
+    "PPO_seed_0": "#f781bf",
+    "system_default_seed_0": "#4daf4a",
 }
 
 
@@ -108,8 +107,8 @@ def plot_data(mean_std_dict: Dict[str, List[Tuple[float, float]]]) -> None:
     # plt.tight_layout(rect=(0, 0, 0.99, 1))
     # plt.xlim(xmin=0.0)
     # plt.ylim(ymin=0.0)
-    plt.ylim(ymin=-2.5, ymax=1.5)
-    plt.title(title)
+    # plt.ylim(ymin=-2.5, ymax=1.5)
+    # plt.title(title)
     plt.xlabel(f"Step (x {period_value})")
     plt.ylabel("Reward")
     plt.savefig(os.path.join(get_data_dir(), f"{title}.png"))

@@ -4,14 +4,27 @@ import os
 import pandas as pd
 from pprint import pprint
 
-DATA_DIR = "2023_10_30_alpha_testing"
+DATA_DIR = "2023_11_13_offline_training_normalization"
 
 COLOR_MAP = {
-    "PPO_dfp_95": "#e41a1c",
-    "PPO_dfp_95_TD3_BC": "#3700b8",
-    "sys_default_dfp": "#000000",
-    "sys_default_dfp_TD3_BC": "#4daf4a",
+    "PPO": "#f781bf",
+    "PPO_TD3_BC_no_norm": "#DC143C",
+    "PPO_TD3_BC_norm": "#DC143C",
+    "SAC": "#3700b8",
+    "SAC_TD3_BC_no_norm": "#FFAC1C",
+    "SAC_TD3_BC_norm": "#FFAC1C",
+    "sys_default": "#4daf4a",
+    "sys_default_TD3_BC_no_norm": "#097969",
+    "sys_default_TD3_BC_norm": "#097969",
 }
+
+# with normalization:
+Y_MIN = -4428
+Y_MAX = -892
+
+# without normalization:
+# Y_MIN = -2113
+# Y_MAX = -942
 
 # Y_MIN = -4711
 # Y_MAX = -631
@@ -48,7 +61,7 @@ def get_algorithm_name(filename: str) -> str:
 
 
 def parse_key(column_key: float | str) -> str | float:
-    alpha_elems = column_key.split(".")[-2:]
+    alpha_elems = column_key.split(".")[-3:-1]
     alpha_str = ".".join(alpha_elems)
     try:
         float(alpha_str)
@@ -131,7 +144,7 @@ def plot_data(
     plt.tight_layout(rect=(0.02, 0.02, 0.99, 0.98))
     y_min, y_max = plt.ylim()
     print(f"y_min: {y_min}, y_max: {y_max}")
-    # plt.ylim(Y_MIN, Y_MAX)
+    plt.ylim(Y_MIN, Y_MAX)
     # plt.tight_layout(rect=(0, 0, 0.99, 1))
     # plt.title(TITLE)
     plt.xlabel("$\\alpha$")
@@ -145,6 +158,8 @@ def main() -> None:
     # NOTE: key is the algorithm name
     plotter_dict: dict[str, tuple[list[int], list[tuple[float, float]]]] = {}
     for filename in data_filenames:
+        if not filename.endswith(".csv"):
+            continue
         dataframe = pd.read_csv(filename)
         data_dict = parse_data(dataframe)
         pprint(data_dict)
