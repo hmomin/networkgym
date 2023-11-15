@@ -216,14 +216,10 @@ def main():
                 model_path,
                 normal_obs_env,
                 verbose=1,
-                n_steps=8192,
-                batch_size=256,
-                n_epochs=10,
-                learning_rate=1e-4,
             )
         else:
             agent = agent_class(
-                config_json["rl_config"]["policy"], normal_obs_env, verbose=1, n_steps=256
+                config_json["rl_config"]["policy"], normal_obs_env, verbose=1
             )
         print(agent.policy)
 
