@@ -126,6 +126,7 @@ def main():
         config_json["rl_config"]["agent"] = "system_default"
 
     rl_alg = config_json["rl_config"]["agent"]
+    parallel_env: bool = config_json["rl_config"]["parallel_env"]
 
     alg_map = {
         "PPO": PPO,
@@ -146,11 +147,10 @@ def main():
     client_id = args.client_id
     # Create the environment
     print("[" + args.env + "] environment selected.")
-    # FIXME: choosing parallel env for training
-    env = PseudoParallelEnv()
-    # env = NetworkGymEnv(
-    # client_id, config_json
-    # )  # make a network env using pass client id, adatper and configure file arguements.
+    # NOTE: can choose parallel env for training
+    env = PseudoParallelEnv() if parallel_env else NetworkGymEnv(
+    client_id, config_json
+    )
     # NOTE: disabling normalization
     normal_obs_env = env
     # normal_obs_env = NormalizeObservation(env)

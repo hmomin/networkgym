@@ -49,8 +49,12 @@ def general_message_handler(
     ],
     client_socket: socket.socket,
 ) -> None:
-    message_dict: dict[str, Any] = pickle.loads(bytes_message)
-    return_address: tuple[str, int] = message_dict["address"]
-    message: str = message_dict["data"]
-    print(f"Message '{message}' received from {return_address}.")
-    specific_message_handler(in_socket, message, return_address, client_socket)
+    try:
+        message_dict: dict[str, Any] = pickle.loads(bytes_message)
+        return_address: tuple[str, int] = message_dict["address"]
+        message: str = message_dict["data"]
+        print(f"Message '{message}' received from {return_address}.")
+        specific_message_handler(in_socket, message, return_address, client_socket)
+    except Exception as e:
+        print("WARNING: exception occurred while trying to read bytes_message")
+        print(e)
