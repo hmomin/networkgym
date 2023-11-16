@@ -2,6 +2,7 @@
     "rl_config": {
         "agent": "PPO",
         "parallel_env": false,
+        "random_action_prob": 0.1,
         "train": false,
         "store_offline": true,
         "load_model_for_training": false,
@@ -73,7 +74,7 @@
         ],
         "steps_per_episode": 10000,
         "episodes_per_session": 1,
-        "random_seed": 62,
+        "random_seed": 86,
         "downlink_traffic": true,
         "max_wait_time_for_action_ms": -1,
         "enb_locations": {

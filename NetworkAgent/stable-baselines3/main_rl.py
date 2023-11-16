@@ -2,6 +2,7 @@ import argparse
 import numpy as np
 import os
 import pickle
+import random
 import sys
 import time
 
@@ -28,6 +29,7 @@ from gymnasium.wrappers import NormalizeObservation
 from NetworkAgent.heuristic_policies import (
     argmax_policy,
     argmin_policy,
+    random_action,
     random_policy,
     utility_argmax_policy,
     utility_logistic_policy,
@@ -81,7 +83,7 @@ def system_default_policy(env, config_json):
         # print(obs)
 
 
-def evaluate(model, env, num_steps, mean_state=None, stdev_state=None):
+def evaluate(model, env, num_steps, random_action_prob: float = 0.0, mean_state=None, stdev_state=None):
     done = True
     for _ in range(num_steps):
         if done:
@@ -99,7 +101,12 @@ def evaluate(model, env, num_steps, mean_state=None, stdev_state=None):
             raise Exception(
                 f"mean_state type ({type(mean_state)}) and/or stdev_state type ({type(stdev_state)}) incompatible."
             )
-        action, _ = model.predict(obs, deterministic=True)
+        if random_action_prob > random.uniform(0, 1):
+            print("TAKING RANDOM ACTION")
+            action = random_action(obs)
+        else:
+            print("TAKING DETERMINISTIC ACTION")
+            action, _ = model.predict(obs, deterministic=True)
         obs, reward, done, truncated, info = env.step(action)
 
 
@@ -110,6 +117,7 @@ def main():
     # load config files
     config_json = load_config_file(args.env)
     config_json["env_config"]["env"] = args.env
+    rl_config = config_json['rl_config']
 
     seed: int = config_json["env_config"]["random_seed"]
     try:
@@ -122,11 +130,11 @@ def main():
     if args.lte_rb != -1:
         config_json["env_config"]["LTE"]["resource_block_num"] = args.lte_rb
 
-    if config_json["rl_config"]["agent"] == "":
-        config_json["rl_config"]["agent"] = "system_default"
+    if rl_config["agent"] == "":
+        rl_config["agent"] = "system_default"
 
-    rl_alg = config_json["rl_config"]["agent"]
-    parallel_env: bool = config_json["rl_config"]["parallel_env"]
+    rl_alg = rl_config["agent"]
+    parallel_env: bool = rl_config["parallel_env"]
 
     alg_map = {
         "PPO": PPO,
@@ -172,7 +180,7 @@ def main():
         agent_class(normal_obs_env, config_json)
         return
 
-    train_flag = config_json["rl_config"]["train"]
+    train_flag = rl_config["train"]
 
     # Load the model if eval is True
     this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -201,15 +209,15 @@ def main():
         episodes_per_session = int(config_json["env_config"]["episodes_per_session"])
         num_steps = steps_per_episode * episodes_per_session
         # n_episodes = config_json['rl_config']['timesteps'] / 100
-
-        evaluate(agent, normal_obs_env, num_steps, mean_state, stdev_state)
+        random_action_prob: float = rl_config["random_action_prob"] if "random_action_prob" in rl_config else 0.0
+        evaluate(agent, normal_obs_env, num_steps, random_action_prob, mean_state, stdev_state)
     else:
         print("Training model...")
         if agent_class is None:
             raise Exception(f"ERROR: rl_alg ({rl_alg}) not found in alg_map!")
         elif (
-            "load_model_for_training" in config_json["rl_config"]
-            and config_json["rl_config"]["load_model_for_training"]
+            "load_model_for_training" in rl_config
+            and rl_config["load_model_for_training"]
         ):
             print("LOADING MODEL FROM MODEL_PATH")
             agent = agent_class.load(
@@ -219,7 +227,7 @@ def main():
             )
         else:
             agent = agent_class(
-                config_json["rl_config"]["policy"], normal_obs_env, verbose=1
+                rl_config["policy"], normal_obs_env, verbose=1
             )
         print(agent.policy)
 
