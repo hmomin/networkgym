@@ -2,7 +2,7 @@
     "rl_config": {
         "agent": "PPO",
         "parallel_env": false,
-        "random_action_prob": 0.1,
+        "random_action_prob": 0.3,
         "train": false,
         "store_offline": true,
         "load_model_for_training": false,
