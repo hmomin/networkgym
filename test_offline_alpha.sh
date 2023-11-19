@@ -11,16 +11,16 @@ client_id=$1
 
 let "seed = $client_id + 128"
 
-algorithms=("SAC_deterministic_walk")
-alphas=($(seq 0.250 0.125 2.000))
+eps_values=(0.1 1.0)
+alphas=(0.000 0.100 0.300 1.000 3.000 10.000)
 normalize_status=("not_normalized")
 
 # check if client_id is within valid range
 if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then
-    for algorithm in "${algorithms[@]}"; do
+    for eps_value in "${eps_values[@]}"; do
         for normalize in "${normalize_status[@]}"; do
             for alpha in "${alphas[@]}"; do
-                agent="${algorithm}_bc.10000.64.${alpha}.${normalize}"
+                agent="PPO_eps_${eps_value}_bc.10000.64.${alpha}.${normalize}"
                 echo "SEED: $seed --- AGENT: $agent"
                 python -u NetworkAgent/config_changer.py --test --agent $agent --seed $seed --steps 2000
                 cd NetworkAgent/stable-baselines3

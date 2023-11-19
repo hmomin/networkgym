@@ -9,15 +9,9 @@ if [ $# -ne 1 ]; then
 fi
 client_id=$1
 
-seed=129
+seed=135
 agents=(
-    system_default_deterministic_walk_bc.10000.64.1.250.normalized
-    system_default_deterministic_walk_bc.10000.64.1.375.normalized
-    system_default_deterministic_walk_bc.10000.64.1.500.normalized
-    system_default_deterministic_walk_bc.10000.64.1.625.normalized
-    system_default_deterministic_walk_bc.10000.64.1.750.normalized
-    system_default_deterministic_walk_bc.10000.64.1.875.normalized
-    system_default_deterministic_walk_bc.10000.64.2.000.normalized
+    PPO_eps_0.3_bc.10000.64.10.000.not_normalized
 )
 
 # check if client_id is within valid range
