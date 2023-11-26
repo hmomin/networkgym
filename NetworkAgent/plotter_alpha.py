@@ -4,30 +4,31 @@ import os
 import pandas as pd
 from pprint import pprint
 
-DATA_DIR = "2023_11_13_offline_training_normalization"
+DATA_DIR = "2023_11_20_ppo_eps_0.1"
 
 COLOR_MAP = {
-    "PPO": "#f781bf",
-    "PPO_TD3_BC_no_norm": "#DC143C",
-    "PPO_TD3_BC_norm": "#DC143C",
-    "SAC": "#3700b8",
-    "SAC_TD3_BC_no_norm": "#FFAC1C",
-    "SAC_TD3_BC_norm": "#FFAC1C",
     "sys_default": "#4daf4a",
-    "sys_default_TD3_BC_no_norm": "#097969",
-    "sys_default_TD3_BC_norm": "#097969",
+    "PPO_eps_0.0": "#a751bf",
+    "PPO_eps_0.0_bc": "#DC143C",
+    "PPO_eps_0.1": "#a751bf",
+    "PPO_eps_0.1_bc": "#DC143C",
+    "PPO_eps_0.3": "#a751bf",
+    "PPO_eps_0.3_bc": "#DC143C",
+    "PPO_eps_1.0": "#a751bf",
+    "PPO_eps_1.0_bc": "#DC143C",
+    "PPO_det": "#a751bf",
+    "PPO_stoch": "#000fff",
 }
 
-# with normalization:
-Y_MIN = -4428
-Y_MAX = -892
+NUM_STEPS = 2000.0
 
-# without normalization:
-# Y_MIN = -2113
-# Y_MAX = -942
+# eps experiments
+# Y_MIN = -1.968364432378047
+# Y_MAX = -0.4307416487125114
 
-# Y_MIN = -4711
-# Y_MAX = -631
+# no normalization:
+# Y_MIN = -1.056810695473464
+# Y_MAX = -0.4711696097131371
 
 
 def get_data_dir() -> str:
@@ -49,6 +50,7 @@ def parse_data(df: pd.DataFrame) -> dict[str | float, tuple[float, float]]:
     for column_key in df:
         alpha = parse_key(column_key)
         values: list[float] = df[column_key].to_list()
+        values = [val/NUM_STEPS for val in values]
         data_dict[alpha] = get_mean_std_from_section(values)
     return data_dict
 
@@ -56,7 +58,7 @@ def parse_data(df: pd.DataFrame) -> dict[str | float, tuple[float, float]]:
 def get_algorithm_name(filename: str) -> str:
     base_csv_filename = os.path.basename(filename)
     algorithm_pieces = base_csv_filename.split(".")[0:-1]
-    algorithm_name = "".join(algorithm_pieces)
+    algorithm_name = ".".join(algorithm_pieces)
     return algorithm_name
 
 
@@ -97,7 +99,8 @@ def process_data_for_plotting(
 
 
 def get_x_vals() -> list[float]:
-    return list(np.arange(0, 2.01, 0.25))
+    return [0.0, 0.1, 0.3, 1.0, 3.0, 10.0]
+    # return list(np.arange(0, 2.01, 0.25))
 
 
 def plot_data(
@@ -119,7 +122,7 @@ def plot_data(
         upper_bounds = [mean_val + stdev for mean_val, stdev in mean_std_list]
         line_color = COLOR_MAP[name] if name in COLOR_MAP else (0, 0, 0)
         plt.plot(x_vals, mean_rewards, color=line_color, label=name)
-        # plt.xscale("log", base=2)
+        plt.xscale("log", base=10)
         x_ticks = get_x_vals()
         x_labels = [str(x_val) for x_val in x_ticks]
         plt.xticks(x_ticks, x_labels)
@@ -144,11 +147,11 @@ def plot_data(
     plt.tight_layout(rect=(0.02, 0.02, 0.99, 0.98))
     y_min, y_max = plt.ylim()
     print(f"y_min: {y_min}, y_max: {y_max}")
-    plt.ylim(Y_MIN, Y_MAX)
+    # plt.ylim(Y_MIN, Y_MAX)
     # plt.tight_layout(rect=(0, 0, 0.99, 1))
     # plt.title(TITLE)
     plt.xlabel("$\\alpha$")
-    plt.ylabel("Cumulative Rollout Return")
+    plt.ylabel("(Rollout Return)/(Num Steps)")
     plt.savefig(os.path.join(get_data_dir(), f"../{DATA_DIR}.png"))
     plt.show()
 

@@ -23,13 +23,32 @@ NOTE (times should be GMT!):
 - SAC_deterministic_walk_bc\.10000\.64\.\d\.\d\d\d\.not_normalized
     CREATED_AFTER = datetime(2023, 10, 30, 4, 21, 0)
     CREATED_BEFORE = datetime(2023, 11, 9, 22, 44, 0)
+
+<TD3+BC offline agents tested>
+- PPO_eps_0.0
+- PPO_eps_0.1
+- PPO_eps_0.3
+- PPO_eps_1.0
+    CREATED_AFTER = datetime(2023, 11, 18, 23, 49, 0)
+    CREATED_BEFORE = datetime(2023, 11, 19, 10, 17, 0)
+
+<actual PPO agent tested with epsilon-greedy actions>
+NOTE: all the run names saved as PPO - check for run_name below
+- PPO
+    CREATED_AFTER = datetime(2023, 11, 19, 19, 50, 0)
+    CREATED_BEFORE = datetime(2023, 11, 19, 21, 40, 0)
+
+<actual PPO agent with deterministic=False in evaluate()>
+- PPO
+    CREATED_AFTER = datetime(2023, 11, 20, 5, 50, 0)
+    CREATED_BEFORE = datetime(2023, 11, 20, 6, 0, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
 RUN_NAME = "PPO"
-CREATED_AFTER = datetime(2023, 11, 9, 22, 44, 0)
-CREATED_BEFORE = datetime(2023, 11, 11, 22, 44, 0)
+CREATED_AFTER = datetime(2023, 11, 20, 5, 50, 0)
+CREATED_BEFORE = datetime(2023, 11, 20, 6, 0, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 TEST_EXPORT = False
 
