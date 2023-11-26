@@ -107,6 +107,8 @@ def evaluate(model, env, num_steps, random_action_prob: float = 0.0, mean_state=
         else:
             print("TAKING DETERMINISTIC ACTION")
             action, _ = model.predict(obs, deterministic=True)
+            # FIXME: taking non-deterministic action to see if it helps
+            # action, _ = model.predict(obs, deterministic=False)
         obs, reward, done, truncated, info = env.step(action)
 
 
@@ -226,9 +228,23 @@ def main():
                 verbose=1,
             )
         else:
-            agent = agent_class(
-                rl_config["policy"], normal_obs_env, verbose=1
+            init_std = rl_config["starting_action_std"] if "starting_action_std" in rl_config else 1.0
+            policy_kwargs = dict(
+                log_std_init = float(np.log(init_std))
             )
+            if rl_alg == "PPO":
+                print("TRAINING PPO WITH MODIFIED STARTING STDEV")
+                print(policy_kwargs)
+                n_steps = 2048
+                if type(env) == PseudoParallelEnv:
+                    n_steps /= 8
+                agent = agent_class(
+                    rl_config["policy"], normal_obs_env, verbose=1, policy_kwargs=policy_kwargs, n_steps=int(n_steps)
+                )
+            else:
+                agent = agent_class(
+                    rl_config["policy"], normal_obs_env, verbose=1
+                )
         print(agent.policy)
 
         train(agent, config_json)
