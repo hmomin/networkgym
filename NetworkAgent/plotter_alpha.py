@@ -4,27 +4,33 @@ import os
 import pandas as pd
 from pprint import pprint
 
-DATA_DIR = "2023_11_20_ppo_eps_0.1"
+DATA_DIR = "2023_11_26_sac_stochastic"
 
 COLOR_MAP = {
     "sys_default": "#4daf4a",
     "PPO_eps_0.0": "#a751bf",
     "PPO_eps_0.0_bc": "#DC143C",
+    "SAC_eps_0.0": "#a751bf",
+    "SAC_eps_0.0_bc": "#DC143C",
     "PPO_eps_0.1": "#a751bf",
     "PPO_eps_0.1_bc": "#DC143C",
+    "SAC_eps_0.1": "#a751bf",
+    "SAC_eps_0.1_bc": "#DC143C",
     "PPO_eps_0.3": "#a751bf",
     "PPO_eps_0.3_bc": "#DC143C",
     "PPO_eps_1.0": "#a751bf",
     "PPO_eps_1.0_bc": "#DC143C",
     "PPO_det": "#a751bf",
+    "SAC_det": "#a751bf",
     "PPO_stoch": "#000fff",
+    "SAC_stoch": "#000fff",
 }
 
 NUM_STEPS = 2000.0
 
 # eps experiments
-# Y_MIN = -1.968364432378047
-# Y_MAX = -0.4307416487125114
+Y_MIN = -1.968364432378047
+Y_MAX = -0.4307416487125114
 
 # no normalization:
 # Y_MIN = -1.056810695473464
@@ -50,7 +56,7 @@ def parse_data(df: pd.DataFrame) -> dict[str | float, tuple[float, float]]:
     for column_key in df:
         alpha = parse_key(column_key)
         values: list[float] = df[column_key].to_list()
-        values = [val/NUM_STEPS for val in values]
+        values = [val / NUM_STEPS for val in values]
         data_dict[alpha] = get_mean_std_from_section(values)
     return data_dict
 
@@ -147,7 +153,7 @@ def plot_data(
     plt.tight_layout(rect=(0.02, 0.02, 0.99, 0.98))
     y_min, y_max = plt.ylim()
     print(f"y_min: {y_min}, y_max: {y_max}")
-    # plt.ylim(Y_MIN, Y_MAX)
+    plt.ylim(Y_MIN, Y_MAX)
     # plt.tight_layout(rect=(0, 0, 0.99, 1))
     # plt.title(TITLE)
     plt.xlabel("$\\alpha$")

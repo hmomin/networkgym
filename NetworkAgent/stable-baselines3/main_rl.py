@@ -83,7 +83,14 @@ def system_default_policy(env, config_json):
         # print(obs)
 
 
-def evaluate(model, env, num_steps, random_action_prob: float = 0.0, mean_state=None, stdev_state=None):
+def evaluate(
+    model,
+    env,
+    num_steps,
+    random_action_prob: float = 0.0,
+    mean_state=None,
+    stdev_state=None,
+):
     done = True
     for _ in range(num_steps):
         if done:
@@ -119,7 +126,7 @@ def main():
     # load config files
     config_json = load_config_file(args.env)
     config_json["env_config"]["env"] = args.env
-    rl_config = config_json['rl_config']
+    rl_config = config_json["rl_config"]
 
     seed: int = config_json["env_config"]["random_seed"]
     try:
@@ -158,9 +165,7 @@ def main():
     # Create the environment
     print("[" + args.env + "] environment selected.")
     # NOTE: can choose parallel env for training
-    env = PseudoParallelEnv() if parallel_env else NetworkGymEnv(
-    client_id, config_json
-    )
+    env = PseudoParallelEnv() if parallel_env else NetworkGymEnv(client_id, config_json)
     # NOTE: disabling normalization
     normal_obs_env = env
     # normal_obs_env = NormalizeObservation(env)
@@ -211,8 +216,19 @@ def main():
         episodes_per_session = int(config_json["env_config"]["episodes_per_session"])
         num_steps = steps_per_episode * episodes_per_session
         # n_episodes = config_json['rl_config']['timesteps'] / 100
-        random_action_prob: float = rl_config["random_action_prob"] if "random_action_prob" in rl_config else 0.0
-        evaluate(agent, normal_obs_env, num_steps, random_action_prob, mean_state, stdev_state)
+        random_action_prob: float = (
+            rl_config["random_action_prob"]
+            if "random_action_prob" in rl_config
+            else 0.0
+        )
+        evaluate(
+            agent,
+            normal_obs_env,
+            num_steps,
+            random_action_prob,
+            mean_state,
+            stdev_state,
+        )
     else:
         print("Training model...")
         if agent_class is None:
@@ -228,10 +244,12 @@ def main():
                 verbose=1,
             )
         else:
-            init_std = rl_config["starting_action_std"] if "starting_action_std" in rl_config else 1.0
-            policy_kwargs = dict(
-                log_std_init = float(np.log(init_std))
+            init_std = (
+                rl_config["starting_action_std"]
+                if "starting_action_std" in rl_config
+                else 1.0
             )
+            policy_kwargs = dict(log_std_init=float(np.log(init_std)))
             if rl_alg == "PPO":
                 print("TRAINING PPO WITH MODIFIED STARTING STDEV")
                 print(policy_kwargs)
@@ -239,12 +257,14 @@ def main():
                 if type(env) == PseudoParallelEnv:
                     n_steps /= 8
                 agent = agent_class(
-                    rl_config["policy"], normal_obs_env, verbose=1, policy_kwargs=policy_kwargs, n_steps=int(n_steps)
+                    rl_config["policy"],
+                    normal_obs_env,
+                    verbose=1,
+                    policy_kwargs=policy_kwargs,
+                    n_steps=int(n_steps),
                 )
             else:
-                agent = agent_class(
-                    rl_config["policy"], normal_obs_env, verbose=1
-                )
+                agent = agent_class(rl_config["policy"], normal_obs_env, verbose=1)
         print(agent.policy)
 
         train(agent, config_json)
