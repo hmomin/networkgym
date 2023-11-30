@@ -86,30 +86,11 @@ Host mlwins
 ```
 
 ## 🚀 Start NetworkGym Client:
-
-- Update the common configuration file [common_config.json](network_gym_client/common_config.json):
-
-```json
-{
-  "algorithm_client_port": 8088 or 8092,//do not change
-  "session_name": "test",//Make sure to change the "session_name" to your assgined session name. Cannot use '-' in the name!!!!
-  "session_key": "test",//Make sure to change the "session_key" to your assgined keys.
-}
-```
-
-- Update the environment dependent configuration file, e.g., [network_gym_client/envs/nqos_split/config.json](network_gym_client/envs/nqos_split/config.json).
-  - View configuration suggestions for arguments at [NetworkGym Docs Website](https://intellabs.github.io/networkgym/environments/mx_traffic_management/mx_traffic_splitting.html#arguments).
-
 - Start the demo client using the following command:
 ```
 python3 start_client_demo.py
 ```
-- When the program terminates, visualize the output using the returned WanDB website. If the python program stops after sending out the start request as shown in the following, check if the port fowarding is broken.
-```
-...
-test-0 started
-test-0 Sending GMASim Start Request…
-```
+- When the program terminates, visualize the output using the returned WanDB website.
 
 ## 📁 File Structure:
 
@@ -161,4 +142,25 @@ for step in range(num_steps):
     if truncated:
         obs, info = env.reset()
 ```
+
+
+## 🔧 Configuration:
+- Update the common configuration in [common_config.json](network_gym_client/common_config.json):
+
+```json
+{
+  "connect_via_server_ip_and_server_port": true, //set to ture to use the server_ip and server_port to connect to internal server (this method requires Intel VPN); set to false to use the local_fowarded_port to connect to external server (this method requires port forwarding!).
+  "server_ip": "gmasim-v01.jf.intel.com", //do not change (for internal users only).
+  "server_port": 8092, //set to 8088 to access stable version or 8092 to access dev version.
+  "local_fowarded_port": 8092, // the local port that used to forward to the external server.
+  "session_name": "test",//Make sure to change the "session_name" to your assgined session name. Cannot use '-' in the name! Test account is for testing only (shared by every one). Contact us to apply for an account. 
+  "session_key": "test",//Make sure to change the "session_key" to your assgined keys.
+}
+```
+
+- Update the environment dependent configuration file, e.g., [network_gym_client/envs/nqos_split/config.json](network_gym_client/envs/nqos_split/config.json).
+  - View configuration suggestions for arguments at [NetworkGym Docs Website](https://intellabs.github.io/networkgym/environments/mx_traffic_management/mx_traffic_splitting.html#arguments).
+
+
+
 
