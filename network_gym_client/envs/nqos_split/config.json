@@ -1,10 +1,11 @@
 {
     "rl_config": {
-        "agent": "SAC",
+        "agent": "PPO",
         "parallel_env": false,
+        "use_discrete_actions": true,
         "random_action_prob": 0.0,
         "starting_action_std": 1.0,
-        "train": false,
+        "train": true,
         "store_offline": false,
         "load_model_for_training": false,
         "policy": "MlpPolicy",
@@ -73,7 +74,7 @@
             "gma::wifi::ul::split_ratio",
             "gma::lte::ul::split_ratio"
         ],
-        "steps_per_episode": 2000,
+        "steps_per_episode": 100,
         "episodes_per_session": 1,
         "random_seed": 135,
         "downlink_traffic": true,

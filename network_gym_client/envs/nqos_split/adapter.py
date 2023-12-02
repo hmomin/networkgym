@@ -29,7 +29,7 @@ class Adapter(network_gym_client.adapter.Adapter):
         super().__init__(config_json)
 
         self.env = Path(__file__).resolve().parent.name
-        self.action_max_value = 32
+        self.use_discrete_actions: bool = config_json["rl_config"]["use_discrete_actions"]
         # FIXME: adding more features is controlled here
         self.num_features = 14
         self.num_users = int(self.config_json['env_config']['num_users'])
@@ -45,8 +45,14 @@ class Adapter(network_gym_client.adapter.Adapter):
         Returns:
             spaces: action spaces
         """
-        return spaces.Box(low=0, high=1,
-                                        shape=(self.size_per_feature,), dtype=np.float32)
+        return spaces.Discrete(3**(self.size_per_feature))\
+            if self.use_discrete_actions\
+            else spaces.Box(
+                low=0,
+                high=1,
+                shape=(self.size_per_feature,),
+                dtype=np.float32
+            )
 
     #consistent with the get_observation function.
     def get_observation_space(self):

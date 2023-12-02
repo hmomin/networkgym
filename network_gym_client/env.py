@@ -11,6 +11,7 @@ import pandas as pd
 # NOTE: importing for buffer and previous action recording
 from NetworkAgent.buffer import Buffer
 from NetworkAgent.full_observation import get_previous_action
+from NetworkAgent.discrete_action_util import convert_discrete_action_to_continuous
 
 import time
 import importlib
@@ -70,6 +71,10 @@ class Env(gym.Env):
             config_json (json): configuration file
         """
         super().__init__()
+        
+        self.use_discrete_actions: bool = config_json["rl_config"]["use_discrete_actions"]\
+            if "use_discrete_actions" in config_json["rl_config"]\
+                else False
 
         if config_json['session_name'] == 'test':
             print('***[WARNING]*** You are using the default "test" to connect to the server, which may conflict with the simulations launched by other users.')
@@ -182,9 +187,11 @@ class Env(gym.Env):
         # NOTE: need to record previous state
         if self.store_offline:
             self.previous_state = observation.astype(np.float32)
+        # NOTE: need to record previous split ratio
+        self.previous_split_ratio = get_previous_action(network_stats)
         return observation.astype(np.float32), {"network_stats": network_stats}
 
-    def step(self, action):
+    def step(self, agent_action):
         """Run one timestep of the environment's dynamics using the agent actions.
 
         Get action lists from RL agent and send to network gym server
@@ -193,7 +200,7 @@ class Env(gym.Env):
         Return obs,reward,done,info
 
         Args:
-            action (ActType): an action provided by the agent to update the environment state.
+            agent_action (ActType): an action provided by the agent to update the environment state.
 
         Returns:
             observation (ObsType): An element of the environment's `observation_space` as the next observation due to the agent actions.
@@ -211,6 +218,14 @@ class Env(gym.Env):
                 A done signal may be emitted for different reasons: Maybe the task underlying the environment was solved successfully,
                 a certain timelimit was exceeded, or the physics simulation has entered an invalid state.
         """
+        # NOTE: this is to account for the discrete action space
+        if self.use_discrete_actions:
+            action = convert_discrete_action_to_continuous(
+                agent_action, self.previous_split_ratio
+            )
+            self.previous_split_ratio = action
+        else:
+            action = agent_action
         self.current_step += 1
         
         print("----------| step() at episode:" + str(self.current_ep) + ", step:" + str(self.current_step) + " |----------")
