@@ -255,13 +255,13 @@ def main():
                 print(policy_kwargs)
                 n_steps = 2048
                 if type(env) == PseudoParallelEnv:
-                    n_steps /= 8
+                    n_steps //= 8
                 agent = agent_class(
                     rl_config["policy"],
                     normal_obs_env,
                     verbose=1,
                     policy_kwargs=policy_kwargs,
-                    n_steps=int(n_steps),
+                    n_steps=n_steps,
                 )
             else:
                 agent = agent_class(rl_config["policy"], normal_obs_env, verbose=1)

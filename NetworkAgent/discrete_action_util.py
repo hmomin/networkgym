@@ -17,90 +17,13 @@ def convert_discrete_action_to_continuous(
 def get_ratio_increment_from_discrete_action(
     discrete_action: np.int64, num_users: int
 ) -> list[int]:
-    # FIXME: LOL there is definitely a cleaner way to do this, but instantiating out all
-    # possible increments didn't take as long as I thought it might... clearly doesn't
-    # scale with number of users
-    ratio_increments = [
-        [-1, -1, -1, -1],
-        [-1, -1, -1, +0],
-        [-1, -1, -1, +1],
-        [-1, -1, +0, -1],
-        [-1, -1, +0, +0],
-        [-1, -1, +0, +1],
-        [-1, -1, +1, -1],
-        [-1, -1, +1, +0],
-        [-1, -1, +1, +1],
-        [-1, +0, -1, -1],
-        [-1, +0, -1, +0],
-        [-1, +0, -1, +1],
-        [-1, +0, +0, -1],
-        [-1, +0, +0, +0],
-        [-1, +0, +0, +1],
-        [-1, +0, +1, -1],
-        [-1, +0, +1, +0],
-        [-1, +0, +1, +1],
-        [-1, +1, -1, -1],
-        [-1, +1, -1, +0],
-        [-1, +1, -1, +1],
-        [-1, +1, +0, -1],
-        [-1, +1, +0, +0],
-        [-1, +1, +0, +1],
-        [-1, +1, +1, -1],
-        [-1, +1, +1, +0],
-        [-1, +1, +1, +1],
-        [+0, -1, -1, -1],
-        [+0, -1, -1, +0],
-        [+0, -1, -1, +1],
-        [+0, -1, +0, -1],
-        [+0, -1, +0, +0],
-        [+0, -1, +0, +1],
-        [+0, -1, +1, -1],
-        [+0, -1, +1, +0],
-        [+0, -1, +1, +1],
-        [+0, +0, -1, -1],
-        [+0, +0, -1, +0],
-        [+0, +0, -1, +1],
-        [+0, +0, +0, -1],
-        [+0, +0, +0, +0],
-        [+0, +0, +0, +1],
-        [+0, +0, +1, -1],
-        [+0, +0, +1, +0],
-        [+0, +0, +1, +1],
-        [+0, +1, -1, -1],
-        [+0, +1, -1, +0],
-        [+0, +1, -1, +1],
-        [+0, +1, +0, -1],
-        [+0, +1, +0, +0],
-        [+0, +1, +0, +1],
-        [+0, +1, +1, -1],
-        [+0, +1, +1, +0],
-        [+0, +1, +1, +1],
-        [+1, -1, -1, -1],
-        [+1, -1, -1, +0],
-        [+1, -1, -1, +1],
-        [+1, -1, +0, -1],
-        [+1, -1, +0, +0],
-        [+1, -1, +0, +1],
-        [+1, -1, +1, -1],
-        [+1, -1, +1, +0],
-        [+1, -1, +1, +1],
-        [+1, +0, -1, -1],
-        [+1, +0, -1, +0],
-        [+1, +0, -1, +1],
-        [+1, +0, +0, -1],
-        [+1, +0, +0, +0],
-        [+1, +0, +0, +1],
-        [+1, +0, +1, -1],
-        [+1, +0, +1, +0],
-        [+1, +0, +1, +1],
-        [+1, +1, -1, -1],
-        [+1, +1, -1, +0],
-        [+1, +1, -1, +1],
-        [+1, +1, +0, -1],
-        [+1, +1, +0, +0],
-        [+1, +1, +0, +1],
-        [+1, +1, +1, -1],
-        [+1, +1, +1, +0],
-        [+1, +1, +1, +1],
-    ]
-    return ratio_increments[discrete_action]
+    user_specific_increments: list[int] = []
+    num_possible_actions = 3 ** num_users
+    running_divisor = discrete_action
+    running_dividend = num_possible_actions
+    for _ in range(num_users):
+        running_dividend //= 3
+        threeway_action = (running_divisor // running_dividend) - 1
+        running_divisor = running_divisor % running_dividend
+        user_specific_increments.append(threeway_action)
+    return user_specific_increments
