@@ -251,8 +251,8 @@ def main():
             )
             policy_kwargs = dict(log_std_init=float(np.log(init_std)))
             if rl_alg == "PPO":
-                print("TRAINING PPO WITH MODIFIED STARTING STDEV")
-                print(policy_kwargs)
+                # print("TRAINING PPO WITH MODIFIED STARTING STDEV")
+                # print(policy_kwargs)
                 n_steps = 2048
                 if type(env) == PseudoParallelEnv:
                     n_steps //= 8
@@ -260,7 +260,7 @@ def main():
                     rl_config["policy"],
                     normal_obs_env,
                     verbose=1,
-                    policy_kwargs=policy_kwargs,
+                    # policy_kwargs=policy_kwargs,
                     n_steps=n_steps,
                 )
             else:
