@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 from gymnasium import spaces
 from stable_baselines3 import PPO
+from tqdm import tqdm
 
 
 class PPO_LSPI:
@@ -17,6 +18,7 @@ class PPO_LSPI:
         self.num_actions: np.int64 = agent.action_space.n
         self.store_parameters(agent.get_parameters()["policy"])
         self.initialize_Q_weights()
+        self.initialize_buffer()
 
     # NOTE: store the policy and value function parameters before the last layer
     # need them for calculating featurization
@@ -33,10 +35,26 @@ class PPO_LSPI:
 
     def initialize_Q_weights(self) -> None:
         self.k = int(self.pi_b2.shape[0] + self.vf_b2.shape[0] + self.num_actions)
-        delta = 1.0e-6
-        self.A_tilde = delta * torch.eye(self.k, device="cuda:0")
-        self.b_tilde = torch.zeros((self.k), device="cuda:0")
         self.w_tilde = torch.randn((self.k), device="cuda:0")
+
+    def initialize_buffer(self) -> None:
+        self.states: list[np.ndarray] = []
+        self.actions: list[int] = []
+        self.rewards: list[float] = []
+        self.next_states: list[np.ndarray] = []
+
+    def store_to_buffer(
+        self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray
+    ) -> None:
+        self.states.append(state)
+        self.actions.append(action)
+        self.rewards.append(reward)
+        self.next_states.append(next_state)
+        if len(self.states) > 100:
+            self.states.pop(0)
+            self.actions.pop(0)
+            self.rewards.pop(0)
+            self.states.pop(0)
 
     def policy(self, observation: np.ndarray) -> int:
         phi_s = self.compute_state_features(observation)
@@ -86,19 +104,40 @@ class PPO_LSPI:
     def LSTDQ_update(
         self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray
     ) -> None:
-        phi_s = self.compute_state_features(state)
-        phi_s_a = self.compute_state_action_features(phi_s, action)
-        phi_s_prime = self.compute_state_features(next_state)
-        phi_s_prime_policy_s_prime = self.compute_state_action_features(
-            phi_s_prime, self.policy(next_state)
-        )
-        # A += x*yT
-        x = torch.unsqueeze(phi_s_a, 1)
-        y = torch.unsqueeze(phi_s_a - self.gamma * phi_s_prime_policy_s_prime, 1)
-        self.A_tilde += x @ y.T
-        # b += x*reward
-        self.b_tilde += phi_s_a * reward
-        self.w_tilde = torch.inverse(self.A_tilde) @ self.b_tilde
+        self.store_to_buffer(state, action, reward, next_state)
+
+        delta = 1.0e-6
+        # B_tilde = 1 / delta * torch.eye(self.k, device="cuda:0")
+        A_tilde = delta * torch.eye(self.k, device="cuda:0")
+        b_tilde = torch.zeros((self.k), device="cuda:0")
+        for s, a, r, s_prime in tqdm(zip(
+            self.states, self.actions, self.rewards, self.next_states
+        )):
+            phi_s = self.compute_state_features(s)
+            phi_s_a = self.compute_state_action_features(phi_s, a)
+            phi_s_prime = self.compute_state_features(s_prime)
+            phi_s_prime_policy_s_prime = self.compute_state_action_features(
+                phi_s_prime, self.policy(s_prime)
+            )
+            # x = φ(s,a)
+            # y_transpose = (φ(s,a) - γφ(s',π(s')))^T
+            # A += x * y_transpose
+            x = torch.unsqueeze(phi_s_a, 1)
+            y_transpose = torch.unsqueeze(
+                phi_s_a - self.gamma * phi_s_prime_policy_s_prime, 1
+            ).T
+            A_tilde += x @ y_transpose
+            # B_tilde -= (B_tilde @ x @ y_transpose @ B_tilde) / (
+            #     1 + y_transpose @ B_tilde @ x
+            # )
+            # b += x*reward
+            b_tilde += phi_s_a * r
+        # matrix_difference = torch.inverse(A_tilde) - B_tilde
+        # print(matrix_difference)
+        # print(f"MATRIX DIFFERENCE: {torch.norm(matrix_difference, 'fro').item()}")
+
+        self.w_tilde = torch.inverse(A_tilde) @ b_tilde
+        # self.w_tilde = B_tilde @ b_tilde
 
     def get_Q_value(self, state: np.ndarray, action: int) -> float:
         phi_s = self.compute_state_features(state)
@@ -111,7 +150,7 @@ def main() -> None:
     agent_thingy = PPO_LSPI()
     random_state = np.random.random((14, 4))
     # testing generation of weights for Q-hat
-    for iter in range(1000):
+    for iter in range(100):
         action, _ = agent_thingy.predict(random_state)
         print(f"iteration: {iter}, action: {action}")
         random_reward = 0.2 * np.random.random() - 0.1
