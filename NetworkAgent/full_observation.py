@@ -29,7 +29,6 @@ PREVIOUS_SPLIT_RATIOS: List[float] = []
 
 
 def get_previous_action(df: pd.DataFrame) -> List[float]:
-    # FIXME: this needs to be reworked for sure!
     global PREVIOUS_SPLIT_RATIOS
     split_ratio_wifi_df = df[df["name"] == "wifi::dl::split_ratio"]
     previous_split_ratios = deepcopy(PREVIOUS_SPLIT_RATIOS)

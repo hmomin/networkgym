@@ -6,7 +6,7 @@ from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
 from threading import Thread
 
 
-# FIXME: this script doesn't work with Stable Baselines, because there are some
+# FIXME LOW: this script doesn't work with Stable Baselines, because there are some
 # step() dependencies missing. It turns out that DummyVecEnv can actually get the job
 # done pretty easily, albeit at the cost of speed...
 

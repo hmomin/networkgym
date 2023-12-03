@@ -17,6 +17,7 @@ sys.path.append("../../")
 from network_gym_client import load_config_file
 from network_gym_client import Env as NetworkGymEnv
 from network_gym_client import PseudoParallelEnv
+from ppo_lspi import PPO_LSPI
 from stable_baselines3.common.env_checker import check_env
 
 from stable_baselines3 import A2C, DDPG, PPO, SAC, TD3
@@ -116,7 +117,11 @@ def evaluate(
             action, _ = model.predict(obs, deterministic=True)
             # FIXME: taking non-deterministic action to see if it helps
             # action, _ = model.predict(obs, deterministic=False)
-        obs, reward, done, truncated, info = env.step(action)
+        new_obs, reward, done, truncated, info = env.step(action)
+        # FIXME HIGH: do something here with new_obs
+        if type(model) == PPO_LSPI:
+            model.LSTDQ_update(obs, action, reward, new_obs)
+        obs = new_obs
 
 
 def main():
@@ -147,6 +152,7 @@ def main():
 
     alg_map = {
         "PPO": PPO,
+        "PPO_LSPI": PPO_LSPI,
         "DDPG": DDPG,
         "SAC": SAC,
         "TD3": TD3,
@@ -209,6 +215,8 @@ def main():
                 mean_state, stdev_state = normalizers
             except:
                 print("No normalizers found for this agent...")
+        elif rl_alg == "PPO_LSPI":
+            agent = agent_class()
         else:
             agent = agent_class.load(model_path)
 
