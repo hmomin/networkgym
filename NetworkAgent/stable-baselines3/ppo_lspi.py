@@ -4,7 +4,6 @@ import torch
 import torch.nn.functional as F
 from gymnasium import spaces
 from stable_baselines3 import PPO
-from tqdm import tqdm
 
 
 class PPO_LSPI:
@@ -18,131 +17,140 @@ class PPO_LSPI:
         self.num_actions: np.int64 = agent.action_space.n
         self.store_parameters(agent.get_parameters()["policy"])
         self.initialize_Q_weights()
-        self.initialize_buffer()
 
     # NOTE: store the policy and value function parameters before the last layer
     # need them for calculating featurization
     def store_parameters(self, param_dict: dict[str, torch.Tensor]) -> None:
         self.pi_W1 = param_dict["mlp_extractor.policy_net.0.weight"]
-        self.pi_b1 = param_dict["mlp_extractor.policy_net.0.bias"]
+        self.pi_b1 = param_dict["mlp_extractor.policy_net.0.bias"].unsqueeze(1)
         self.pi_W2 = param_dict["mlp_extractor.policy_net.2.weight"]
-        self.pi_b2 = param_dict["mlp_extractor.policy_net.2.bias"]
+        self.pi_b2 = param_dict["mlp_extractor.policy_net.2.bias"].unsqueeze(1)
 
         self.vf_W1 = param_dict["mlp_extractor.value_net.0.weight"]
-        self.vf_b1 = param_dict["mlp_extractor.value_net.0.bias"]
+        self.vf_b1 = param_dict["mlp_extractor.value_net.0.bias"].unsqueeze(1)
         self.vf_W2 = param_dict["mlp_extractor.value_net.2.weight"]
-        self.vf_b2 = param_dict["mlp_extractor.value_net.2.bias"]
+        self.vf_b2 = param_dict["mlp_extractor.value_net.2.bias"].unsqueeze(1)
 
     def initialize_Q_weights(self) -> None:
         self.k = int(self.pi_b2.shape[0] + self.vf_b2.shape[0] + self.num_actions)
-        self.w_tilde = torch.randn((self.k), device="cuda:0")
-
-    def initialize_buffer(self) -> None:
-        self.states: list[np.ndarray] = []
-        self.actions: list[int] = []
-        self.rewards: list[float] = []
-        self.next_states: list[np.ndarray] = []
+        self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
 
     def store_to_buffer(
         self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray
     ) -> None:
-        self.states.append(state)
-        self.actions.append(action)
-        self.rewards.append(reward)
-        self.next_states.append(next_state)
-        if len(self.states) > 100:
-            self.states.pop(0)
-            self.actions.pop(0)
-            self.rewards.pop(0)
-            self.states.pop(0)
+        tensor_state = torch.tensor(
+            state, dtype=torch.float32, device="cuda:0"
+        ).unsqueeze(1)
+        tensor_action: torch.Tensor = F.one_hot(
+            torch.tensor(action, device="cuda:0"),
+            num_classes=self.num_actions,
+        ).unsqueeze(1)
+        tensor_reward = torch.tensor([reward], device="cuda:0").unsqueeze(1)
+        tensor_next_state = torch.tensor(
+            next_state, dtype=torch.float32, device="cuda:0"
+        ).unsqueeze(1)
+        if hasattr(self, "states"):
+            self.states = torch.cat([self.states, tensor_state], dim=1)
+            self.actions = torch.cat([self.actions, tensor_action], dim=1)
+            self.rewards = torch.cat([self.rewards, tensor_reward], dim=1)
+            self.next_states = torch.cat([self.next_states, tensor_next_state], dim=1)
+        else:
+            # create new tensors for (s,a,r,s') tuples
+            self.states = tensor_state
+            self.actions = tensor_action
+            self.rewards = tensor_reward
+            self.next_states = tensor_next_state
 
-    def policy(self, observation: np.ndarray) -> int:
+    def policy(self, observation: torch.Tensor, one_hot: bool = True) -> torch.Tensor:
         phi_s = self.compute_state_features(observation)
-        max_Q_value = -torch.inf
-        best_action = -1
-        for discrete_action in range(self.num_actions):
-            phi_s_a = self.compute_state_action_features(phi_s, discrete_action)
-            Q_value = torch.dot(phi_s_a, self.w_tilde)
-            if Q_value > max_Q_value:
-                best_action = discrete_action
-                max_Q_value = Q_value
-        if best_action == -1:
-            raise Exception("ERROR: couldn't find Q-value higher than -infinity?...")
-        return best_action
+        phi_s_T = phi_s.T
+        phi_s_repeated = phi_s_T.unsqueeze(1).repeat(1, int(self.num_actions), 1)
+        action_indices = list(range(self.num_actions))
+        all_actions: torch.Tensor = F.one_hot(
+            torch.tensor(action_indices, device="cuda:0"),
+            num_classes=self.num_actions,
+        ).unsqueeze(0)
+        L = phi_s.shape[1]
+        repeated_actions = all_actions.repeat(L, 1, 1)
+        phi_matrix = torch.cat([phi_s_repeated, repeated_actions], dim=2)
+        batch_w_tilde = self.w_tilde.unsqueeze(0).repeat(L, 1, 1)
+        Q_values = torch.bmm(phi_matrix, batch_w_tilde)
+        optimal_actions = torch.argmax(Q_values, dim=1)
+        if not one_hot:
+            return optimal_actions
+        argmax_indices = torch.squeeze(optimal_actions, 1)
+        optimal_action_one_hots = torch.index_select(
+            all_actions, dim=1, index=argmax_indices
+        ).squeeze(0)
+        return optimal_action_one_hots
 
     def predict(
         self, observation: np.ndarray, deterministic: bool = True
     ) -> tuple[int, dict]:
+        flat_observation = observation.flatten()
+        tensor_observation = torch.tensor(
+            flat_observation, dtype=torch.float32, device="cuda:0"
+        ).unsqueeze(1)
         if not deterministic:
             raise Exception("ERROR: stochastic action not supported by LSPI!")
-        return self.policy(observation), {}
+        optimal_action_tensor = self.policy(tensor_observation, one_hot=False)
+        optimal_action = int(optimal_action_tensor.item())
+        return optimal_action, {}
 
-    def compute_state_features(self, observation: np.ndarray) -> torch.Tensor:
-        flat_observation = observation.flatten()
-        x = torch.tensor(flat_observation, dtype=torch.float32, device="cuda:0")
-
-        pi_layer_1 = torch.tanh(self.pi_W1 @ x + self.pi_b1)
+    def compute_state_features(self, states: torch.Tensor) -> torch.Tensor:
+        pi_layer_1 = torch.tanh(self.pi_W1 @ states + self.pi_b1)
         pi_layer_2 = torch.tanh(self.pi_W2 @ pi_layer_1 + self.pi_b2)
 
-        vf_layer_1 = torch.tanh(self.vf_W1 @ x + self.vf_b1)
+        vf_layer_1 = torch.tanh(self.vf_W1 @ states + self.vf_b1)
         vf_layer_2 = torch.tanh(self.vf_W2 @ vf_layer_1 + self.vf_b2)
 
-        phi_s = torch.cat([pi_layer_2, vf_layer_2])
+        phi_s = torch.cat([pi_layer_2, vf_layer_2], dim=0)
         return phi_s
 
-    def compute_state_action_features(
-        self, phi_s: torch.Tensor, discrete_action: int
-    ) -> torch.Tensor:
-        action_one_hot_vector = F.one_hot(
-            torch.tensor(discrete_action, device="cuda:0"),
-            num_classes=self.num_actions,
-        )
-        phi_s_a = torch.cat([phi_s, action_one_hot_vector])
-        return phi_s_a
+    def construct_phi_matrix(self) -> torch.Tensor:
+        phi_s = self.compute_state_features(self.states)
+        phi_matrix_transpose = torch.cat([phi_s, self.actions], dim=0)
+        phi_matrix = phi_matrix_transpose.T
+        return phi_matrix
+
+    def construct_phi_prime_matrix(self) -> torch.Tensor:
+        phi_s_prime = self.compute_state_features(self.next_states)
+        pi_s_prime = self.policy(self.next_states, one_hot=True)
+        phi_prime_matrix = torch.cat([phi_s_prime.T, pi_s_prime], dim=1)
+        return phi_prime_matrix
 
     # NOTE: incremental update of weight vector for Q-hat
     def LSTDQ_update(
         self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray
     ) -> None:
+        state = state.flatten()
+        next_state = next_state.flatten()
         self.store_to_buffer(state, action, reward, next_state)
 
-        delta = 1.0e-6
-        # B_tilde = 1 / delta * torch.eye(self.k, device="cuda:0")
-        A_tilde = delta * torch.eye(self.k, device="cuda:0")
-        b_tilde = torch.zeros((self.k), device="cuda:0")
-        for s, a, r, s_prime in tqdm(zip(
-            self.states, self.actions, self.rewards, self.next_states
-        )):
-            phi_s = self.compute_state_features(s)
-            phi_s_a = self.compute_state_action_features(phi_s, a)
-            phi_s_prime = self.compute_state_features(s_prime)
-            phi_s_prime_policy_s_prime = self.compute_state_action_features(
-                phi_s_prime, self.policy(s_prime)
-            )
-            # x = φ(s,a)
-            # y_transpose = (φ(s,a) - γφ(s',π(s')))^T
-            # A += x * y_transpose
-            x = torch.unsqueeze(phi_s_a, 1)
-            y_transpose = torch.unsqueeze(
-                phi_s_a - self.gamma * phi_s_prime_policy_s_prime, 1
-            ).T
-            A_tilde += x @ y_transpose
-            # B_tilde -= (B_tilde @ x @ y_transpose @ B_tilde) / (
-            #     1 + y_transpose @ B_tilde @ x
-            # )
-            # b += x*reward
-            b_tilde += phi_s_a * r
-        # matrix_difference = torch.inverse(A_tilde) - B_tilde
-        # print(matrix_difference)
-        # print(f"MATRIX DIFFERENCE: {torch.norm(matrix_difference, 'fro').item()}")
+        phi_tilde = self.construct_phi_matrix()
+        phi_prime_tilde = self.construct_phi_prime_matrix()
 
-        self.w_tilde = torch.inverse(A_tilde) @ b_tilde
-        # self.w_tilde = B_tilde @ b_tilde
+        A_tilde = phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
+        b_tilde = phi_tilde.T @ self.rewards.T
+        w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
+        # NOTE: the solution isn't computed if the matrix is rank-deficient
+        if torch.isnan(w_tilde).any():
+            self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
+        else:
+            self.w_tilde = w_tilde
 
     def get_Q_value(self, state: np.ndarray, action: int) -> float:
-        phi_s = self.compute_state_features(state)
-        phi_s_a = self.compute_state_action_features(phi_s, action)
-        Q_value = torch.dot(phi_s_a, self.w_tilde).item()
+        state = state.flatten()
+        tensor_state = torch.tensor(
+            state, dtype=torch.float32, device="cuda:0"
+        ).unsqueeze(1)
+        phi_s = self.compute_state_features(tensor_state)
+        action_one_hot_vector = F.one_hot(
+            torch.tensor(action, device="cuda:0"),
+            num_classes=self.num_actions,
+        ).unsqueeze(1)
+        phi_s_a = torch.cat([phi_s, action_one_hot_vector], dim=0)
+        Q_value = (phi_s_a.T @ self.w_tilde).item()
         return Q_value
 
 
@@ -150,10 +158,16 @@ def main() -> None:
     agent_thingy = PPO_LSPI()
     random_state = np.random.random((14, 4))
     # testing generation of weights for Q-hat
-    for iter in range(100):
+    for iter in range(3000):
         action, _ = agent_thingy.predict(random_state)
         print(f"iteration: {iter}, action: {action}")
-        random_reward = 0.2 * np.random.random() - 0.1
+        # NOTE: expect the action to eventually converge to 42, independent of state
+        if action == 42:
+            random_reward = 1.0
+        elif action == 24:
+            random_reward = 0.5
+        else:
+            random_reward = -10.0
         random_next_state = np.random.random((14, 4))
         agent_thingy.LSTDQ_update(
             random_state, action, random_reward, random_next_state
