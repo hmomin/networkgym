@@ -5,10 +5,21 @@ import pandas as pd
 from typing import Any
 
 filenames = [
-    "2023_11_20_ppo_training/ppo_seeds_0-7.csv",
-    "2023_11_20_ppo_training/ppo_seeds_8-15.csv",
-    "2023_11_20_ppo_training/ppo_seeds_16-23.csv",
+    "2023_12_04_lspi_testing/lspi.csv",
+    "2023_12_04_lspi_testing/ppo.csv",
+    "2023_12_04_lspi_testing/sys_default.csv",
 ]
+
+# filenames = [
+#     "2023_12_04_ppo_discrete_training/PPO_discrete_0-7.csv",
+#     "2023_12_04_ppo_discrete_training/sys_default.csv"
+# ]
+
+# filenames = [
+#     "2023_11_20_ppo_training/ppo_seeds_0-7.csv",
+#     "2023_11_20_ppo_training/ppo_seeds_8-15.csv",
+#     "2023_11_20_ppo_training/ppo_seeds_16-23.csv",
+# ]
 
 # filenames = [
 #     "2023_11_26_sac_training/sac_seeds_0-7.csv",
@@ -18,7 +29,7 @@ filenames = [
 
 title = "Training Utility Reward Curves (deterministic walk)"
 
-period_value = 2000 if "Training" in title else 100
+period_value = 1000 if "Training" in title else 100
 
 color_map = {
     "PPO_seeds_0-7": "#7D54B2",
@@ -27,6 +38,10 @@ color_map = {
     "SAC_seeds_0-7": "#7D54B2",
     "SAC_seeds_8-15": "#E87B9F",
     "SAC_seeds_16-23": "#87CEBF",
+    "sys_default_seed_0": "#4daf4a",
+    "sys_default_seed_8": "#4daf4a",
+    "PPO_seed_8": "#a751bf",
+    "LSPI_seed_8": "#DC143C",
 }
 
 

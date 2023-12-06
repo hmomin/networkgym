@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from pprint import pprint
 
-DATA_DIR = "2023_11_26_sac_stochastic"
+DATA_DIR = "2023_12_04_ppo_eps_0.6"
 
 COLOR_MAP = {
     "sys_default": "#4daf4a",
@@ -18,6 +18,8 @@ COLOR_MAP = {
     "SAC_eps_0.1_bc": "#DC143C",
     "PPO_eps_0.3": "#a751bf",
     "PPO_eps_0.3_bc": "#DC143C",
+    "PPO_eps_0.6": "#a751bf",
+    "PPO_eps_0.6_bc": "#DC143C",
     "PPO_eps_1.0": "#a751bf",
     "PPO_eps_1.0_bc": "#DC143C",
     "PPO_det": "#a751bf",

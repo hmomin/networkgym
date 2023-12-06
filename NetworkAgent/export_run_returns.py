@@ -59,13 +59,22 @@ NOTE: all the run names saved as PPO - check for run_name below
 - SAC (eps 0.0 - stochastic policy)
     CREATED_AFTER = datetime(2023, 11, 27, 18, 23, 0)
     CREATED_BEFORE = datetime(2023, 11, 27, 18, 26, 0)
+
+<offline RL agents on PPO data>
+- PPO_eps_0.6
+    CREATED_AFTER = datetime(2023, 11, 30, 22, 8, 0)
+    CREATED_BEFORE = datetime(2023, 12, 1, 20, 41, 0)
+
+- PPO (eps 0.6 actual behavior policy)
+    CREATED_AFTER = datetime(2023, 12, 4, 18, 1, 0)
+    CREATED_BEFORE = datetime(2023, 12, 4, 18, 5, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "SAC"
-CREATED_AFTER = datetime(2023, 11, 27, 18, 23, 0)
-CREATED_BEFORE = datetime(2023, 11, 27, 18, 26, 0)
+RUN_NAME = "PPO"
+CREATED_AFTER = datetime(2023, 12, 4, 18, 1, 0)
+CREATED_BEFORE = datetime(2023, 12, 4, 18, 5, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 TEST_EXPORT = False
 
