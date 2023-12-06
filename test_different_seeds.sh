@@ -3,7 +3,7 @@
 set -e
 
 agents=(
-    "SAC"
+    "PPO"
 )
 
 # exactly one argument must be provided

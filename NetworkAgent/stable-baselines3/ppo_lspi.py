@@ -45,7 +45,7 @@ class PPO_LSPI:
             torch.tensor(action, device="cuda:0"),
             num_classes=self.num_actions,
         ).unsqueeze(1)
-        tensor_reward = torch.tensor([reward], device="cuda:0").unsqueeze(1)
+        tensor_reward = torch.tensor([reward], dtype=torch.float32, device="cuda:0").unsqueeze(1)
         tensor_next_state = torch.tensor(
             next_state, dtype=torch.float32, device="cuda:0"
         ).unsqueeze(1)
@@ -60,6 +60,12 @@ class PPO_LSPI:
             self.actions = tensor_action
             self.rewards = tensor_reward
             self.next_states = tensor_next_state
+        print("----- BUFFER SIZES -----")
+        print(self.states.shape)
+        print(self.actions.shape)
+        print(self.rewards.shape)
+        print(self.next_states.shape)
+        print("------------------------")
 
     def policy(self, observation: torch.Tensor, one_hot: bool = True) -> torch.Tensor:
         phi_s = self.compute_state_features(observation)
