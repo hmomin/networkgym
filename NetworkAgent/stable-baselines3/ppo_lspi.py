@@ -7,13 +7,14 @@ from stable_baselines3 import PPO
 
 
 class PPO_LSPI:
-    def __init__(self, model_name: str = "PPO"):
+    def __init__(self, model_name: str = "PPO", epsilon: float = 1.0e-3):
         this_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(this_dir, "models", model_name)
         agent = PPO.load(model_path)
         if type(agent.action_space) != spaces.Discrete:
             raise Exception("ERROR: discrete action space expected for LSPI usage.")
         self.gamma = 0.99
+        self.epsilon = epsilon
         self.num_actions: np.int64 = agent.action_space.n
         self.store_parameters(agent.get_parameters()["policy"])
         self.initialize_Q_weights()
@@ -132,18 +133,23 @@ class PPO_LSPI:
         state = state.flatten()
         next_state = next_state.flatten()
         self.store_to_buffer(state, action, reward, next_state)
+        norm_difference = float('inf')
+        iteration = 0
+        while norm_difference >= self.epsilon and iteration < 6:
+            phi_tilde = self.construct_phi_matrix()
+            phi_prime_tilde = self.construct_phi_prime_matrix()
 
-        phi_tilde = self.construct_phi_matrix()
-        phi_prime_tilde = self.construct_phi_prime_matrix()
-
-        A_tilde = phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
-        b_tilde = phi_tilde.T @ self.rewards.T
-        w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
-        # NOTE: the solution isn't computed if the matrix is rank-deficient
-        if torch.isnan(w_tilde).any():
-            self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
-        else:
+            A_tilde = phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
+            b_tilde = phi_tilde.T @ self.rewards.T
+            w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
+            # NOTE: the solution isn't computed if the matrix is rank-deficient
+            if torch.isnan(w_tilde).any():
+                self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
+                break
+            norm_difference = torch.norm(w_tilde - self.w_tilde, float("inf"))
             self.w_tilde = w_tilde
+            print(f"||w - w'||_inf: {norm_difference}")
+            iteration += 1
 
     def get_Q_value(self, state: np.ndarray, action: int) -> float:
         state = state.flatten()
