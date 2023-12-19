@@ -142,10 +142,14 @@ class PPO_LSPI:
             A_tilde = phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
             b_tilde = phi_tilde.T @ self.rewards.T
             w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
-            # NOTE: the solution isn't computed if the matrix is rank-deficient
+            # NOTE: if the matrix is rank-deficient, w_tilde will be all NaNs
+            # in this case, do ridge regression
+            ridge_lambda = 1.0
             if torch.isnan(w_tilde).any():
-                self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
-                break
+                print(f"RIDGE_LAMBDA: {ridge_lambda}")
+                A_ridge = A_tilde.T @ A_tilde + ridge_lambda * torch.eye(self.k, device="cuda:0")
+                b_ridge = A_tilde.T @ b_tilde
+                w_tilde = torch.linalg.lstsq(A_ridge, b_ridge).solution
             norm_difference = torch.norm(w_tilde - self.w_tilde, float("inf"))
             self.w_tilde = w_tilde
             print(f"||w - w'||_inf: {norm_difference}")
