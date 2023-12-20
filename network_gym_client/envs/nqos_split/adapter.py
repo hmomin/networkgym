@@ -29,7 +29,7 @@ class Adapter(network_gym_client.adapter.Adapter):
         super().__init__(config_json)
 
         self.env = Path(__file__).resolve().parent.name
-        self.use_discrete_actions: bool = config_json["rl_config"]["use_discrete_actions"]
+        self.use_discrete_increment_actions: bool = config_json["rl_config"]["use_discrete_increment_actions"]
         # FIXME: adding more features is controlled here
         self.num_features = 14
         self.num_users = int(self.config_json['env_config']['num_users'])
@@ -46,7 +46,7 @@ class Adapter(network_gym_client.adapter.Adapter):
             spaces: action spaces
         """
         return spaces.Discrete(3**(self.size_per_feature))\
-            if self.use_discrete_actions\
+            if self.use_discrete_increment_actions\
             else spaces.Box(
                 low=0,
                 high=1,

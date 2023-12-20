@@ -72,8 +72,8 @@ class Env(gym.Env):
         """
         super().__init__()
         
-        self.use_discrete_actions: bool = config_json["rl_config"]["use_discrete_actions"]\
-            if "use_discrete_actions" in config_json["rl_config"]\
+        self.use_discrete_increment_actions: bool = config_json["rl_config"]["use_discrete_increment_actions"]\
+            if "use_discrete_increment_actions" in config_json["rl_config"]\
                 else False
 
         if config_json['session_name'] == 'test':
@@ -219,7 +219,7 @@ class Env(gym.Env):
                 a certain timelimit was exceeded, or the physics simulation has entered an invalid state.
         """
         # NOTE: this is to account for the discrete action space
-        if self.use_discrete_actions:
+        if self.use_discrete_increment_actions:
             action = convert_discrete_action_to_continuous(
                 agent_action, self.previous_split_ratio
             )
