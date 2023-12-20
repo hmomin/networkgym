@@ -29,7 +29,14 @@ class Adapter(network_gym_client.adapter.Adapter):
         super().__init__(config_json)
 
         self.env = Path(__file__).resolve().parent.name
-        self.use_discrete_increment_actions: bool = config_json["rl_config"]["use_discrete_increment_actions"]
+        self.use_discrete_increment_actions: bool =\
+            config_json["rl_config"]["use_discrete_increment_actions"]
+        self.use_discrete_ratio_actions: bool =\
+            config_json["rl_config"]["use_discrete_ratio_actions"]
+        if self.use_discrete_increment_actions and self.use_discrete_ratio_actions:
+            raise Exception(
+                "ERROR: can't use discrete increment and ratio actions together!"
+            )
         # FIXME: adding more features is controlled here
         self.num_features = 14
         self.num_users = int(self.config_json['env_config']['num_users'])
@@ -45,9 +52,12 @@ class Adapter(network_gym_client.adapter.Adapter):
         Returns:
             spaces: action spaces
         """
-        return spaces.Discrete(3**(self.size_per_feature))\
-            if self.use_discrete_increment_actions\
-            else spaces.Box(
+        if self.use_discrete_increment_actions:
+            return spaces.Discrete(3**(self.size_per_feature))
+        elif self.use_discrete_ratio_actions:
+            return spaces.Discrete(9**(self.size_per_feature))
+        else:
+            return spaces.Box(
                 low=0,
                 high=1,
                 shape=(self.size_per_feature,),

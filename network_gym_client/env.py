@@ -11,7 +11,10 @@ import pandas as pd
 # NOTE: importing for buffer and previous action recording
 from NetworkAgent.buffer import Buffer
 from NetworkAgent.full_observation import get_previous_action
-from NetworkAgent.discrete_action_util import convert_discrete_action_to_continuous
+from NetworkAgent.discrete_action_util import (
+    convert_discrete_increment_action_to_continuous,
+    convert_discrete_ratio_action_to_continuous
+)
 
 import time
 import importlib
@@ -72,9 +75,14 @@ class Env(gym.Env):
         """
         super().__init__()
         
-        self.use_discrete_increment_actions: bool = config_json["rl_config"]["use_discrete_increment_actions"]\
-            if "use_discrete_increment_actions" in config_json["rl_config"]\
-                else False
+        self.use_discrete_increment_actions: bool =\
+            config_json["rl_config"]["use_discrete_increment_actions"]
+        self.use_discrete_ratio_actions: bool =\
+            config_json["rl_config"]["use_discrete_ratio_actions"]
+        if self.use_discrete_increment_actions and self.use_discrete_ratio_actions:
+            raise Exception(
+                "ERROR: can't use discrete increment and ratio actions together!"
+            )
 
         if config_json['session_name'] == 'test':
             print('***[WARNING]*** You are using the default "test" to connect to the server, which may conflict with the simulations launched by other users.')
@@ -220,8 +228,13 @@ class Env(gym.Env):
         """
         # NOTE: this is to account for the discrete action space
         if self.use_discrete_increment_actions:
-            action = convert_discrete_action_to_continuous(
+            action = convert_discrete_increment_action_to_continuous(
                 agent_action, self.previous_split_ratio
+            )
+            self.previous_split_ratio = action
+        elif self.use_discrete_ratio_actions:
+            action = convert_discrete_ratio_action_to_continuous(
+                agent_action, len(self.previous_split_ratio)
             )
             self.previous_split_ratio = action
         else:
