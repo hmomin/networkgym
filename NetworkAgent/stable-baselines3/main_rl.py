@@ -39,7 +39,6 @@ from NetworkAgent.config_lock.client_utils import release_lock
 
 
 def train(agent, config_json):
-
     steps_per_episode = int(config_json["env_config"]["steps_per_episode"])
     episodes_per_session = int(config_json["env_config"]["episodes_per_session"])
     num_steps = steps_per_episode * episodes_per_session
@@ -58,7 +57,6 @@ def train(agent, config_json):
 
 
 def system_default_policy(env, config_json):
-
     steps_per_episode = int(config_json["env_config"]["steps_per_episode"])
     episodes_per_session = int(config_json["env_config"]["episodes_per_session"])
     num_steps = steps_per_episode * episodes_per_session
@@ -66,7 +64,6 @@ def system_default_policy(env, config_json):
     truncated = True  # episode end
     terminated = False  # episode end and simulation end
     for step in range(num_steps + 10):
-
         # if simulation end, exit
         if terminated:
             print("simulation end")
@@ -125,7 +122,6 @@ def evaluate(
 
 
 def main():
-
     args = arg_parser()
 
     # load config files

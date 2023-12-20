@@ -24,11 +24,12 @@ def convert_discrete_ratio_action_to_continuous(
     print(new_split_ratio)
     return new_split_ratio
 
+
 def get_user_discretized_actions(
     discrete_action: np.int64 | int, num_users: int, num_actions_per_user: int
 ) -> list[int]:
     user_specific_actions: list[int] = []
-    num_possible_actions = num_actions_per_user ** num_users
+    num_possible_actions = num_actions_per_user**num_users
     running_divisor = discrete_action
     running_dividend = num_possible_actions
     for _ in range(num_users):
@@ -52,9 +53,7 @@ def main() -> None:
     #     print(f"{discrete_action}: {user_specific_action}")
     print("TESTING user discretized actions...")
     discrete_action = 5537
-    user_specific_actions = get_user_discretized_actions(
-        discrete_action, num_users, 9
-    )
+    user_specific_actions = get_user_discretized_actions(discrete_action, num_users, 9)
     assert user_specific_actions == [7, 5, 3, 2]
     print("TESTING discrete ratio action")
     discrete_ratio_actions = convert_discrete_ratio_action_to_continuous(
@@ -63,9 +62,7 @@ def main() -> None:
     assert discrete_ratio_actions == [0.875, 0.625, 0.375, 0.250]
     print("TESTING discrete increment actions")
     discrete_action = 38
-    user_specific_actions = get_user_discretized_actions(
-        discrete_action, num_users, 3
-    )
+    user_specific_actions = get_user_discretized_actions(discrete_action, num_users, 3)
     assert user_specific_actions == [1, 1, 0, 2]
     previous_split_ratio = [0.5 for _ in range(num_users)]
     discrete_increment_action = convert_discrete_increment_action_to_continuous(
@@ -77,6 +74,7 @@ def main() -> None:
         discrete_action, previous_split_ratio
     )
     assert discrete_increment_action == [1.00000, 1.00000, 0.96875, 1.00000]
+
 
 if __name__ == "__main__":
     main()

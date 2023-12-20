@@ -7,7 +7,12 @@ from stable_baselines3 import PPO
 
 
 class PPO_LSPI:
-    def __init__(self, model_name: str = "PPO", epsilon: float = 1.0e-3):
+    def __init__(
+        self,
+        model_name: str = "PPO",
+        epsilon: float = 1.0e-3,
+        num_network_users: int = -1,
+    ):
         this_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(this_dir, "models", model_name)
         agent = PPO.load(model_path)
@@ -16,6 +21,9 @@ class PPO_LSPI:
         self.gamma = 0.99
         self.epsilon = epsilon
         self.num_actions: int = int(agent.action_space.n)
+        # NOTE: num_network_users is a special parameter for NetworkGym environment
+        # it allows the actions to be featurized in a special way...
+        self.num_users = num_network_users
         self.store_parameters(agent.get_parameters()["policy"])
         self.initialize_Q_weights()
 
@@ -33,7 +41,13 @@ class PPO_LSPI:
         self.vf_b2 = param_dict["mlp_extractor.value_net.2.bias"].unsqueeze(1)
 
     def initialize_Q_weights(self) -> None:
-        self.k = self.pi_b2.shape[0] + self.vf_b2.shape[0] + self.num_actions
+        self.k = self.pi_b2.shape[0] + self.vf_b2.shape[0]
+        # NOTE: featurization of discrete action space is much smaller when using
+        # NetworkGym - saves time training
+        if self.num_users > 0:
+            self.k += self.num_users
+        else:
+            self.k += self.num_actions
         self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
 
     def store_to_buffer(
@@ -46,7 +60,9 @@ class PPO_LSPI:
             torch.tensor(action, device="cuda:0"),
             num_classes=self.num_actions,
         ).unsqueeze(1)
-        tensor_reward = torch.tensor([reward], dtype=torch.float32, device="cuda:0").unsqueeze(1)
+        tensor_reward = torch.tensor(
+            [reward], dtype=torch.float32, device="cuda:0"
+        ).unsqueeze(1)
         tensor_next_state = torch.tensor(
             next_state, dtype=torch.float32, device="cuda:0"
         ).unsqueeze(1)
@@ -77,6 +93,8 @@ class PPO_LSPI:
             torch.tensor(action_indices, device="cuda:0"),
             num_classes=self.num_actions,
         ).unsqueeze(0)
+        if self.num_users > 0:
+            raise Exception("FIXME HIGH: compute featurization of actions here!")
         L = phi_s.shape[1]
         repeated_actions = all_actions.repeat(L, 1, 1)
         phi_matrix = torch.cat([phi_s_repeated, repeated_actions], dim=2)
@@ -133,7 +151,7 @@ class PPO_LSPI:
         state = state.flatten()
         next_state = next_state.flatten()
         self.store_to_buffer(state, action, reward, next_state)
-        norm_difference = float('inf')
+        norm_difference = float("inf")
         iteration = 0
         while norm_difference >= self.epsilon and iteration < 6:
             phi_tilde = self.construct_phi_matrix()
@@ -143,14 +161,13 @@ class PPO_LSPI:
             b_tilde = phi_tilde.T @ self.rewards.T
             w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
             # NOTE: if the matrix is rank-deficient, w_tilde will be all NaNs
-            # in this case, do ridge regression
-            ridge_lambda = 1.0
+            # in this case, just randomize the weights. Ridge regression leads to
+            # local suboptima...
             if torch.isnan(w_tilde).any():
-                print(f"RIDGE_LAMBDA: {ridge_lambda}")
-                A_ridge = A_tilde.T @ A_tilde + ridge_lambda * torch.eye(self.k, device="cuda:0")
-                b_ridge = A_tilde.T @ b_tilde
-                w_tilde = torch.linalg.lstsq(A_ridge, b_ridge).solution
-            norm_difference = torch.norm(w_tilde - self.w_tilde, float("inf"))
+                norm_difference = 0
+                w_tilde = torch.randn((self.k, 1), device="cuda:0")
+            else:
+                norm_difference = torch.norm(w_tilde - self.w_tilde, float("inf"))
             self.w_tilde = w_tilde
             print(f"||w - w'||_inf: {norm_difference}")
             iteration += 1
@@ -165,6 +182,10 @@ class PPO_LSPI:
             torch.tensor(action, device="cuda:0"),
             num_classes=self.num_actions,
         ).unsqueeze(1)
+        if self.num_users > 0:
+            raise Exception(
+                "FIXME HIGH: action_featurization not implemented for get_Q_value()"
+            )
         phi_s_a = torch.cat([phi_s, action_one_hot_vector], dim=0)
         Q_value = (phi_s_a.T @ self.w_tilde).item()
         return Q_value
@@ -174,16 +195,16 @@ def main() -> None:
     agent_thingy = PPO_LSPI()
     random_state = np.random.random((14, 4))
     # testing generation of weights for Q-hat
-    for iter in range(3000):
+    for iter in range(1000):
         action, _ = agent_thingy.predict(random_state)
         print(f"iteration: {iter}, action: {action}")
         # NOTE: expect the action to eventually converge to 42, independent of state
         if action == 42:
-            random_reward = 1.0
+            random_reward = np.random.uniform(0.0, 2.0)
         elif action == 24:
-            random_reward = 0.5
+            random_reward = np.random.uniform(0.0, 1.0)
         else:
-            random_reward = -10.0
+            random_reward = np.random.uniform(-11.0, -9.0)
         random_next_state = np.random.random((14, 4))
         agent_thingy.LSTDQ_update(
             random_state, action, random_reward, random_next_state
