@@ -25,7 +25,7 @@ from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.noise import NormalActionNoise
-from gymnasium.wrappers import NormalizeObservation
+from gymnasium.wrappers.normalize import NormalizeObservation
 
 from NetworkAgent.heuristic_policies import (
     argmax_policy,

@@ -15,11 +15,11 @@ class PPO_LSPI:
             raise Exception("ERROR: discrete action space expected for LSPI usage.")
         self.gamma = 0.99
         self.epsilon = epsilon
-        self.num_actions: np.int64 = agent.action_space.n
+        self.num_actions: int = int(agent.action_space.n)
         self.store_parameters(agent.get_parameters()["policy"])
         self.initialize_Q_weights()
 
-    # NOTE: store the policy and value function parameters before the last layer
+    # NOTE: store the policy and value function parameters before the last layer.
     # need them for calculating featurization
     def store_parameters(self, param_dict: dict[str, torch.Tensor]) -> None:
         self.pi_W1 = param_dict["mlp_extractor.policy_net.0.weight"]
@@ -33,7 +33,7 @@ class PPO_LSPI:
         self.vf_b2 = param_dict["mlp_extractor.value_net.2.bias"].unsqueeze(1)
 
     def initialize_Q_weights(self) -> None:
-        self.k = int(self.pi_b2.shape[0] + self.vf_b2.shape[0] + self.num_actions)
+        self.k = self.pi_b2.shape[0] + self.vf_b2.shape[0] + self.num_actions
         self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
 
     def store_to_buffer(
@@ -71,7 +71,7 @@ class PPO_LSPI:
     def policy(self, observation: torch.Tensor, one_hot: bool = True) -> torch.Tensor:
         phi_s = self.compute_state_features(observation)
         phi_s_T = phi_s.T
-        phi_s_repeated = phi_s_T.unsqueeze(1).repeat(1, int(self.num_actions), 1)
+        phi_s_repeated = phi_s_T.unsqueeze(1).repeat(1, self.num_actions, 1)
         action_indices = list(range(self.num_actions))
         all_actions: torch.Tensor = F.one_hot(
             torch.tensor(action_indices, device="cuda:0"),
