@@ -211,7 +211,8 @@ def main():
             except:
                 print("No normalizers found for this agent...")
         elif rl_alg == "PPO_LSPI":
-            agent = agent_class()
+            # FIXME: num users hardcoded here!
+            agent = agent_class(num_network_users=4)
         else:
             agent = agent_class.load(model_path)
 
