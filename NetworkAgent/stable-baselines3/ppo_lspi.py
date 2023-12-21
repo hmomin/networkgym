@@ -91,10 +91,13 @@ class PPO_LSPI:
         tensor_state = torch.tensor(
             state, dtype=torch.float32, device="cuda:0"
         ).unsqueeze(1)
-        tensor_action: torch.Tensor = F.one_hot(
-            torch.tensor(action, device="cuda:0"),
-            num_classes=self.num_actions,
-        ).unsqueeze(1)
+        if self.num_users > 0:
+            tensor_action = torch.tensor([action], device="cuda:0").unsqueeze(1)
+        else:
+            tensor_action: torch.Tensor = F.one_hot(
+                torch.tensor(action, device="cuda:0"),
+                num_classes=self.num_actions,
+            ).unsqueeze(1)
         tensor_reward = torch.tensor(
             [reward], dtype=torch.float32, device="cuda:0"
         ).unsqueeze(1)
@@ -162,14 +165,21 @@ class PPO_LSPI:
 
     def construct_phi_matrix(self) -> torch.Tensor:
         phi_s = self.compute_state_features(self.states)
-        phi_matrix_transpose = torch.cat([phi_s, self.actions], dim=0)
+        action_indices = self.actions.squeeze(0)
+        action_features = torch.index_select(self.action_feature_map, 1, action_indices)
+        reshaped_action_features = action_features.squeeze(0).T
+        phi_matrix_transpose = torch.cat([phi_s, reshaped_action_features], dim=0)
         phi_matrix = phi_matrix_transpose.T
         return phi_matrix
 
     def construct_phi_prime_matrix(self) -> torch.Tensor:
         phi_s_prime = self.compute_state_features(self.next_states)
-        pi_s_prime = self.policy(self.next_states, one_hot=True)
-        phi_prime_matrix = torch.cat([phi_s_prime.T, pi_s_prime], dim=1)
+        pi_s_prime = self.policy(self.next_states, one_hot=False).squeeze(1)
+        policy_action_features = torch.index_select(
+            self.action_feature_map, 1, pi_s_prime
+        )
+        reshaped_policy_features = policy_action_features.squeeze(0)
+        phi_prime_matrix = torch.cat([phi_s_prime.T, reshaped_policy_features], dim=1)
         return phi_prime_matrix
 
     # NOTE: incremental update of weight vector for Q-hat
@@ -192,6 +202,8 @@ class PPO_LSPI:
             # in this case, just randomize the weights. Ridge regression leads to
             # local suboptima...
             if torch.isnan(w_tilde).any():
+                rank_A_tilde = torch.linalg.matrix_rank(A_tilde)
+                print(f"A_tilde defective - rank {rank_A_tilde} < {A_tilde.shape[0]}")
                 norm_difference = 0
                 w_tilde = torch.randn((self.k, 1), device="cuda:0")
             else:
@@ -216,7 +228,7 @@ def main() -> None:
     agent_thingy = PPO_LSPI(num_network_users=4)
     random_state = np.random.random((14, 4))
     # testing generation of weights for Q-hat
-    for iter in range(3000):
+    for iter in range(1000):
         action, _ = agent_thingy.predict(random_state)
         print(f"iteration: {iter}, action: {action}")
         # NOTE: expect the action to eventually converge to 42, independent of state
@@ -226,8 +238,7 @@ def main() -> None:
             random_reward = np.random.uniform(0.0, 1.0)
         else:
             random_reward = np.random.uniform(-11.0, -9.0)
-        # random_next_state = np.random.random((14, 4))
-        random_next_state = random_state
+        random_next_state = np.random.random((14, 4))
         agent_thingy.LSTDQ_update(
             random_state, action, random_reward, random_next_state
         )
