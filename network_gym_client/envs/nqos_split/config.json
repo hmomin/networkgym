@@ -2,8 +2,8 @@
     "rl_config": {
         "agent": "PPO_LSPI",
         "parallel_env": false,
-        "use_discrete_increment_actions": false,
-        "use_discrete_ratio_actions": true,
+        "use_discrete_increment_actions": true,
+        "use_discrete_ratio_actions": false,
         "random_action_prob": 0.0,
         "starting_action_std": 1.0,
         "train": false,
