@@ -1,12 +1,17 @@
 import numpy as np
 import os
 import pickle
+import sys
 import torch as T
 import torch.nn as nn
 from copy import deepcopy
 from buffer import CombinedBuffer
-from td3_bc.network import Network
 from offline_env import OfflineEnv
+
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+
+from networks.mlp import MLP
 
 
 class Agent:
@@ -52,7 +57,7 @@ class Agent:
         self.actor = (
             pickle.load(open(name + "Actor", "rb"))
             if should_load and os.path.exists(name + "Actor")
-            else Network(
+            else MLP(
                 [self.observation_dim, 400, 300, self.action_dim],
                 nn.ReLU,
                 nn.Sigmoid,
@@ -63,7 +68,7 @@ class Agent:
         self.critic1 = (
             pickle.load(open(name + "Critic1", "rb"))
             if should_load and os.path.exists(name + "Critic1")
-            else Network(
+            else MLP(
                 [self.observation_dim + self.action_dim, 400, 300, 1],
                 nn.ReLU,
                 nn.Identity,
@@ -74,7 +79,7 @@ class Agent:
         self.critic2 = (
             pickle.load(open(name + "Critic2", "rb"))
             if should_load and os.path.exists(name + "Critic2")
-            else Network(
+            else MLP(
                 [self.observation_dim + self.action_dim, 400, 300, 1],
                 nn.ReLU,
                 nn.Identity,
@@ -179,7 +184,7 @@ class Agent:
         return rewards + self.gamma * (1 - dones) * target_Q_values
 
     def compute_Q_loss(
-        self, network: Network, states: T.Tensor, actions: T.Tensor, targets: T.Tensor
+        self, network: MLP, states: T.Tensor, actions: T.Tensor, targets: T.Tensor
     ) -> T.Tensor:
         # compute the MSE of the Q function with respect to the targets
         Q_values = T.squeeze(network.forward(T.hstack([states, actions]).float()))
@@ -200,7 +205,7 @@ class Agent:
             policy_loss = -Q_term
         return policy_loss
 
-    def update_target_network(self, target_network: Network, network: Network):
+    def update_target_network(self, target_network: MLP, network: MLP):
         with T.no_grad():
             for target_parameter, parameter in zip(
                 target_network.parameters(), network.parameters()

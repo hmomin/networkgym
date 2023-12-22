@@ -1,16 +1,10 @@
 import numpy as np
 import os
-import sys
 import torch
 import torch.nn.functional as F
 from gymnasium import spaces
 from stable_baselines3 import PPO
 from time import sleep
-
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(parent_dir)
-
-from discrete_action_util import get_user_discretized_actions
 
 
 class PPO_LSPI:

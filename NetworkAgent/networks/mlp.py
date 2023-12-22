@@ -5,7 +5,7 @@ import torch.optim as optim
 from typing import Callable
 
 
-class Network(nn.Module):
+class MLP(nn.Module):
     def __init__(
         self,
         shape: list[int],
