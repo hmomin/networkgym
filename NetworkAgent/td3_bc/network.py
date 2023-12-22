@@ -8,8 +8,9 @@ from typing import Callable
 class Network(nn.Module):
     def __init__(
         self,
-        shape: list,
-        output_activation: Callable,
+        shape: list[int],
+        hidden_activation: Callable[[], Callable[[T.Tensor], T.Tensor]],
+        output_activation: Callable[[], Callable[[T.Tensor], T.Tensor]],
         learning_rate: float,
         device: T.device,
     ):
@@ -21,7 +22,7 @@ class Network(nn.Module):
             dim2 = shape[i]
             layers.append(nn.Linear(dim1, dim2))
             if i < len(shape) - 1:
-                layers.append(nn.ReLU())
+                layers.append(hidden_activation())
         layers.append(output_activation())
         self.network = nn.Sequential(*layers)
 
