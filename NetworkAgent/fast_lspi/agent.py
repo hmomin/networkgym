@@ -25,7 +25,7 @@ class FastLSPI:
         activation_function: Callable[
             [], Callable[[torch.Tensor], torch.Tensor]
         ] = nn.ELU,
-        epsilon: float = 1.0e-3,
+        epsilon: float = 0.1,
         learning_rate: float = 3.0e-4,
         gamma: float = 0.99,
         should_load: bool = True,
@@ -104,12 +104,12 @@ class FastLSPI:
             self.rewards = tensor_reward
             self.next_states = tensor_next_state
         self.L = self.rewards.shape[1]
-        print("----- BUFFER SIZES -----")
-        print(self.states.shape)
-        print(self.actions.shape)
-        print(self.rewards.shape)
-        print(self.next_states.shape)
-        print("------------------------")
+        # print("----- BUFFER SIZES -----")
+        # print(self.states.shape)
+        # print(self.actions.shape)
+        # print(self.rewards.shape)
+        # print(self.next_states.shape)
+        # print("------------------------")
 
     def actor_policy(
         self, observations: torch.Tensor, deterministic: bool = False
@@ -128,7 +128,8 @@ class FastLSPI:
     def predict(
         self, observation: np.ndarray, deterministic: bool = True
     ) -> tuple[int, dict]:
-        if self.full_rank_reached:
+        eps_greedy_prob = np.random.random()
+        if self.full_rank_reached and eps_greedy_prob > self.epsilon:
             flat_observation = observation.flatten()
             tensor_observation = torch.tensor(
                 flat_observation, dtype=torch.float32, device="cuda:0"
@@ -193,7 +194,7 @@ class FastLSPI:
             return
         norm_difference = float("inf")
         iteration = 0
-        while norm_difference >= self.epsilon and iteration < 6:
+        while norm_difference >= 1.0e-6 and iteration < 6:
             phi_tilde = self.construct_phi_matrix()
             phi_prime_tilde = self.construct_phi_prime_matrix()
             A_tilde = phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
@@ -209,7 +210,7 @@ class FastLSPI:
             else:
                 self.full_rank_reached = True
                 norm_difference = torch.norm(w_tilde - self.w_tilde, float("inf"))
-                print(f"||w - w'||_inf: {norm_difference}")
+                # print(f"||w - w'||_inf: {norm_difference}")
                 self.w_tilde = w_tilde
             iteration += 1
 
@@ -224,7 +225,7 @@ class FastLSPI:
         # actions
         selected_probabilities = masked_probabilities.sum(dim=1)
         cross_entropy_loss = torch.mean(-torch.log(selected_probabilities))
-        print(f"actor loss: {cross_entropy_loss.item()}")
+        # print(f"actor loss: {cross_entropy_loss.item()}")
         self.actor.gradient_descent_step(cross_entropy_loss)
 
     def get_Q_value(self, state: np.ndarray, action: int) -> float:
@@ -239,6 +240,9 @@ class FastLSPI:
             Q_value = (phi_s_a @ self.w_tilde).item()
             return Q_value
 
+    def save(self):
+        pickle.dump(self.actor, open(self.actor_name, "wb"))
+
 
 def main() -> None:
     agent_thingy = FastLSPI(
@@ -249,7 +253,7 @@ def main() -> None:
     )
     random_state = np.random.random((14, 4))
     # testing generation of weights for Q-hat
-    for iter in range(5000):
+    for iter in range(1000):
         action, _ = agent_thingy.predict(random_state)
         print(f"iteration: {iter}, action: {action}")
         # NOTE: expect the action to eventually converge to 42, independent of state
