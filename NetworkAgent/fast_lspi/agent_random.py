@@ -24,22 +24,18 @@ class FastLSPI:
         hidden_dims: list[int] = [256, 256],
         activation_function: Callable[
             [], Callable[[torch.Tensor], torch.Tensor]
-        ] = nn.ELU,
-        starting_temperature: float = 100.0,
-        batch_size: int = 256,
-        learning_rate: float = 3.0e-4,
+        ] = nn.Tanh,
+        epsilon: float = 0.1,
         gamma: float = 0.99,
         should_load: bool = True,
         save_folder: str = "saved",
     ):
         self.gamma = 0.99
+        self.epsilon = epsilon
         self.observation_dim = observation_dim
         self.hidden_dims = hidden_dims
         self.activation_function = activation_function
         self.num_actions = num_actions
-        self.batch_size = batch_size
-        self.temperature = starting_temperature
-        self.learning_rate = learning_rate
         self.gamma = gamma
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using {self.device} device...")
@@ -48,7 +44,7 @@ class FastLSPI:
         save_dir = os.path.join(script_dir, save_folder)
         if not os.path.isdir(save_dir):
             os.mkdir(save_dir)
-        self.actor_name = os.path.join(save_dir, "FastLSPI.actor")
+        self.state_featurizer_name = os.path.join(save_dir, "FastLSPI.actor")
         self.initialize_action_feature_map()
         self.initialize_parameters(should_load)
         self.initialize_Q_weights()
@@ -61,20 +57,20 @@ class FastLSPI:
         ).unsqueeze(0)
 
     def initialize_parameters(self, should_load: bool = True) -> None:
-        self.actor = (
-            pickle.load(open(self.actor_name, "rb"))
-            if should_load and os.path.exists(self.actor_name)
+        self.state_featurizer = (
+            pickle.load(open(self.state_featurizer_name, "rb"))
+            if should_load and os.path.exists(self.state_featurizer_name)
             else MLP(
-                [self.observation_dim, *self.hidden_dims, self.num_actions],
+                [self.observation_dim, *self.hidden_dims],
                 self.activation_function,
                 nn.Identity,
-                self.learning_rate,
+                0.0,
                 self.device,
             )
         )
 
     def initialize_Q_weights(self) -> None:
-        self.k = 2 * self.num_actions
+        self.k = self.hidden_dims[-1] + self.num_actions
         self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
         self.full_rank_reached = False
 
@@ -113,52 +109,30 @@ class FastLSPI:
         # print(self.next_states.shape)
         # print("------------------------")
 
-    def actor_policy(
-        self, observations: torch.Tensor, deterministic: bool = False
-    ) -> torch.Tensor:
-        with torch.no_grad():
-            logits = self.actor.forward(observations)
-            probabilities = F.softmax(logits, dim=1)
-            if deterministic:
-                actor_actions = torch.argmax(probabilities, dim=1)
-            else:
-                actor_actions = torch.multinomial(
-                    probabilities, num_samples=1, replacement=True
-                )
-            return actor_actions
-
-    def actor_entropy(self, probabilities: torch.Tensor):
-        log_probs = torch.log(probabilities)
-        neg_p_log_p = -probabilities * log_probs
-        entropies = torch.sum(neg_p_log_p, dim=1)
-        avg_entropy = torch.mean(entropies)
-        return avg_entropy
-
-    def predict(
-        self, observation: np.ndarray, deterministic: bool = True
-    ) -> tuple[int, dict]:
-        if self.full_rank_reached:
+    def predict(self, observation: np.ndarray) -> tuple[int, dict]:
+        eps_greedy_prob = np.random.random()
+        if self.full_rank_reached and eps_greedy_prob > self.epsilon:
             flat_observation = observation.flatten()
             tensor_observation = torch.tensor(
                 flat_observation, dtype=torch.float32, device="cuda:0"
-            ).unsqueeze(0)
-            actor_action_tensor = self.actor_policy(tensor_observation, deterministic)
-            actor_action = int(actor_action_tensor.item())
+            ).unsqueeze(1)
+            action_tensor = self.policy(tensor_observation, one_hot=False)
+            action = int(action_tensor.item())
         else:
-            actor_action = np.random.randint(0, self.num_actions)
-        return actor_action, {}
+            action = np.random.randint(0, self.num_actions)
+        return action, {}
 
-    def Q_policy(
-        self, observations: torch.Tensor, one_hot: bool = True
-    ) -> torch.Tensor:
+    def policy(self, observations: torch.Tensor, one_hot: bool = True) -> torch.Tensor:
         with torch.no_grad():
-            phi_s = self.actor.forward(observations.T)
+            phi_s = self.state_featurizer.forward(observations.T)
             phi_s_repeated = phi_s.unsqueeze(1).repeat(1, self.num_actions, 1)
             action_features_repeated = self.action_one_hots.repeat(
-                self.batch_size, 1, 1
+                phi_s_repeated.shape[0], 1, 1
             )
             phi_matrix = torch.cat([phi_s_repeated, action_features_repeated], dim=2)
-            batch_w_tilde = self.w_tilde.unsqueeze(0).repeat(self.batch_size, 1, 1)
+            batch_w_tilde = self.w_tilde.unsqueeze(0).repeat(
+                phi_s_repeated.shape[0], 1, 1
+            )
             Q_values = torch.bmm(phi_matrix, batch_w_tilde)
             optimal_actions = torch.argmax(Q_values, dim=1)
             if not one_hot:
@@ -169,48 +143,42 @@ class FastLSPI:
             ).squeeze(0)
             return optimal_action_one_hots
 
-    def construct_phi_matrix(self, indices: torch.Tensor) -> torch.Tensor:
+    def construct_phi_matrix(self) -> torch.Tensor:
         with torch.no_grad():
-            batch_states = self.states[:, indices]
-            batch_actions = self.actions[:, indices]
-            phi_s = self.actor.forward(batch_states.T)
-            phi_matrix = torch.cat([phi_s, batch_actions.T], dim=1)
+            phi_s = self.state_featurizer.forward(self.states.T)
+            phi_matrix = torch.cat([phi_s, self.actions.T], dim=1)
             return phi_matrix
 
-    def construct_phi_prime_matrix(self, indices: torch.Tensor) -> torch.Tensor:
+    def construct_phi_prime_matrix(self) -> torch.Tensor:
         with torch.no_grad():
-            batch_next_states = self.next_states[:, indices]
-            phi_s_prime = self.actor.forward(batch_next_states.T)
-            pi_s_prime = self.Q_policy(batch_next_states, one_hot=True)
+            phi_s_prime = self.state_featurizer.forward(self.next_states.T)
+            pi_s_prime = self.policy(self.next_states, one_hot=True)
             phi_prime_matrix = torch.cat([phi_s_prime, pi_s_prime], dim=1)
             return phi_prime_matrix
 
     def update(
         self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray
     ) -> None:
-        indices = self.LSTDQ_update(state, action, reward, next_state)
-        if self.full_rank_reached and indices is not None:
-            self.actor_update(indices)
+        self.LSTDQ_update(state, action, reward, next_state)
 
     # NOTE: incremental update of weight vector for Q-hat
     def LSTDQ_update(
         self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray
-    ) -> torch.Tensor | None:
+    ) -> None:
         state = state.flatten()
         next_state = next_state.flatten()
         self.store_to_buffer(state, action, reward, next_state)
         # NOTE: no point in doing LSTDQ update if the rank is too small
-        if self.L < max(self.k, self.batch_size):
+        # FIXME HIGH - sometimes, full rank can be reached pretty quickly?
+        if self.L < self.k:
             return
         norm_difference = float("inf")
         iteration = 0
-        indices = torch.randint(0, self.L, (self.batch_size,), device=self.device)
-        while norm_difference >= 1.0e-6 and iteration < 6:
-            phi_tilde = self.construct_phi_matrix(indices)
-            phi_prime_tilde = self.construct_phi_prime_matrix(indices)
-            batch_rewards = self.rewards[:, indices]
+        while norm_difference >= 1.0e-6 and iteration < 10:
+            phi_tilde = self.construct_phi_matrix()
+            phi_prime_tilde = self.construct_phi_prime_matrix()
             A_tilde = phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
-            b_tilde = phi_tilde.T @ batch_rewards.T
+            b_tilde = phi_tilde.T @ self.rewards.T
             w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
             # NOTE: if the matrix is rank-deficient, w_tilde will be all NaNs
             # in this case, just don't do an update
@@ -218,10 +186,6 @@ class FastLSPI:
                 self.full_rank_reached = False
                 rank_A_tilde = torch.linalg.matrix_rank(A_tilde)
                 print(f"A_tilde defective - rank {rank_A_tilde} < {A_tilde.shape[0]}")
-                print(
-                    f"Updating batch size from {self.batch_size} to {2 * self.batch_size}..."
-                )
-                self.batch_size *= 2
                 break
             else:
                 self.full_rank_reached = True
@@ -229,29 +193,6 @@ class FastLSPI:
                 # print(f"||w - w'||_inf: {norm_difference}")
                 self.w_tilde = w_tilde
             iteration += 1
-        return indices
-
-    def actor_update(self, indices: torch.Tensor) -> None:
-        batch_states = self.states[:, indices]
-        pseudo_optimal_actions = self.Q_policy(batch_states, one_hot=True)
-        # determine the actions that the actor network would actually recommend
-        # (with gradient calculation on)
-        logits = self.actor.forward(batch_states.T)
-        probabilities = F.softmax(logits, dim=1)
-        masked_probabilities = pseudo_optimal_actions * probabilities
-        # do N steps of gradient descent on the cross-entropy loss between the two
-        # actions
-        selected_probabilities = masked_probabilities.sum(dim=1)
-        cross_entropy_loss = torch.mean(-torch.log(selected_probabilities))
-        # include entropy bonus
-        entropy = self.actor_entropy(probabilities)
-        total_loss = cross_entropy_loss - self.temperature * entropy
-        print(f"cross entropy loss: {cross_entropy_loss.item()}")
-        print(f"entropy: {entropy.item()}")
-        print(f"temperature: {self.temperature}")
-        print(f"total loss: {total_loss.item()}")
-        self.temperature = max(0, self.temperature - 0.0001)
-        self.actor.gradient_descent_step(total_loss)
 
     def get_Q_value(self, state: np.ndarray, action: int) -> float:
         with torch.no_grad():
@@ -259,14 +200,14 @@ class FastLSPI:
             tensor_state = torch.tensor(
                 state, dtype=torch.float32, device="cuda:0"
             ).unsqueeze(0)
-            phi_s = self.actor.forward(tensor_state)
+            phi_s = self.state_featurizer.forward(tensor_state)
             phi_a = self.action_one_hots[:, action, :]
             phi_s_a = torch.cat([phi_s, phi_a], dim=1)
             Q_value = (phi_s_a @ self.w_tilde).item()
             return Q_value
 
     def save(self):
-        pickle.dump(self.actor, open(self.actor_name, "wb"))
+        pickle.dump(self.state_featurizer, open(self.state_featurizer_name, "wb"))
 
 
 def main() -> None:
@@ -274,13 +215,13 @@ def main() -> None:
         observation_dim=14 * 4,
         num_actions=3**4,
         hidden_dims=[400, 300],
-        activation_function=nn.ELU,
+        activation_function=nn.Tanh,
     )
     random_state = np.random.random((14, 4))
     # testing generation of weights for Q-hat
-    for iter in range(200000):
-        action, _ = agent_thingy.predict(random_state, deterministic=False)
-        print(f"iteration: {iter}, action: {action}")
+    for iter in range(2000):
+        action, _ = agent_thingy.predict(random_state)
+        # print(f"iteration: {iter}, action: {action}")
         # NOTE: expect the action to eventually converge to 42, independent of state
         if action == 42:
             random_reward = np.random.uniform(0.0, 2.0)

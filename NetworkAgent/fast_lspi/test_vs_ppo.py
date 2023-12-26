@@ -1,5 +1,6 @@
 # NOTE: the goal of this script is to compare the performance of FastLSPI with
 # PPO in a discrete action space setting
+# NOTE: it's pretty bad... gonna scrap it for now
 
 import gymnasium as gym
 from agent import FastLSPI
@@ -7,8 +8,8 @@ from stable_baselines3 import PPO
 
 
 def main() -> None:
-    # env = gym.make("LunarLander-v2", render_mode=None)
-    env = gym.make("CartPole-v1", render_mode=None)
+    env = gym.make("LunarLander-v2", render_mode="human")
+    # env = gym.make("CartPole-v1", render_mode=None)
 
     # ppo_agent = PPO("MlpPolicy", env)
     # for _ in range(20):
@@ -34,8 +35,8 @@ def main() -> None:
     fastlspi_agent = FastLSPI(env.observation_space.shape[0], env.action_space.n)
     state, info = env.reset()
     episode_return = 0.0
-    for _ in range(42_000):
-        action, _ = fastlspi_agent.predict(state, deterministic=False)
+    for _ in range(200_000):
+        action, _ = fastlspi_agent.predict(state)
         next_state, reward, terminated, truncated, info = env.step(action)
         episode_return += reward
         fastlspi_agent.update(state, action, reward, next_state)
