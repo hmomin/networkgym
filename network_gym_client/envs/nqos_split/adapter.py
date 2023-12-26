@@ -55,7 +55,7 @@ class Adapter(network_gym_client.adapter.Adapter):
         if self.use_discrete_increment_actions:
             return spaces.Discrete(3**(self.size_per_feature))
         elif self.use_discrete_ratio_actions:
-            return spaces.Discrete(9**(self.size_per_feature))
+            return spaces.Discrete(5**(self.size_per_feature))
         else:
             return spaces.Box(
                 low=0,

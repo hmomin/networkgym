@@ -18,8 +18,8 @@ def convert_discrete_increment_action_to_continuous(
 def convert_discrete_ratio_action_to_continuous(
     agent_action: np.int64 | int, num_users: int
 ) -> list[float]:
-    user_specific_actions = get_user_discretized_actions(agent_action, num_users, 9)
-    new_split_ratio = [x / 8.0 for x in user_specific_actions]
+    user_specific_actions = get_user_discretized_actions(agent_action, num_users, 5)
+    new_split_ratio = [x / 4.0 for x in user_specific_actions]
     print("NEW SPLIT RATIO")
     print(new_split_ratio)
     return new_split_ratio
