@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 algorithm="PPO"
 
 # exactly one argument must be provided

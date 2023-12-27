@@ -111,9 +111,9 @@ def evaluate(
             action = random_action(obs)
         else:
             print("TAKING DETERMINISTIC ACTION")
-            action, _ = model.predict(obs, deterministic=True)
+            # action, _ = model.predict(obs, deterministic=True)
             # FIXME: taking non-deterministic action to see if it helps
-            # action, _ = model.predict(obs, deterministic=False)
+            action, _ = model.predict(obs, deterministic=False)
         new_obs, reward, done, truncated, info = env.step(action)
         if type(model) == PPO_LSPI:
             model.LSTDQ_update(obs, action, reward, new_obs)
@@ -248,12 +248,12 @@ def main():
                 verbose=1,
             )
         else:
-            init_std = (
-                rl_config["starting_action_std"]
-                if "starting_action_std" in rl_config
-                else 1.0
-            )
-            policy_kwargs = dict(log_std_init=float(np.log(init_std)))
+            # init_std = (
+            #     rl_config["starting_action_std"]
+            #     if "starting_action_std" in rl_config
+            #     else 1.0
+            # )
+            # policy_kwargs = dict(log_std_init=float(np.log(init_std)))
             if rl_alg == "PPO":
                 # print("TRAINING PPO WITH MODIFIED STARTING STDEV")
                 # print(policy_kwargs)
