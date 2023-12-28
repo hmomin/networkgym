@@ -51,10 +51,7 @@ class KL_BC:
             )
         )
 
-    def update(
-        self,
-        mini_batch_size: int,
-    ):
+    def update(self, mini_batch_size: int):
         self.training_stats.append([])
         # randomly sample a mini-batch from the replay buffer
         mini_batch = self.buffer.get_mini_batch(mini_batch_size)
