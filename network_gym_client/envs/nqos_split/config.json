@@ -7,7 +7,7 @@
         "random_action_prob": 0.0,
         "starting_action_std": 1.0,
         "train": false,
-        "store_offline": true,
+        "store_offline": false,
         "load_model_for_training": false,
         "policy": "MlpPolicy",
         "reward_type": "utility"
@@ -77,7 +77,7 @@
         ],
         "steps_per_episode": 10000,
         "episodes_per_session": 1,
-        "random_seed": 64,
+        "random_seed": 256,
         "downlink_traffic": true,
         "max_wait_time_for_action_ms": -1,
         "enb_locations": {

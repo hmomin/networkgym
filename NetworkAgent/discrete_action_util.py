@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from time import sleep
 
 
@@ -38,6 +39,19 @@ def get_user_discretized_actions(
         running_divisor = running_divisor % running_dividend
         user_specific_actions.append(user_action)
     return user_specific_actions
+
+
+def convert_continuous_to_discrete_ratio_action(
+    split_ratios: torch.Tensor,
+) -> torch.Tensor:
+    user_discretized_actions = (split_ratios * 4).to(torch.int64)
+    discrete_actions = (
+        user_discretized_actions[:, 0] * (5**3)
+        + user_discretized_actions[:, 1] * (5**2)
+        + user_discretized_actions[:, 2] * (5**1)
+        + user_discretized_actions[:, 3] * (5**0)
+    )
+    return discrete_actions
 
 
 # NOTE: just some tests below...
