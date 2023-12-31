@@ -117,6 +117,7 @@ class CombinedBuffer(Buffer):
         self.actions = safe_concat(self.actions, buffer.actions, max_size)
         self.rewards = safe_concat(self.rewards, buffer.rewards, max_size)
         self.next_states = safe_concat(self.next_states, buffer.next_states, max_size)
+        self.buffer_size = self.states.shape[0]
 
     def normalize_states(self, eps: float = 1e-3) -> None:
         self.mean_state = self.states.mean(0, keepdims=True)
@@ -128,8 +129,7 @@ class CombinedBuffer(Buffer):
         self,
         size: int,
     ) -> dict[str, T.Tensor]:
-        buffer_size = self.states.shape[0]
-        indices = T.randint(0, buffer_size, (size,), device=self.device)
+        indices = T.randint(0, self.buffer_size, (size,), device=self.device)
         # NOTE: an environment never actually terminates in the way that the MDP
         # framework expects...
         dones = T.zeros_like(self.tensor_rewards[indices], device=self.device)

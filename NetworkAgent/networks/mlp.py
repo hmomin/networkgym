@@ -10,23 +10,23 @@ class MLP(nn.Module):
     def __init__(
         self,
         shape: list[int],
-        hidden_activation: Callable[[], Callable[[T.Tensor], T.Tensor]],
-        output_activation: Callable[[], Callable[[T.Tensor], T.Tensor]],
+        hidden_activation: nn.Module,
+        output_activation: nn.Module,
         learning_rate: float,
         device: T.device,
         discrete_action_space: bool = False,
     ):
         super().__init__()
         # initialize the network
-        layers = []
+        self.layers: list[nn.Module] = []
         for i in range(1, len(shape)):
             dim1 = shape[i - 1]
             dim2 = shape[i]
-            layers.append(nn.Linear(dim1, dim2))
+            self.layers.append(nn.Linear(dim1, dim2))
             if i < len(shape) - 1:
-                layers.append(hidden_activation())
-        layers.append(output_activation())
-        self.network = nn.Sequential(*layers)
+                self.layers.append(hidden_activation())
+        self.layers.append(output_activation())
+        self.network = nn.Sequential(*self.layers)
 
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
         self.device = device
