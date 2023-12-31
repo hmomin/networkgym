@@ -50,7 +50,7 @@ class LSPI_BC:
                 discrete_action_space=True,
             )
         )
-        # FIXME HIGH: perhaps, this should be a specifiable hyperparameter...
+        # FIXME LOW: perhaps, this should be a specifiable hyperparameter...
         self.large_batch_size: int = 500
         self.initialize_action_feature_map()
         self.initialize_Q_weights()
@@ -63,8 +63,8 @@ class LSPI_BC:
         ).unsqueeze(0)
 
     def initialize_Q_weights(self):
-        phi_s_layer = self.actor.layers[-4]
-        phi_s_shape: int = phi_s_layer.bias.shape[0]
+        phi_s_layer: nn.Linear = self.actor.layers[-4]
+        phi_s_shape = phi_s_layer.bias.shape[0]
         self.k = phi_s_shape + self.num_actions
         self.w_tilde = T.randn((self.k, 1), device="cuda:0")
 
@@ -73,13 +73,7 @@ class LSPI_BC:
         states = small_batch["states"]
         actions = small_batch["actions"]
         kl_div_loss = self.compute_kl_divergence_loss(states, actions)
-        # print(f"\tKL_div_loss: {kl_div_loss.item()}")
-        large_batch = self.buffer.get_mini_batch(self.large_batch_size)
-        states = large_batch["states"]
-        actions = large_batch["actions"]
-        rewards = large_batch["rewards"]
-        next_states = large_batch["next_states"]
-        Q_loss = self.compute_LSPI_Q_loss(states, actions, rewards, next_states)
+        Q_loss = self.compute_LSPI_Q_loss()
         total_loss = alpha_bc * Q_loss + (1 - alpha_bc) * kl_div_loss
         self.actor.gradient_descent_step(total_loss)
 
@@ -104,18 +98,10 @@ class LSPI_BC:
 
     def compute_LSPI_Q_loss(
         self,
-        states: T.Tensor,
-        actions: T.Tensor,
-        rewards: T.Tensor,
-        next_states: T.Tensor,
     ) -> T.Tensor:
-        actual_actions = convert_continuous_to_discrete_ratio_action(actions)
-        action_one_hots = F.one_hot(actual_actions, num_classes=5**4)
-        rewards = rewards.unsqueeze(1)
-        self.compute_LSPI_weights(states, action_one_hots, rewards, next_states)
-        # raise Exception(
-        #     "FIXME HIGH: running into CUDA overflow errors. Might work on desktop instead of laptop..."
-        # )
+        self.compute_LSPI_weights()
+        large_batch = self.buffer.get_mini_batch(self.large_batch_size)
+        states = large_batch["states"]
         pseudo_optimal_actions = self.Q_policy(states, one_hot=True)
         # determine the actions that the actor network would actually recommend
         # (with gradient calculation on)
@@ -128,34 +114,36 @@ class LSPI_BC:
         cross_entropy_loss = T.mean(-T.log(selected_probabilities))
         return cross_entropy_loss
 
-    def compute_LSPI_weights(
-        self,
-        states: T.Tensor,
-        actions: T.Tensor,
-        rewards: T.Tensor,
-        next_states: T.Tensor,
-    ) -> None:
-        norm_difference = float("inf")
-        iteration = 0
-        while norm_difference >= 1.0e-6 and iteration < 6:
+    def compute_LSPI_weights(self) -> None:
+        A_tilde = T.zeros((self.k, self.k), dtype=T.float32, device=self.device)
+        b_tilde = T.zeros((self.k, 1), dtype=T.float32, device=self.device)
+        rank_A_tilde = 0
+        batch_counter = 0
+        while rank_A_tilde < self.k:
+            large_batch = self.buffer.get_mini_batch(self.large_batch_size)
+            states = large_batch["states"]
+            continuous_actions = large_batch["actions"]
+            rewards = large_batch["rewards"]
+            next_states = large_batch["next_states"]
+            batch_counter += self.large_batch_size
+
+            discrete_actions = convert_continuous_to_discrete_ratio_action(
+                continuous_actions
+            )
+            actions = F.one_hot(discrete_actions, num_classes=5**4)
+            rewards = rewards.unsqueeze(1)
+
             phi_tilde = self.construct_phi_matrix(states, actions)
             phi_prime_tilde = self.construct_phi_prime_matrix(next_states)
-            A_tilde = phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
-            b_tilde = phi_tilde.T @ rewards.to(T.float32)
-            w_tilde = T.linalg.lstsq(A_tilde, b_tilde).solution
-            # NOTE: if the matrix is rank-deficient, w_tilde will be all NaNs
-            # in this case, just refuse to do an update
-            if T.isnan(w_tilde).any():
-                rank_A_tilde = T.linalg.matrix_rank(A_tilde)
-                print(f"A_tilde defective - rank {rank_A_tilde} < {A_tilde.shape[0]}")
-                # FIXME HIGH: add below back in!
-                # raise Exception("A_tilde of low-rank in LSTDQ computation...")
-                return
-            else:
-                norm_difference = T.norm(w_tilde - self.w_tilde, float("inf"))
-                # print(f"||w - w'||_inf: {norm_difference}")
-                self.w_tilde = w_tilde
-            iteration += 1
+            A_tilde += phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
+            rank_A_tilde = T.linalg.matrix_rank(A_tilde)
+            print(f"Total batch size: {batch_counter} - A_tilde rank: {rank_A_tilde}")
+            # FIXME HIGH: this doesn't work with a large action space that's not
+            # adequately explored. The rank can't become high enough, because the
+            # actions are represented as one-hot vectors
+            if rank_A_tilde == self.k:
+                b_tilde += phi_tilde.T @ rewards.to(T.float32)
+                self.w_tilde = T.linalg.lstsq(A_tilde, b_tilde).solution
 
     def construct_phi_matrix(
         self, batch_states: T.Tensor, batch_actions: T.Tensor
