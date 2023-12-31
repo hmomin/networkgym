@@ -1,9 +1,9 @@
 {
     "rl_config": {
-        "agent": "PPO",
+        "agent": "system_default",
         "parallel_env": false,
         "use_discrete_increment_actions": false,
-        "use_discrete_ratio_actions": true,
+        "use_discrete_ratio_actions": false,
         "random_action_prob": 0.0,
         "starting_action_std": 1.0,
         "train": false,
@@ -75,7 +75,7 @@
             "gma::wifi::ul::split_ratio",
             "gma::lte::ul::split_ratio"
         ],
-        "steps_per_episode": 10000,
+        "steps_per_episode": 1000,
         "episodes_per_session": 1,
         "random_seed": 256,
         "downlink_traffic": true,
