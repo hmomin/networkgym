@@ -79,19 +79,18 @@ class LSPI_BC:
         actions = large_batch["actions"]
         rewards = large_batch["rewards"]
         next_states = large_batch["next_states"]
-        Q_loss = self.compute_LSPI_Q_loss(
-            alpha_bc, states, actions, rewards, next_states
-        )
-        total_loss = Q_loss + kl_div_loss
+        Q_loss = self.compute_LSPI_Q_loss(states, actions, rewards, next_states)
+        total_loss = alpha_bc * Q_loss + (1 - alpha_bc) * kl_div_loss
         self.actor.gradient_descent_step(total_loss)
 
-    def state_featurizer_forward(self, x: T.Tensor) -> T.Tensor:
+    def state_featurizer_forward(self, states: T.Tensor) -> T.Tensor:
+        output = states
         num_actor_layers = len(self.actor.layers)
         # NOTE: assuming the last three layers are not used to generate state features
         for idx in range(num_actor_layers - 3):
             module = self.actor.layers[idx]
-            x = module(x)
-        return x
+            output = module(output)
+        return output
 
     def compute_kl_divergence_loss(self, states: T.Tensor, actions: T.Tensor):
         actor_logits = self.actor.forward(states.float())
@@ -105,7 +104,6 @@ class LSPI_BC:
 
     def compute_LSPI_Q_loss(
         self,
-        alpha_bc: float,
         states: T.Tensor,
         actions: T.Tensor,
         rewards: T.Tensor,
@@ -114,10 +112,21 @@ class LSPI_BC:
         actual_actions = convert_continuous_to_discrete_ratio_action(actions)
         action_one_hots = F.one_hot(actual_actions, num_classes=5**4)
         rewards = rewards.unsqueeze(1)
-        w_tilde = self.compute_LSPI_weights(
-            states, action_one_hots, rewards, next_states
-        )
-        raise Exception("FIXME HIGH: running into CUDA overflow errors. Might work on desktop instead of laptop...")
+        self.compute_LSPI_weights(states, action_one_hots, rewards, next_states)
+        # raise Exception(
+        #     "FIXME HIGH: running into CUDA overflow errors. Might work on desktop instead of laptop..."
+        # )
+        pseudo_optimal_actions = self.Q_policy(states, one_hot=True)
+        # determine the actions that the actor network would actually recommend
+        # (with gradient calculation on)
+        logits = self.actor.forward(states)
+        probabilities = F.softmax(logits, dim=1)
+        masked_probabilities = pseudo_optimal_actions * probabilities
+        # do a step of gradient descent on the cross-entropy loss between the two
+        # actions
+        selected_probabilities = masked_probabilities.sum(dim=1)
+        cross_entropy_loss = T.mean(-T.log(selected_probabilities))
+        return cross_entropy_loss
 
     def compute_LSPI_weights(
         self,
@@ -137,7 +146,11 @@ class LSPI_BC:
             # NOTE: if the matrix is rank-deficient, w_tilde will be all NaNs
             # in this case, just refuse to do an update
             if T.isnan(w_tilde).any():
-                raise Exception("A_tilde of low-rank in LSTDQ computation...")
+                rank_A_tilde = T.linalg.matrix_rank(A_tilde)
+                print(f"A_tilde defective - rank {rank_A_tilde} < {A_tilde.shape[0]}")
+                # FIXME HIGH: add below back in!
+                # raise Exception("A_tilde of low-rank in LSTDQ computation...")
+                return
             else:
                 norm_difference = T.norm(w_tilde - self.w_tilde, float("inf"))
                 # print(f"||w - w'||_inf: {norm_difference}")
