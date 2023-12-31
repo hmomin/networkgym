@@ -22,9 +22,7 @@ class FastLSPI:
         observation_dim: int,
         num_actions: int,
         hidden_dims: list[int] = [256, 256],
-        activation_function: Callable[
-            [], Callable[[torch.Tensor], torch.Tensor]
-        ] = nn.Tanh,
+        activation_function: nn.Module = nn.Tanh(),
         epsilon: float = 0.1,
         gamma: float = 0.99,
         should_load: bool = True,
@@ -63,7 +61,7 @@ class FastLSPI:
             else MLP(
                 [self.observation_dim, *self.hidden_dims],
                 self.activation_function,
-                nn.Identity,
+                nn.Identity(),
                 0.0,
                 self.device,
             )
@@ -215,7 +213,7 @@ def main() -> None:
         observation_dim=14 * 4,
         num_actions=3**4,
         hidden_dims=[400, 300],
-        activation_function=nn.Tanh,
+        activation_function=nn.Tanh(),
     )
     random_state = np.random.random((14, 4))
     # testing generation of weights for Q-hat

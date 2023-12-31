@@ -24,8 +24,8 @@ class MLP(nn.Module):
             dim2 = shape[i]
             self.layers.append(nn.Linear(dim1, dim2))
             if i < len(shape) - 1:
-                self.layers.append(hidden_activation())
-        self.layers.append(output_activation())
+                self.layers.append(hidden_activation)
+        self.layers.append(output_activation)
         self.network = nn.Sequential(*self.layers)
 
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)

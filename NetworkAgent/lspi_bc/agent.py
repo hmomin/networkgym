@@ -43,8 +43,8 @@ class LSPI_BC:
             if should_load and os.path.exists(name + "Actor")
             else MLP(
                 [self.observation_dim, 256, 256, self.num_actions],
-                nn.ReLU,
-                nn.Identity,
+                nn.ReLU(),
+                nn.Identity(),
                 learning_rate,
                 self.device,
                 discrete_action_space=True,

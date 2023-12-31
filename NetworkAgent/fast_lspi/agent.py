@@ -22,9 +22,7 @@ class FastLSPI:
         observation_dim: int,
         num_actions: int,
         hidden_dims: list[int] = [256, 256],
-        activation_function: Callable[
-            [], Callable[[torch.Tensor], torch.Tensor]
-        ] = nn.ELU,
+        activation_function: nn.Module = nn.ELU(),
         starting_temperature: float = 100.0,
         batch_size: int = 256,
         learning_rate: float = 3.0e-4,
@@ -67,7 +65,7 @@ class FastLSPI:
             else MLP(
                 [self.observation_dim, *self.hidden_dims, self.num_actions],
                 self.activation_function,
-                nn.Identity,
+                nn.Identity(),
                 self.learning_rate,
                 self.device,
             )
@@ -274,7 +272,7 @@ def main() -> None:
         observation_dim=14 * 4,
         num_actions=3**4,
         hidden_dims=[400, 300],
-        activation_function=nn.ELU,
+        activation_function=nn.ELU(),
     )
     random_state = np.random.random((14, 4))
     # testing generation of weights for Q-hat

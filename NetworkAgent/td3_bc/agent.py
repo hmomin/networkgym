@@ -59,8 +59,8 @@ class Agent:
             if should_load and os.path.exists(name + "Actor")
             else MLP(
                 [self.observation_dim, 400, 300, self.action_dim],
-                nn.ReLU,
-                nn.Sigmoid,
+                nn.ReLU(),
+                nn.Sigmoid(),
                 learning_rate,
                 self.device,
             )
@@ -70,8 +70,8 @@ class Agent:
             if should_load and os.path.exists(name + "Critic1")
             else MLP(
                 [self.observation_dim + self.action_dim, 400, 300, 1],
-                nn.ReLU,
-                nn.Identity,
+                nn.ReLU(),
+                nn.Identity(),
                 learning_rate,
                 self.device,
             )
@@ -81,8 +81,8 @@ class Agent:
             if should_load and os.path.exists(name + "Critic2")
             else MLP(
                 [self.observation_dim + self.action_dim, 400, 300, 1],
-                nn.ReLU,
-                nn.Identity,
+                nn.ReLU(),
+                nn.Identity(),
                 learning_rate,
                 self.device,
             )
