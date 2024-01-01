@@ -54,6 +54,18 @@ def convert_continuous_to_discrete_ratio_action(
     return discrete_actions
 
 
+def convert_user_increment_to_discrete_increment_action(
+    user_increment: list[int],
+) -> int:
+    num_users = len(user_increment)
+    user_discretized_actions = [int(round(x + 1)) for x in user_increment]
+    discrete_action = 0
+    for idx, user_action in enumerate(user_discretized_actions):
+        power = num_users - (idx + 1)
+        discrete_action += user_action * (3**power)
+    return discrete_action
+
+
 # NOTE: just some tests below...
 def main() -> None:
     num_users = 4

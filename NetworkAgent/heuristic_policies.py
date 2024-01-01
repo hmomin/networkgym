@@ -2,6 +2,8 @@ import numpy as np
 import sys
 from time import sleep
 from typing import Callable
+from random import randint
+from discrete_action_util import convert_user_increment_to_discrete_increment_action
 from network_gym_client.env import Env
 
 # NOTE: num users is hardcoded here - there's a check for it later...
@@ -166,6 +168,40 @@ def random_action(obs: np.ndarray) -> list[float]:
 
 def system_default_proxy_policy(env: Env, config_json: dict) -> None:
     generic_policy(env, config_json, system_default_action)
+
+
+def delay_increment_policy(env: Env, config_json: dict) -> None:
+    generic_policy(env, config_json, delay_increment_action)
+
+
+def delay_increment_action(obs: np.ndarray) -> int:
+    lte_owds = obs[5, :]
+    wifi_owds = obs[6, :]
+    actions: list[int] = []
+    for lte_owd, wifi_owd in zip(lte_owds, wifi_owds):
+        update_to_split_ratio = delay_increment(wifi_owd, lte_owd)
+        actions.append(update_to_split_ratio)
+    discrete_action = convert_user_increment_to_discrete_increment_action(actions)
+    return discrete_action
+
+
+def delay_increment(wifi_owd: float, lte_owd: float) -> int:
+    if wifi_owd > lte_owd:
+        return -1
+    elif wifi_owd < lte_owd:
+        return +1
+    else:
+        return 0
+
+
+def random_discrete_increment_action(obs: np.ndarray) -> int:
+    num_users = obs.shape[1]
+    random_action = randint(0, 3**num_users - 1)
+    return random_action
+
+
+def random_discrete_policy(env: Env, config_json: dict) -> None:
+    generic_policy(env, config_json, random_discrete_increment_action)
 
 
 def argmax_policy(env: Env, config_json: dict) -> None:
