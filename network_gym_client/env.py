@@ -303,6 +303,8 @@ class Env(gym.Env):
                 reward,
                 observation.astype(np.float32)
             )
+            if terminated or truncated:
+                self.buffer.write_to_disk()
             self.previous_state = observation.astype(np.float32)
         
         return observation.astype(np.float32), reward, terminated, truncated, {"network_stats": network_stats}

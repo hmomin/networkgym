@@ -65,7 +65,6 @@ class Buffer:
         self.actions = safe_stack(self.actions, np_action)
         self.rewards = np.concatenate((self.rewards, np.array([reward])))
         self.next_states = safe_stack(self.next_states, next_state)
-        self.write_to_disk()
 
     def write_to_disk(self) -> None:
         print(f"states:      {self.states.shape}")
