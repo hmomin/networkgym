@@ -1,4 +1,3 @@
-import numpy as np
 import os
 import pickle
 import sys
@@ -10,7 +9,6 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
 from buffer import CombinedBuffer
-from discrete_action_util import convert_continuous_to_discrete_ratio_action
 from networks.mlp import MLP
 from offline_env import OfflineEnv
 
