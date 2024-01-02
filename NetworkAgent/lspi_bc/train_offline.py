@@ -19,8 +19,8 @@ def get_args() -> argparse.Namespace:
         "--alpha",
         help="value of alpha to use for Q-loss weighting",
         required=False,
-        default=0.0,
-        type=float,
+        default="0.00",
+        type=str,
     )
     args = parser.parse_args()
     return args
@@ -29,7 +29,7 @@ def get_args() -> argparse.Namespace:
 def main() -> None:
     # ------------------------- HYPERPARAMETERS -------------------------
     buffer_max_size = 10_000
-    num_actions = 625
+    num_actions = 81
     training_steps = 10_000  # number of mini-batch steps for training
     learning_rate = 0.001  # learning rate for actor and critic networks
     mini_batch_size = 100  # how large a mini-batch should be when updating
@@ -37,16 +37,16 @@ def main() -> None:
     # -------------------------------------------------------------------
     args = get_args()
     env_name: str = args.env_name
-    alpha_bc: float = args.alpha
+    alpha_bc: str = args.alpha
 
     env = OfflineEnv(env_name, buffer_max_size, normalize=False)
 
     agent = LSPI_BC(env, num_actions, learning_rate, resume)
 
-    print("Training agent with offline data...")
-    for _ in range(training_steps):
-        agent.update(mini_batch_size, 0.0)
-    agent.save(training_steps)
+    print("Performing behavioral cloning...")
+    for _ in tqdm(range(training_steps)):
+        agent.update(mini_batch_size, "0.00")
+    print(f"Now training alpha_bc={alpha_bc} agent with offline data...")
     for _ in range(training_steps):
         agent.update(mini_batch_size, alpha_bc)
     agent.save(2 * training_steps)

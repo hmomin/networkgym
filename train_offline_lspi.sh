@@ -2,10 +2,9 @@
 
 set -e
 
-# alphas=(0.000 0.100 0.300 1.000 3.000 10.000)
-alphas=(0.1)
+alphas=(0.10 0.20 0.30 0.40 0.50 0.60 0.70 0.80 0.90 1.00)
 
-env_name="PPO_discrete_ratio_action_space_625"
+env_name="random_discrete_increment_utility"
 echo "ENV_NAME: $env_name"
 
 for alpha in "${alphas[@]}"; do

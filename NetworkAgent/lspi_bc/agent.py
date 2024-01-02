@@ -68,13 +68,18 @@ class LSPI_BC:
         self.k = phi_s_shape + self.num_actions
         self.w_tilde = T.randn((self.k, 1), device="cuda:0")
 
-    def update(self, mini_batch_size: int, alpha_bc: float = 0.0):
+    def update(self, mini_batch_size: int, alpha_bc: str = "0.00"):
+        self.alpha_str = alpha_bc
+        alpha_val = float(alpha_bc)
         small_batch = self.buffer.get_mini_batch(mini_batch_size)
         states = small_batch["states"]
         actions = small_batch["actions"]
         kl_div_loss = self.compute_kl_divergence_loss(states, actions)
-        Q_loss = self.compute_LSPI_Q_loss()
-        total_loss = alpha_bc * Q_loss + (1 - alpha_bc) * kl_div_loss
+        if alpha_val > 0:
+            Q_loss = self.compute_LSPI_Q_loss()
+            total_loss = alpha_val * Q_loss + (1 - alpha_val) * kl_div_loss
+        else:
+            total_loss = kl_div_loss
         self.actor.gradient_descent_step(total_loss)
 
     def state_featurizer_forward(self, states: T.Tensor) -> T.Tensor:
@@ -90,8 +95,9 @@ class LSPI_BC:
         actor_logits = self.actor.forward(states.float())
         actor_probs = F.softmax(actor_logits, dim=1)
         log_probs = T.log(actor_probs)
-        behavior_actions = convert_continuous_to_discrete_ratio_action(actions)
-        behavior_one_hots = F.one_hot(behavior_actions, num_classes=5**4)
+        behavior_one_hots = F.one_hot(
+            actions.flatten().to(T.int64), num_classes=self.num_actions
+        )
         neg_log_p = T.sum(behavior_one_hots * -log_probs, dim=1)
         policy_loss = T.mean(neg_log_p)
         return policy_loss
@@ -119,30 +125,33 @@ class LSPI_BC:
         b_tilde = T.zeros((self.k, 1), dtype=T.float32, device=self.device)
         rank_A_tilde = 0
         batch_counter = 0
+        size_counter = 0
         while rank_A_tilde < self.k:
             large_batch = self.buffer.get_mini_batch(self.large_batch_size)
             states = large_batch["states"]
-            continuous_actions = large_batch["actions"]
+            discrete_actions = large_batch["actions"]
             rewards = large_batch["rewards"]
             next_states = large_batch["next_states"]
-            batch_counter += self.large_batch_size
-
-            discrete_actions = convert_continuous_to_discrete_ratio_action(
-                continuous_actions
+            batch_counter += 1
+            size_counter += self.large_batch_size
+            actions = F.one_hot(
+                discrete_actions.flatten().to(T.int64), num_classes=self.num_actions
             )
-            actions = F.one_hot(discrete_actions, num_classes=5**4)
             rewards = rewards.unsqueeze(1)
 
             phi_tilde = self.construct_phi_matrix(states, actions)
             phi_prime_tilde = self.construct_phi_prime_matrix(next_states)
+
             A_tilde += phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
+            b_tilde += phi_tilde.T @ rewards.to(T.float32)
             rank_A_tilde = T.linalg.matrix_rank(A_tilde)
-            print(f"Total batch size: {batch_counter} - A_tilde rank: {rank_A_tilde}")
+            print(f"Total batch size: {size_counter} - A_tilde rank: {rank_A_tilde}")
+            A_norm = T.linalg.matrix_norm(A_tilde, "fro")
+            print(f"A_norm: {A_norm}")
             # FIXME HIGH: this doesn't work with a large action space that's not
             # adequately explored. The rank can't become high enough, because the
             # actions are represented as one-hot vectors
             if rank_A_tilde == self.k:
-                b_tilde += phi_tilde.T @ rewards.to(T.float32)
                 self.w_tilde = T.linalg.lstsq(A_tilde, b_tilde).solution
 
     def construct_phi_matrix(
@@ -180,5 +189,5 @@ class LSPI_BC:
 
     def save(self, step: int = 0, max_steps: int = 1_000_000):
         step_str = str(step).zfill(len(str(max_steps)))
-        name = f"{self.env_name}{step_str}.{self.buffer.num_buffers}."
+        name = f"{self.env_name}{step_str}.{self.buffer.num_buffers}.{self.alpha_str}."
         pickle.dump(self.actor, open(name + "Actor", "wb"))
