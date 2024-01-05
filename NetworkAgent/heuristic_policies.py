@@ -196,7 +196,7 @@ def delay_increment(wifi_owd: float, lte_owd: float) -> int:
 
 def random_discrete_increment_action(obs: np.ndarray) -> int:
     num_users = obs.shape[1]
-    random_action = randint(0, 3**num_users - 1)
+    random_action = randint(0, 3 ** num_users - 1)
     return random_action
 
 

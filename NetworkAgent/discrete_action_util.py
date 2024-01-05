@@ -30,7 +30,7 @@ def get_user_discretized_actions(
     discrete_action: np.int64 | int, num_users: int, num_actions_per_user: int
 ) -> list[int]:
     user_specific_actions: list[int] = []
-    num_possible_actions = num_actions_per_user**num_users
+    num_possible_actions = num_actions_per_user ** num_users
     running_divisor = discrete_action
     running_dividend = num_possible_actions
     for _ in range(num_users):
@@ -46,10 +46,10 @@ def convert_continuous_to_discrete_ratio_action(
 ) -> torch.Tensor:
     user_discretized_actions = (split_ratios * 4).to(torch.int64)
     discrete_actions = (
-        user_discretized_actions[:, 0] * (5**3)
-        + user_discretized_actions[:, 1] * (5**2)
-        + user_discretized_actions[:, 2] * (5**1)
-        + user_discretized_actions[:, 3] * (5**0)
+        user_discretized_actions[:, 0] * (5 ** 3)
+        + user_discretized_actions[:, 1] * (5 ** 2)
+        + user_discretized_actions[:, 2] * (5 ** 1)
+        + user_discretized_actions[:, 3] * (5 ** 0)
     )
     return discrete_actions
 
@@ -62,7 +62,7 @@ def convert_user_increment_to_discrete_increment_action(
     discrete_action = 0
     for idx, user_action in enumerate(user_discretized_actions):
         power = num_users - (idx + 1)
-        discrete_action += user_action * (3**power)
+        discrete_action += user_action * (3 ** power)
     return discrete_action
 
 

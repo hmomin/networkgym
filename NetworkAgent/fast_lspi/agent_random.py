@@ -207,7 +207,7 @@ class FastLSPI:
 def main() -> None:
     agent_thingy = FastLSPI(
         observation_dim=14 * 4,
-        num_actions=3**4,
+        num_actions=3 ** 4,
         hidden_dims=[400, 300],
         activation_function=nn.Tanh(),
     )
