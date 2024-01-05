@@ -2,8 +2,8 @@ import numpy as np
 import torch as T
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.parameter import Parameter
 import torch.optim as optim
-from typing import Callable
 
 
 class MLP(nn.Module):
@@ -56,7 +56,22 @@ class MLP(nn.Module):
                 tensor_action = self.forward(tensor_state)
                 return (tensor_action.cpu().detach().numpy(), None)
 
-    def gradient_descent_step(self, loss: T.Tensor, retain_graph: bool = False):
+    def gradient_descent_step(self, loss: T.Tensor, retain_graph: bool = False) -> None:
+        self.compute_gradients(loss, retain_graph)
+        self.update_parameters()
+
+    def compute_gradients(self, loss: T.Tensor, retain_graph: bool = False) -> None:
         self.optimizer.zero_grad()
         loss.backward(retain_graph=retain_graph)
+
+    def update_parameters(self) -> None:
         self.optimizer.step()
+
+    def get_parameter_vector(self, gradient: bool = False) -> T.Tensor:
+        running_vector = T.tensor([], device=self.device)
+        for _, param in self.named_parameters():
+            matrix_param = param.grad if gradient else param
+            # FIXME HIGH: figure out how to reshape parameter into a vector
+            # then, concatenate it with the running parameter vector
+            matrix_param.reshape()
+            raise
