@@ -6,6 +6,14 @@ from torch.nn.parameter import Parameter
 import torch.optim as optim
 
 
+def get_num_parameters_from_matrix(param: Parameter) -> int:
+    shape = param.shape
+    num_parameters = 1
+    for dimension in shape:
+        num_parameters *= dimension
+    return num_parameters
+
+
 class MLP(nn.Module):
     def __init__(
         self,
@@ -57,21 +65,30 @@ class MLP(nn.Module):
                 return (tensor_action.cpu().detach().numpy(), None)
 
     def gradient_descent_step(self, loss: T.Tensor, retain_graph: bool = False) -> None:
+        self.optimizer.zero_grad()
         self.compute_gradients(loss, retain_graph)
         self.update_parameters()
 
     def compute_gradients(self, loss: T.Tensor, retain_graph: bool = False) -> None:
-        self.optimizer.zero_grad()
         loss.backward(retain_graph=retain_graph)
 
     def update_parameters(self) -> None:
         self.optimizer.step()
 
+    def delete_gradients(self) -> None:
+        for param in self.parameters():
+            param.grad = None
+
     def get_parameter_vector(self, gradient: bool = False) -> T.Tensor:
         running_vector = T.tensor([], device=self.device)
         for _, param in self.named_parameters():
-            matrix_param = param.grad if gradient else param
-            # FIXME HIGH: figure out how to reshape parameter into a vector
-            # then, concatenate it with the running parameter vector
-            matrix_param.reshape()
-            raise
+            matrix_param: T.Tensor = param.grad if gradient else param
+            vectorized_param = matrix_param.reshape((-1, 1))
+            running_vector = T.cat((running_vector, vectorized_param), dim=0)
+        return running_vector
+
+    def get_num_parameters(self) -> int:
+        num_parameters = 0
+        for _, param in self.named_parameters():
+            num_parameters += get_num_parameters_from_matrix(param)
+        return num_parameters

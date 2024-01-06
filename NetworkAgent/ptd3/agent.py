@@ -12,6 +12,7 @@ sys.path.append(parent_dir)
 from buffer import CombinedBuffer
 from networks.mlp import MLP
 from offline_env import OfflineEnv
+from tqdm import tqdm
 
 
 class PessimisticTD3:
@@ -21,7 +22,6 @@ class PessimisticTD3:
         learning_rate: float,
         gamma: float,
         tau: float,
-        beta_pessimism: float = 1.0,
         should_load: bool = True,
         save_folder: str = "saved",
     ):
@@ -33,7 +33,6 @@ class PessimisticTD3:
         self.high_action_bound = +1
         self.gamma = gamma
         self.tau = tau
-        self.beta_pessimism = beta_pessimism
         # check if the save_folder path exists
         script_dir = os.path.dirname(os.path.abspath(__file__))
         save_dir = os.path.join(script_dir, save_folder)
@@ -51,7 +50,7 @@ class PessimisticTD3:
             pickle.load(open(name + "Actor", "rb"))
             if should_load and os.path.exists(name + "Actor")
             else MLP(
-                [self.observation_dim, 400, 300, self.action_dim],
+                [self.observation_dim, 64, 64, self.action_dim],
                 nn.ReLU(),
                 nn.Sigmoid(),
                 learning_rate,
@@ -62,7 +61,7 @@ class PessimisticTD3:
             pickle.load(open(name + "Critic1", "rb"))
             if should_load and os.path.exists(name + "Critic1")
             else MLP(
-                [self.observation_dim + self.action_dim, 400, 300, 1],
+                [self.observation_dim + self.action_dim, 64, 64, 1],
                 nn.ReLU(),
                 nn.Identity(),
                 learning_rate,
@@ -73,7 +72,7 @@ class PessimisticTD3:
             pickle.load(open(name + "Critic2", "rb"))
             if should_load and os.path.exists(name + "Critic2")
             else MLP(
-                [self.observation_dim + self.action_dim, 400, 300, 1],
+                [self.observation_dim + self.action_dim, 64, 64, 1],
                 nn.ReLU(),
                 nn.Identity(),
                 learning_rate,
@@ -115,6 +114,7 @@ class PessimisticTD3:
         training_sigma: float,
         training_clip: float,
         update_policy: bool,
+        beta: float = 0.0,
     ):
         self.training_stats.append([])
         self.mini_batch_size = mini_batch_size
@@ -141,7 +141,7 @@ class PessimisticTD3:
         self.critic2.gradient_descent_step(Q2_loss)
         if update_policy:
             # do a single step on the actor network
-            policy_loss = self.compute_policy_loss(states, actions)
+            policy_loss = self.compute_policy_loss(states, actions, beta)
             self.training_stats[-1].append(policy_loss.item())
             # print(f"\tpi_loss: {policy_loss.item()}")
             self.actor.gradient_descent_step(policy_loss)
@@ -184,22 +184,42 @@ class PessimisticTD3:
         Q_values = T.squeeze(network.forward(T.hstack([states, actions]).float()))
         return T.square(Q_values - targets).mean()
 
-    def compute_policy_loss(self, states: T.Tensor, actions: T.Tensor):
+    def compute_policy_loss(self, states: T.Tensor, actions: T.Tensor, beta: float):
         policy_actions = self.actor.forward(states.float())
         Q_values = T.squeeze(
             self.critic1.forward(T.hstack([states, policy_actions]).float())
         )
         Q_term = Q_values.mean()
 
-        mini_batch = self.buffer.get_mini_batch(self.mini_batch_size)
-        states = mini_batch["states"]
-        actions = mini_batch["actions"]
-        Q_values = T.squeeze(self.critic1.forward(T.hstack([states, actions]).float()))
-        mean_Q_value = Q_values.mean()
-        self.critic1.compute_gradients(-mean_Q_value)
-        gradient_vector = self.critic1.get_parameter_vector(gradient=True)
-        # FIXME HIGH: continue this...
+        if beta > 0.0:
+            Sigma_matrix = self.compute_Sigma_matrix()
+            # FIXME HIGH: continue this...
+            policy_loss = -Q_term
+        else:
+            policy_loss = -Q_term
         return policy_loss
+
+    def compute_Sigma_matrix(self) -> T.Tensor:
+        dataset_size = self.buffer.buffer_size
+        if not hasattr(self, "num_parameters"):
+            self.num_parameters = self.critic1.get_num_parameters()
+        Sigma = T.zeros((self.num_parameters, self.num_parameters), device=self.device)
+        self.critic1.delete_gradients()
+        print("Computing Sigma matrix...")
+        for idx in tqdm(range(dataset_size)):
+            dataset_state = self.buffer.tensor_states[idx, :]
+            dataset_action = self.buffer.tensor_actions[idx, :]
+            Q_value = T.squeeze(
+                self.critic1.forward(T.hstack([dataset_state, dataset_action]).float())
+            )
+            self.critic1.compute_gradients(-Q_value)
+            gradient_vector = self.critic1.get_parameter_vector(gradient=True)
+            self.critic1.delete_gradients()
+            rank_one_update = gradient_vector @ gradient_vector.T
+            Sigma += rank_one_update
+        rank = T.linalg.matrix_rank(Sigma)
+        print(f"rank: {rank}")
+        return Sigma
 
     def update_target_network(self, target_network: MLP, network: MLP):
         with T.no_grad():
@@ -211,8 +231,7 @@ class PessimisticTD3:
 
     def save(self, step: int = 0, max_steps: int = 1_000_000):
         step_str = str(step).zfill(len(str(max_steps)))
-        beta_str = f"{self.beta_pessimism:.3f}"
-        name = f"{self.env_name}{step_str}.{self.buffer.num_buffers}.{beta_str}."
+        name = f"{self.env_name}{step_str}.{self.buffer.num_buffers}."
         pickle.dump(self.training_stats, open(name + "training_stats", "wb"))
         pickle.dump(self.actor, open(name + "Actor", "wb"))
         pickle.dump(self.critic1, open(name + "Critic1", "wb"))

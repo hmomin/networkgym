@@ -1,7 +1,6 @@
 NetworkAgent/stable-baselines3/models
 NetworkAgent/stable-baselines3/wandb
-NetworkAgent/td3_bc/saved
-NetworkAgent/lspi_bc/saved
+NetworkAgent/*/saved
 NetworkAgent/buffers
 *.pyc
 network_gym_accounts.csv
