@@ -5,6 +5,7 @@ import sys
 import torch as T
 import torch.nn as nn
 from copy import deepcopy
+from time import time
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
@@ -200,23 +201,38 @@ class PessimisticTD3:
         return policy_loss
 
     def compute_Sigma_matrix(self) -> T.Tensor:
-        dataset_size = self.buffer.buffer_size
+        # FIXME HIGH: maybe, this should be a hyperparameter
+        large_batch_size = 1_000
+        large_batch = self.buffer.get_mini_batch(large_batch_size)
+        states = large_batch["states"]
+        actions = large_batch["actions"]
         if not hasattr(self, "num_parameters"):
             self.num_parameters = self.critic1.get_num_parameters()
-        Sigma = T.zeros((self.num_parameters, self.num_parameters), device=self.device)
+        gradient_matrix = T.tensor([], dtype=T.float64, device=self.device)
         self.critic1.delete_gradients()
         print("Computing Sigma matrix...")
-        for idx in tqdm(range(dataset_size)):
-            dataset_state = self.buffer.tensor_states[idx, :]
-            dataset_action = self.buffer.tensor_actions[idx, :]
-            Q_value = T.squeeze(
-                self.critic1.forward(T.hstack([dataset_state, dataset_action]).float())
-            )
+
+        start = time()
+        for idx in range(large_batch_size):
+            state = states[idx, :]
+            action = actions[idx, :]
+            Q_value = T.squeeze(self.critic1.forward(T.hstack([state, action]).float()))
             self.critic1.compute_gradients(-Q_value)
-            gradient_vector = self.critic1.get_parameter_vector(gradient=True)
+            gradient_vector = self.critic1.get_parameter_vector(gradient=True).to(
+                T.float64
+            )
+            gradient_matrix = T.cat([gradient_matrix, gradient_vector], dim=1)
+            print(gradient_matrix.shape)
             self.critic1.delete_gradients()
-            rank_one_update = gradient_vector @ gradient_vector.T
-            Sigma += rank_one_update
+        print(T.linalg.matrix_rank(gradient_matrix))
+        Sigma = gradient_matrix @ gradient_matrix.T
+        print(T.linalg.matrix_rank(Sigma))
+
+        end = time()
+        print("TIME")
+        print(end - start)
+
+        raise Exception("LOL")
         rank = T.linalg.matrix_rank(Sigma)
         print(f"rank: {rank}")
         return Sigma
