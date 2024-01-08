@@ -163,7 +163,7 @@ class FastLSPI:
         next_state = next_state.flatten()
         self.store_to_buffer(state, action, reward, next_state)
         # NOTE: no point in doing LSTDQ update if the rank is too small
-        # FIXME HIGH - sometimes, full rank can be reached pretty quickly?
+        # FIXME LOW - sometimes, full rank can be reached pretty quickly?
         if self.L < self.k:
             return
         norm_difference = float("inf")

@@ -1,6 +1,5 @@
 import argparse
 from agent import PessimisticTD3
-from tqdm import tqdm
 from offline_env import OfflineEnv
 
 
@@ -29,8 +28,7 @@ def get_args() -> argparse.Namespace:
 def main() -> None:
     # ------------------------- HYPERPARAMETERS -------------------------
     buffer_max_size = 10_000
-    # FIXME HIGH: change this back to something reasonable, like 10,000
-    training_steps = 1_000  # number of mini-batch steps for training
+    training_steps = 10_000  # number of mini-batch steps for training
     save_step = int(training_steps / 100)  # how frequently models should update
     gamma = 0.99  # discount factor for rewards
     learning_rate = 0.001  # learning rate for actor and critic networks
@@ -51,15 +49,14 @@ def main() -> None:
 
     print("Training agent with offline data...")
     for step in range(training_steps):
-        # pessimism = step >= training_steps // 2
-        pessimism = step >= 0
+        pessimism = step >= training_steps // 2
         should_update_policy = step % policy_delay == 0
         beta = beta_pessimism if pessimism else 0.0
+        print(f"iteration: {step:5d} | beta_pessimism: {beta}")
         agent.update(
             mini_batch_size, training_sigma, training_clip, should_update_policy, beta
         )
         if step % save_step == 0:
-            print(f"iteration: {step:5d} | beta_pessimism: {beta}")
             agent.save(step)
     agent.save(training_steps)
 

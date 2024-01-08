@@ -6,6 +6,8 @@ import torch as T
 import torch.nn as nn
 from copy import deepcopy
 from time import time
+from torch.func import functional_call, vmap, grad
+from typing import Callable
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
@@ -116,6 +118,7 @@ class PessimisticTD3:
         training_clip: float,
         update_policy: bool,
         beta: float = 0.0,
+        ridge_lambda: float = 1.0e-3,
     ):
         self.training_stats.append([])
         self.mini_batch_size = mini_batch_size
@@ -142,7 +145,7 @@ class PessimisticTD3:
         self.critic2.gradient_descent_step(Q2_loss)
         if update_policy:
             # do a single step on the actor network
-            policy_loss = self.compute_policy_loss(states, actions, beta)
+            policy_loss = self.compute_policy_loss(states, beta, ridge_lambda)
             self.training_stats[-1].append(policy_loss.item())
             # print(f"\tpi_loss: {policy_loss.item()}")
             self.actor.gradient_descent_step(policy_loss)
@@ -185,57 +188,96 @@ class PessimisticTD3:
         Q_values = T.squeeze(network.forward(T.hstack([states, actions]).float()))
         return T.square(Q_values - targets).mean()
 
-    def compute_policy_loss(self, states: T.Tensor, actions: T.Tensor, beta: float):
+    def compute_policy_loss(self, states: T.Tensor, beta: float, ridge_lambda: float):
         policy_actions = self.actor.forward(states.float())
         Q_values = T.squeeze(
             self.critic1.forward(T.hstack([states, policy_actions]).float())
         )
-        Q_term = Q_values.mean()
+        mean_Q_value = Q_values.mean()
 
         if beta > 0.0:
-            Sigma_matrix = self.compute_Sigma_matrix()
-            # FIXME HIGH: continue this...
-            policy_loss = -Q_term
+            self.batch_gradient_function = self.get_per_sample_gradient_function()
+            self.critic_params, self.critic_buffers = self.detach_critic_parameters()
+            Sigma_matrix = self.compute_Sigma_matrix(ridge_lambda)
+            Gamma = self.compute_uncertainty_estimate(
+                beta, Sigma_matrix, states, policy_actions
+            )
+            policy_loss = -(mean_Q_value - Gamma)
+            print(f"mean_Q_value: {mean_Q_value} | mean_Gamma: {Gamma}")
         else:
-            policy_loss = -Q_term
+            policy_loss = -mean_Q_value
         return policy_loss
 
-    def compute_Sigma_matrix(self) -> T.Tensor:
+    def detach_critic_parameters(
+        self,
+    ) -> tuple[dict[str, T.Tensor], dict[str, T.Tensor]]:
+        critic_params = {k: v.detach() for k, v in self.critic1.named_parameters()}
+        critic_buffers = {k: v.detach() for k, v in self.critic1.named_buffers()}
+        return critic_params, critic_buffers
+
+    def compute_detached_Q_loss(
+        self,
+        critic_params: dict[str, T.Tensor],
+        critic_buffers: dict[str, T.Tensor],
+        sample: T.Tensor,
+    ) -> T.Tensor:
+        batch = sample.unsqueeze(0)
+        model = self.critic1
+        Q_value: T.Tensor = functional_call(
+            model, (critic_params, critic_buffers), (batch,)
+        )
+        loss = -Q_value.squeeze()
+        return loss
+
+    def get_per_sample_gradient_function(
+        self,
+    ) -> Callable[
+        [dict[str, T.Tensor], dict[str, T.Tensor], T.Tensor], dict[str, T.Tensor]
+    ]:
+        function_transform_compute_grad = grad(self.compute_detached_Q_loss)
+        function_transform_compute_sample_grad = vmap(
+            function_transform_compute_grad, in_dims=(None, None, 0)
+        )
+        return function_transform_compute_sample_grad
+
+    def get_gradient_matrix(self, gradients: dict[str, T.Tensor]) -> T.Tensor:
+        gradient_matrix = T.tensor([], dtype=T.float64, device=self.device)
+        for _, param in gradients.items():
+            vectorized_param_gradient = param.reshape((param.shape[0], -1))
+            gradient_matrix = T.hstack([gradient_matrix, vectorized_param_gradient])
+        if not hasattr(self, "num_parameters"):
+            self.num_parameters = gradient_matrix.shape[1]
+        return gradient_matrix
+
+    def compute_Sigma_matrix(self, ridge_lambda: float) -> T.Tensor:
         # FIXME HIGH: maybe, this should be a hyperparameter
-        large_batch_size = 1_000
+        large_batch_size = 10_000
         large_batch = self.buffer.get_mini_batch(large_batch_size)
         states = large_batch["states"]
         actions = large_batch["actions"]
-        if not hasattr(self, "num_parameters"):
-            self.num_parameters = self.critic1.get_num_parameters()
-        gradient_matrix = T.tensor([], dtype=T.float64, device=self.device)
-        self.critic1.delete_gradients()
-        print("Computing Sigma matrix...")
-
-        start = time()
-        for idx in range(large_batch_size):
-            state = states[idx, :]
-            action = actions[idx, :]
-            Q_value = T.squeeze(self.critic1.forward(T.hstack([state, action]).float()))
-            self.critic1.compute_gradients(-Q_value)
-            gradient_vector = self.critic1.get_parameter_vector(gradient=True).to(
-                T.float64
-            )
-            gradient_matrix = T.cat([gradient_matrix, gradient_vector], dim=1)
-            print(gradient_matrix.shape)
-            self.critic1.delete_gradients()
-        print(T.linalg.matrix_rank(gradient_matrix))
-        Sigma = gradient_matrix @ gradient_matrix.T
-        print(T.linalg.matrix_rank(Sigma))
-
-        end = time()
-        print("TIME")
-        print(end - start)
-
-        raise Exception("LOL")
-        rank = T.linalg.matrix_rank(Sigma)
-        print(f"rank: {rank}")
+        critic_inputs = T.hstack([states, actions]).float()
+        gradients = self.batch_gradient_function(
+            self.critic_params, self.critic_buffers, critic_inputs
+        )
+        gradient_matrix = self.get_gradient_matrix(gradients)
+        Sigma = gradient_matrix.T @ gradient_matrix + ridge_lambda * T.eye(
+            self.num_parameters, dtype=T.float64, device=self.device
+        )
         return Sigma
+
+    def compute_uncertainty_estimate(
+        self, beta: float, Sigma: T.Tensor, states: T.Tensor, policy_actions: T.Tensor
+    ) -> T.Tensor:
+        Sigma_inverse: T.Tensor = T.linalg.inv(Sigma)
+        critic_inputs = T.hstack([states, policy_actions]).float()
+        gradients = self.batch_gradient_function(
+            self.critic_params, self.critic_buffers, critic_inputs
+        )
+        gradient_matrix = self.get_gradient_matrix(gradients)
+        matrix_inside_sqrt = gradient_matrix @ Sigma_inverse @ gradient_matrix.T
+        vector_inside_sqrt = T.diag(matrix_inside_sqrt)
+        Gamma = beta * T.mean(T.sqrt(vector_inside_sqrt))
+        return Gamma
 
     def update_target_network(self, target_network: MLP, network: MLP):
         with T.no_grad():

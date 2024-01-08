@@ -146,7 +146,7 @@ class LSPI_BC:
             print(f"Total batch size: {size_counter} - A_tilde rank: {rank_A_tilde}")
             A_norm = T.linalg.matrix_norm(A_tilde, "fro")
             print(f"A_norm: {A_norm}")
-            # FIXME HIGH: this doesn't work with a large action space that's not
+            # FIXME LOW: this doesn't work with a large action space that's not
             # adequately explored. The rank can't become high enough, because the
             # actions are represented as one-hot vectors
             if rank_A_tilde == self.k:
