@@ -68,13 +68,21 @@ NOTE: all the run names saved as PPO - check for run_name below
 - PPO (eps 0.6 actual behavior policy)
     CREATED_AFTER = datetime(2023, 12, 4, 18, 1, 0)
     CREATED_BEFORE = datetime(2023, 12, 4, 18, 5, 0)
+
+- system_default_deterministic_walk_PTD3
+    CREATED AFTER = datetime(2023, 12, 4, 18, 1, 0)
+    CREATED_BEFORE = datetime(2024, 1, 11, 0, 20, 0)
+
+- system_default
+    CREATED AFTER = datetime(2024, 1, 11, 0, 20, 0)
+    CREATED_BEFORE = datetime(2024, 1, 11, 2, 20, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "PPO"
-CREATED_AFTER = datetime(2023, 12, 4, 18, 1, 0)
-CREATED_BEFORE = datetime(2023, 12, 4, 18, 5, 0)
+RUN_NAME = "system_default"
+CREATED_AFTER = datetime(2024, 1, 11, 0, 20, 0)
+CREATED_BEFORE = datetime(2024, 1, 11, 2, 20, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 TEST_EXPORT = False
 
