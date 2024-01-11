@@ -4,11 +4,7 @@ import torch.nn.functional as F
 
 
 class FastLSPI:
-    def __init__(
-        self,
-        observation_dim: int,
-        num_actions: int,
-    ):
+    def __init__(self, observation_dim: int, num_actions: int):
         self.gamma = 0.99
         self.observation_dim = observation_dim
         self.num_actions = num_actions
@@ -84,46 +80,36 @@ class FastLSPI:
     def Q_policy(
         self, observations: torch.Tensor, one_hot: bool = True
     ) -> torch.Tensor:
-        with torch.no_grad():
-            phi_s = observations.T
-            phi_s_repeated = phi_s.unsqueeze(1).repeat(1, self.num_actions, 1)
-            action_features_repeated = self.action_one_hots.repeat(
-                phi_s_repeated.shape[0], 1, 1
-            )
-            phi_matrix = torch.cat([phi_s_repeated, action_features_repeated], dim=2)
-            batch_w_tilde = self.w_tilde.unsqueeze(0).repeat(
-                phi_s_repeated.shape[0], 1, 1
-            )
-            Q_values = torch.bmm(phi_matrix, batch_w_tilde)
-            optimal_actions = torch.argmax(Q_values, dim=1)
-            if not one_hot:
-                return optimal_actions
-            argmax_indices = torch.squeeze(optimal_actions, 1)
-            optimal_action_one_hots = torch.index_select(
-                self.action_one_hots, dim=1, index=argmax_indices
-            ).squeeze(0)
-            return optimal_action_one_hots
+        phi_s = observations.T
+        phi_s_repeated = phi_s.unsqueeze(1).repeat(1, self.num_actions, 1)
+        action_features_repeated = self.action_one_hots.repeat(
+            phi_s_repeated.shape[0], 1, 1
+        )
+        phi_matrix = torch.cat([phi_s_repeated, action_features_repeated], dim=2)
+        batch_w_tilde = self.w_tilde.unsqueeze(0).repeat(phi_s_repeated.shape[0], 1, 1)
+        Q_values = torch.bmm(phi_matrix, batch_w_tilde)
+        optimal_actions = torch.argmax(Q_values, dim=1)
+        if not one_hot:
+            return optimal_actions
+        argmax_indices = torch.squeeze(optimal_actions, 1)
+        optimal_action_one_hots = torch.index_select(
+            self.action_one_hots, dim=1, index=argmax_indices
+        ).squeeze(0)
+        return optimal_action_one_hots
 
     def construct_phi_matrix(self, indices: torch.Tensor) -> torch.Tensor:
-        with torch.no_grad():
-            batch_states = self.states[:, indices]
-            batch_actions = self.actions[:, indices]
-            phi_s = batch_states.T
-            phi_matrix = torch.cat([phi_s, batch_actions.T], dim=1)
-            return phi_matrix
+        batch_states = self.states[:, indices]
+        batch_actions = self.actions[:, indices]
+        phi_s = batch_states.T
+        phi_matrix = torch.cat([phi_s, batch_actions.T], dim=1)
+        return phi_matrix
 
     def construct_phi_prime_matrix(self, indices: torch.Tensor) -> torch.Tensor:
-        with torch.no_grad():
-            batch_next_states = self.next_states[:, indices]
-            phi_s_prime = batch_next_states.T
-            pi_s_prime = self.Q_policy(batch_next_states, one_hot=True)
-            phi_prime_matrix = torch.cat([phi_s_prime, pi_s_prime], dim=1)
-            return phi_prime_matrix
-
-    def update(
-        self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray
-    ) -> None:
-        self.LSTDQ_update(state, action, reward, next_state)
+        batch_next_states = self.next_states[:, indices]
+        phi_s_prime = batch_next_states.T
+        pi_s_prime = self.Q_policy(batch_next_states, one_hot=True)
+        phi_prime_matrix = torch.cat([phi_s_prime, pi_s_prime], dim=1)
+        return phi_prime_matrix
 
     # NOTE: incremental update of weight vector for Q-hat
     def LSTDQ_update(
@@ -194,7 +180,9 @@ def main() -> None:
         else:
             random_reward = np.random.uniform(-11.0, -9.0)
         random_next_state = np.random.random((14, 4))
-        agent_thingy.update(random_state, action, random_reward, random_next_state)
+        agent_thingy.LSTDQ_update(
+            random_state, action, random_reward, random_next_state
+        )
         random_state = random_next_state
     # evaluation
     for action in range(agent_thingy.num_actions):
