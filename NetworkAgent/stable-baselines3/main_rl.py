@@ -18,6 +18,7 @@ from network_gym_client import load_config_file
 from network_gym_client import Env as NetworkGymEnv
 from network_gym_client import PseudoParallelEnv
 from ppo_lspi import PPO_LSPI
+from fast_lspi.agent_linear import FastLSPI
 from stable_baselines3.common.env_checker import check_env
 
 from stable_baselines3 import A2C, DDPG, PPO, SAC, TD3
@@ -114,11 +115,11 @@ def evaluate(
             action = random_action(obs)
         else:
             print("TAKING DETERMINISTIC ACTION")
-            # action, _ = model.predict(obs, deterministic=True)
+            action, _ = model.predict(obs, deterministic=True)
             # FIXME: taking non-deterministic action to see if it helps
-            action, _ = model.predict(obs, deterministic=False)
+            # action, _ = model.predict(obs, deterministic=False)
         new_obs, reward, done, truncated, info = env.step(action)
-        if type(model) == PPO_LSPI:
+        if type(model) == PPO_LSPI or type(model) == FastLSPI:
             model.LSTDQ_update(obs, action, reward, new_obs)
         obs = new_obs
 
@@ -155,6 +156,7 @@ def main():
         "SAC": SAC,
         "TD3": TD3,
         "A2C": A2C,
+        "FastLSPI": FastLSPI,
         "ArgMax": argmax_policy,
         "ArgMin": argmin_policy,
         "delay_increment": delay_increment_policy,
@@ -222,6 +224,13 @@ def main():
         elif rl_alg == "PPO_LSPI":
             # FIXME: num users hardcoded here!
             agent = agent_class(num_network_users=4)
+        elif rl_alg == "FastLSPI":
+            observation_dim = (
+                normal_obs_env.observation_space.shape[0]
+                * normal_obs_env.observation_space.shape[1]
+            )
+            num_actions = normal_obs_env.action_space.n
+            agent = agent_class(observation_dim, num_actions)
         else:
             agent = agent_class.load(model_path)
 
