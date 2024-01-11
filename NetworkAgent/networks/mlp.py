@@ -1,5 +1,5 @@
 import numpy as np
-import torch as T
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.parameter import Parameter
@@ -21,7 +21,7 @@ class MLP(nn.Module):
         hidden_activation: nn.Module,
         output_activation: nn.Module,
         learning_rate: float,
-        device: T.device,
+        device: torch.device,
         discrete_action_space: bool = False,
     ):
         super().__init__()
@@ -41,22 +41,22 @@ class MLP(nn.Module):
         self.discrete_action_space = discrete_action_space
         self.to(self.device)
 
-    def forward(self, state: T.Tensor) -> T.Tensor:
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
         return self.network(state)
 
     def predict(
         self, state: np.ndarray, deterministic: bool = True
     ) -> tuple[np.ndarray, None]:
         flattened_state = state.flatten()
-        with T.no_grad():
-            tensor_state = T.tensor(flattened_state, device=self.device)
+        with torch.no_grad():
+            tensor_state = torch.tensor(flattened_state, device=self.device)
             if self.discrete_action_space:
                 logits = self.forward(tensor_state.unsqueeze(0))
                 probabilities = F.softmax(logits, dim=1)
                 if deterministic:
-                    tensor_action = T.argmax(probabilities, dim=1)
+                    tensor_action = torch.argmax(probabilities, dim=1)
                 else:
-                    tensor_action = T.multinomial(
+                    tensor_action = torch.multinomial(
                         probabilities, num_samples=1, replacement=True
                     )
                 return (tensor_action.item(), None)
@@ -64,12 +64,14 @@ class MLP(nn.Module):
                 tensor_action = self.forward(tensor_state)
                 return (tensor_action.cpu().detach().numpy(), None)
 
-    def gradient_descent_step(self, loss: T.Tensor, retain_graph: bool = False) -> None:
+    def gradient_descent_step(
+        self, loss: torch.Tensor, retain_graph: bool = False
+    ) -> None:
         self.optimizer.zero_grad()
         self.compute_gradients(loss, retain_graph)
         self.update_parameters()
 
-    def compute_gradients(self, loss: T.Tensor, retain_graph: bool = False) -> None:
+    def compute_gradients(self, loss: torch.Tensor, retain_graph: bool = False) -> None:
         loss.backward(retain_graph=retain_graph)
 
     def update_parameters(self) -> None:
@@ -79,12 +81,12 @@ class MLP(nn.Module):
         for param in self.parameters():
             param.grad = None
 
-    def get_parameter_vector(self, gradient: bool = False) -> T.Tensor:
-        running_vector = T.tensor([], device=self.device)
+    def get_parameter_vector(self, gradient: bool = False) -> torch.Tensor:
+        running_vector = torch.tensor([], device=self.device)
         for _, param in self.named_parameters():
-            matrix_param: T.Tensor = param.grad if gradient else param
+            matrix_param: torch.Tensor = param.grad if gradient else param
             vectorized_param = matrix_param.reshape((-1, 1))
-            running_vector = T.cat((running_vector, vectorized_param), dim=0)
+            running_vector = torch.cat((running_vector, vectorized_param), dim=0)
         return running_vector
 
     def get_num_parameters(self) -> int:

@@ -2,7 +2,7 @@ import numpy as np
 import os
 import pickle
 import sys
-import torch as T
+import torch
 import torch.nn as nn
 from copy import deepcopy
 from buffer import CombinedBuffer
@@ -48,7 +48,7 @@ class Agent:
         bc_string = "bc" if self.behavioral_cloning else "normal"
         self.env_name = os.path.join(save_dir, f"{env.algo_name}_{bc_string}.")
         name = self.env_name
-        self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using {self.device} device...")
         self.training_stats: list[list[float]] = []
         # initialize the actor and critics
@@ -112,8 +112,8 @@ class Agent:
         )
 
     def get_deterministic_action(self, state: np.ndarray) -> np.ndarray:
-        state_tensor = T.tensor(state, device=self.device)
-        actions: T.Tensor = self.actor.forward(state_tensor)
+        state_tensor = torch.tensor(state, device=self.device)
+        actions: torch.Tensor = self.actor.forward(state_tensor)
         return actions.cpu().detach().numpy()
 
     def update(
@@ -158,46 +158,58 @@ class Agent:
 
     def compute_targets(
         self,
-        rewards: T.Tensor,
-        next_states: T.Tensor,
-        dones: T.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        dones: torch.Tensor,
         training_sigma: float,
         training_clip: float,
-    ) -> T.Tensor:
+    ) -> torch.Tensor:
         target_actions = self.target_actor.forward(next_states.float())
         # create additive noise for target actions
-        noise = T.normal(0, training_sigma, target_actions.shape, device=self.device)
-        clipped_noise = T.clip(noise, -training_clip, +training_clip)
-        target_actions = T.clip(
+        noise = torch.normal(
+            0, training_sigma, target_actions.shape, device=self.device
+        )
+        clipped_noise = torch.clip(noise, -training_clip, +training_clip)
+        target_actions = torch.clip(
             target_actions + clipped_noise,
             self.low_action_bound,
             self.high_action_bound,
         )
         # compute targets
-        target_Q1_values = T.squeeze(
-            self.target_critic1.forward(T.hstack([next_states, target_actions]).float())
+        target_Q1_values = torch.squeeze(
+            self.target_critic1.forward(
+                torch.hstack([next_states, target_actions]).float()
+            )
         )
-        target_Q2_values = T.squeeze(
-            self.target_critic2.forward(T.hstack([next_states, target_actions]).float())
+        target_Q2_values = torch.squeeze(
+            self.target_critic2.forward(
+                torch.hstack([next_states, target_actions]).float()
+            )
         )
-        target_Q_values = T.minimum(target_Q1_values, target_Q2_values)
+        target_Q_values = torch.minimum(target_Q1_values, target_Q2_values)
         return rewards + self.gamma * (1 - dones) * target_Q_values
 
     def compute_Q_loss(
-        self, network: MLP, states: T.Tensor, actions: T.Tensor, targets: T.Tensor
-    ) -> T.Tensor:
+        self,
+        network: MLP,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         # compute the MSE of the Q function with respect to the targets
-        Q_values = T.squeeze(network.forward(T.hstack([states, actions]).float()))
-        return T.square(Q_values - targets).mean()
+        Q_values = torch.squeeze(
+            network.forward(torch.hstack([states, actions]).float())
+        )
+        return torch.square(Q_values - targets).mean()
 
-    def compute_policy_loss(self, states: T.Tensor, actions: T.Tensor):
+    def compute_policy_loss(self, states: torch.Tensor, actions: torch.Tensor):
         policy_actions = self.actor.forward(states.float())
-        Q_values = T.squeeze(
-            self.critic1.forward(T.hstack([states, policy_actions]).float())
+        Q_values = torch.squeeze(
+            self.critic1.forward(torch.hstack([states, policy_actions]).float())
         )
         Q_term = Q_values.mean()
         if self.behavioral_cloning:
-            mean_absolute_Q_values = T.abs(Q_values).mean().detach()
+            mean_absolute_Q_values = torch.abs(Q_values).mean().detach()
             lambda_bc = self.alpha_bc / mean_absolute_Q_values
             behavioral_cloning_term = (policy_actions - actions).square().mean()
             policy_loss = -(lambda_bc * Q_term - behavioral_cloning_term)
@@ -206,7 +218,7 @@ class Agent:
         return policy_loss
 
     def update_target_network(self, target_network: MLP, network: MLP):
-        with T.no_grad():
+        with torch.no_grad():
             for target_parameter, parameter in zip(
                 target_network.parameters(), network.parameters()
             ):

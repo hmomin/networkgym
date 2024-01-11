@@ -2,7 +2,7 @@ import numpy as np
 import os
 import pickle
 import sys
-import torch as T
+import torch
 import torch.nn as nn
 from copy import deepcopy
 from time import time
@@ -43,7 +43,7 @@ class PessimisticTD3:
             os.mkdir(save_dir)
         self.env_name = os.path.join(save_dir, f"{env.algo_name}_PTD3.")
         name = self.env_name
-        self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using {self.device} device...")
         self.training_stats: list[list[float]] = []
         # initialize the actor and critics
@@ -107,8 +107,8 @@ class PessimisticTD3:
         )
 
     def get_deterministic_action(self, state: np.ndarray) -> np.ndarray:
-        state_tensor = T.tensor(state, device=self.device)
-        actions: T.Tensor = self.actor.forward(state_tensor)
+        state_tensor = torch.tensor(state, device=self.device)
+        actions: torch.Tensor = self.actor.forward(state_tensor)
         return actions.cpu().detach().numpy()
 
     def update(
@@ -156,42 +156,56 @@ class PessimisticTD3:
 
     def compute_targets(
         self,
-        rewards: T.Tensor,
-        next_states: T.Tensor,
-        dones: T.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        dones: torch.Tensor,
         training_sigma: float,
         training_clip: float,
-    ) -> T.Tensor:
+    ) -> torch.Tensor:
         target_actions = self.target_actor.forward(next_states.float())
         # create additive noise for target actions
-        noise = T.normal(0, training_sigma, target_actions.shape, device=self.device)
-        clipped_noise = T.clip(noise, -training_clip, +training_clip)
-        target_actions = T.clip(
+        noise = torch.normal(
+            0, training_sigma, target_actions.shape, device=self.device
+        )
+        clipped_noise = torch.clip(noise, -training_clip, +training_clip)
+        target_actions = torch.clip(
             target_actions + clipped_noise,
             self.low_action_bound,
             self.high_action_bound,
         )
         # compute targets
-        target_Q1_values = T.squeeze(
-            self.target_critic1.forward(T.hstack([next_states, target_actions]).float())
+        target_Q1_values = torch.squeeze(
+            self.target_critic1.forward(
+                torch.hstack([next_states, target_actions]).float()
+            )
         )
-        target_Q2_values = T.squeeze(
-            self.target_critic2.forward(T.hstack([next_states, target_actions]).float())
+        target_Q2_values = torch.squeeze(
+            self.target_critic2.forward(
+                torch.hstack([next_states, target_actions]).float()
+            )
         )
-        target_Q_values = T.minimum(target_Q1_values, target_Q2_values)
+        target_Q_values = torch.minimum(target_Q1_values, target_Q2_values)
         return rewards + self.gamma * (1 - dones) * target_Q_values
 
     def compute_Q_loss(
-        self, network: MLP, states: T.Tensor, actions: T.Tensor, targets: T.Tensor
-    ) -> T.Tensor:
+        self,
+        network: MLP,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         # compute the MSE of the Q function with respect to the targets
-        Q_values = T.squeeze(network.forward(T.hstack([states, actions]).float()))
-        return T.square(Q_values - targets).mean()
+        Q_values = torch.squeeze(
+            network.forward(torch.hstack([states, actions]).float())
+        )
+        return torch.square(Q_values - targets).mean()
 
-    def compute_policy_loss(self, states: T.Tensor, beta: float, ridge_lambda: float):
+    def compute_policy_loss(
+        self, states: torch.Tensor, beta: float, ridge_lambda: float
+    ):
         policy_actions = self.actor.forward(states.float())
-        Q_values = T.squeeze(
-            self.critic1.forward(T.hstack([states, policy_actions]).float())
+        Q_values = torch.squeeze(
+            self.critic1.forward(torch.hstack([states, policy_actions]).float())
         )
         mean_Q_value = Q_values.mean()
 
@@ -210,20 +224,20 @@ class PessimisticTD3:
 
     def detach_critic_parameters(
         self,
-    ) -> tuple[dict[str, T.Tensor], dict[str, T.Tensor]]:
+    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
         critic_params = {k: v.detach() for k, v in self.critic1.named_parameters()}
         critic_buffers = {k: v.detach() for k, v in self.critic1.named_buffers()}
         return critic_params, critic_buffers
 
     def compute_detached_Q_loss(
         self,
-        critic_params: dict[str, T.Tensor],
-        critic_buffers: dict[str, T.Tensor],
-        sample: T.Tensor,
-    ) -> T.Tensor:
+        critic_params: dict[str, torch.Tensor],
+        critic_buffers: dict[str, torch.Tensor],
+        sample: torch.Tensor,
+    ) -> torch.Tensor:
         batch = sample.unsqueeze(0)
         model = self.critic1
-        Q_value: T.Tensor = functional_call(
+        Q_value: torch.Tensor = functional_call(
             model, (critic_params, critic_buffers), (batch,)
         )
         loss = -Q_value.squeeze()
@@ -232,7 +246,8 @@ class PessimisticTD3:
     def get_per_sample_gradient_function(
         self,
     ) -> Callable[
-        [dict[str, T.Tensor], dict[str, T.Tensor], T.Tensor], dict[str, T.Tensor]
+        [dict[str, torch.Tensor], dict[str, torch.Tensor], torch.Tensor],
+        dict[str, torch.Tensor],
     ]:
         function_transform_compute_grad = grad(self.compute_detached_Q_loss)
         function_transform_compute_sample_grad = vmap(
@@ -240,47 +255,51 @@ class PessimisticTD3:
         )
         return function_transform_compute_sample_grad
 
-    def get_gradient_matrix(self, gradients: dict[str, T.Tensor]) -> T.Tensor:
-        gradient_matrix = T.tensor([], dtype=T.float64, device=self.device)
+    def get_gradient_matrix(self, gradients: dict[str, torch.Tensor]) -> torch.Tensor:
+        gradient_matrix = torch.tensor([], dtype=torch.float64, device=self.device)
         for _, param in gradients.items():
             vectorized_param_gradient = param.reshape((param.shape[0], -1))
-            gradient_matrix = T.hstack([gradient_matrix, vectorized_param_gradient])
+            gradient_matrix = torch.hstack([gradient_matrix, vectorized_param_gradient])
         if not hasattr(self, "num_parameters"):
             self.num_parameters = gradient_matrix.shape[1]
         return gradient_matrix
 
-    def compute_Sigma_matrix(self, ridge_lambda: float) -> T.Tensor:
+    def compute_Sigma_matrix(self, ridge_lambda: float) -> torch.Tensor:
         # FIXME HIGH: maybe, this should be a hyperparameter
         large_batch_size = 10_000
         large_batch = self.buffer.get_mini_batch(large_batch_size)
         states = large_batch["states"]
         actions = large_batch["actions"]
-        critic_inputs = T.hstack([states, actions]).float()
+        critic_inputs = torch.hstack([states, actions]).float()
         gradients = self.batch_gradient_function(
             self.critic_params, self.critic_buffers, critic_inputs
         )
         gradient_matrix = self.get_gradient_matrix(gradients)
-        Sigma = gradient_matrix.T @ gradient_matrix + ridge_lambda * T.eye(
-            self.num_parameters, dtype=T.float64, device=self.device
+        Sigma = gradient_matrix.T @ gradient_matrix + ridge_lambda * torch.eye(
+            self.num_parameters, dtype=torch.float64, device=self.device
         )
         return Sigma
 
     def compute_uncertainty_estimate(
-        self, beta: float, Sigma: T.Tensor, states: T.Tensor, policy_actions: T.Tensor
-    ) -> T.Tensor:
-        Sigma_inverse: T.Tensor = T.linalg.inv(Sigma)
-        critic_inputs = T.hstack([states, policy_actions]).float()
+        self,
+        beta: float,
+        Sigma: torch.Tensor,
+        states: torch.Tensor,
+        policy_actions: torch.Tensor,
+    ) -> torch.Tensor:
+        Sigma_inverse: torch.Tensor = torch.linalg.inv(Sigma)
+        critic_inputs = torch.hstack([states, policy_actions]).float()
         gradients = self.batch_gradient_function(
             self.critic_params, self.critic_buffers, critic_inputs
         )
         gradient_matrix = self.get_gradient_matrix(gradients)
         matrix_inside_sqrt = gradient_matrix @ Sigma_inverse @ gradient_matrix.T
-        vector_inside_sqrt = T.diag(matrix_inside_sqrt)
-        Gamma = beta * T.mean(T.sqrt(vector_inside_sqrt))
+        vector_inside_sqrt = torch.diag(matrix_inside_sqrt)
+        Gamma = beta * torch.mean(torch.sqrt(vector_inside_sqrt))
         return Gamma
 
     def update_target_network(self, target_network: MLP, network: MLP):
-        with T.no_grad():
+        with torch.no_grad():
             for target_parameter, parameter in zip(
                 target_network.parameters(), network.parameters()
             ):
