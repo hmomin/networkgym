@@ -23,7 +23,7 @@ COUNTER = 0
 
 def get_data_dir() -> str:
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    full_data_dir = os.path.join(script_dir, "data", data_dir)
+    full_data_dir = os.path.join(script_dir, "..", "data", data_dir)
     return full_data_dir
 
 

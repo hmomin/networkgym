@@ -28,7 +28,7 @@ color_map = {
 
 def get_data_dir() -> str:
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(script_dir, "data")
+    data_dir = os.path.join(script_dir, "..", "data")
     return data_dir
 
 
