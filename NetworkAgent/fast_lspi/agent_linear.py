@@ -4,9 +4,12 @@ import torch.nn.functional as F
 
 
 class FastLSPI:
-    def __init__(self, observation_dim: int, num_actions: int):
+    def __init__(
+        self, observation_dim: int, num_actions: int, capped_buffer: bool = True
+    ):
         self.gamma = 0.99
         self.L = 0
+        self.ring = capped_buffer
         self.observation_dim = observation_dim
         self.num_actions = num_actions
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -23,7 +26,9 @@ class FastLSPI:
 
     def initialize_Q_weights(self) -> None:
         self.k = self.observation_dim + self.num_actions
-        self.batch_size = self.k
+        self.batch_size = 1
+        while self.batch_size < self.k:
+            self.batch_size *= 2
         self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
 
     def store_to_buffer(
@@ -54,6 +59,12 @@ class FastLSPI:
             self.rewards = tensor_reward
             self.next_states = tensor_next_state
         self.L = self.rewards.shape[1]
+        if self.ring and self.L > self.batch_size:
+            self.states = self.states[:, 1:]
+            self.actions = self.actions[:, 1:]
+            self.rewards = self.rewards[:, 1:]
+            self.next_states = self.next_states[:, 1:]
+            self.L -= 1
         # print("----- BUFFER SIZES -----")
         # print(self.states.shape)
         # print(self.actions.shape)
@@ -121,8 +132,12 @@ class FastLSPI:
             return
         norm_difference = float("inf")
         iteration = 0
-        indices = torch.randint(0, self.L, (self.batch_size,), device=self.device)
-        while norm_difference >= 1.0e-6 and iteration < 6:
+        indices = (
+            torch.arange(0, self.L, dtype=torch.int64, device=self.device)
+            if self.ring
+            else torch.randint(0, self.L, (self.batch_size,), device=self.device)
+        )
+        while norm_difference >= 1.0e-6 and iteration < 10:
             phi_tilde = self.construct_phi_matrix(indices)
             phi_prime_tilde = self.construct_phi_prime_matrix(indices)
             batch_rewards = self.rewards[:, indices]
@@ -133,7 +148,7 @@ class FastLSPI:
             # in this case, do ridge regression
             while torch.isnan(w_tilde).any():
                 print(f"A_tilde defective")
-                A_tilde += 1.0e-3 * torch.eye(self.k, device="cuda:0")
+                A_tilde += 1.0e-6 * torch.eye(self.k, device="cuda:0")
                 w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
                 break
             norm_difference = torch.norm(w_tilde - self.w_tilde, float("inf"))
