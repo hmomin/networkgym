@@ -6,6 +6,7 @@ import torch.nn.functional as F
 class FastLSPI:
     def __init__(self, observation_dim: int, num_actions: int):
         self.gamma = 0.99
+        self.L = 0
         self.observation_dim = observation_dim
         self.num_actions = num_actions
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -22,11 +23,8 @@ class FastLSPI:
 
     def initialize_Q_weights(self) -> None:
         self.k = self.observation_dim + self.num_actions
-        self.batch_size = 1
-        while self.batch_size < self.k:
-            self.batch_size *= 2
+        self.batch_size = self.k
         self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
-        self.full_rank_reached = False
 
     def store_to_buffer(
         self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray
@@ -66,7 +64,7 @@ class FastLSPI:
     def predict(
         self, observation: np.ndarray, deterministic: bool = True
     ) -> tuple[int, dict]:
-        if self.full_rank_reached and deterministic:
+        if self.L >= self.batch_size and deterministic:
             flat_observation = observation.flatten()
             tensor_observation = torch.tensor(
                 flat_observation, dtype=torch.float32, device="cuda:0"
@@ -119,7 +117,7 @@ class FastLSPI:
         next_state = next_state.flatten()
         self.store_to_buffer(state, action, reward, next_state)
         # NOTE: no point in doing LSTDQ update if the rank is too small
-        if self.L < max(self.k, self.batch_size):
+        if self.L < self.batch_size:
             return
         norm_difference = float("inf")
         iteration = 0
@@ -132,21 +130,15 @@ class FastLSPI:
             b_tilde = phi_tilde.T @ batch_rewards.T
             w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
             # NOTE: if the matrix is rank-deficient, w_tilde will be all NaNs
-            # in this case, just don't do an update
-            if torch.isnan(w_tilde).any():
-                self.full_rank_reached = False
-                rank_A_tilde = torch.linalg.matrix_rank(A_tilde)
-                print(f"A_tilde defective - rank {rank_A_tilde} < {A_tilde.shape[0]}")
-                print(
-                    f"Updating batch size from {self.batch_size} to {2 * self.batch_size}..."
-                )
-                self.batch_size *= 2
+            # in this case, do ridge regression
+            while torch.isnan(w_tilde).any():
+                print(f"A_tilde defective")
+                A_tilde += 1.0e-3 * torch.eye(self.k, device="cuda:0")
+                w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
                 break
-            else:
-                self.full_rank_reached = True
-                norm_difference = torch.norm(w_tilde - self.w_tilde, float("inf"))
-                # print(f"||w - w'||_inf: {norm_difference}")
-                self.w_tilde = w_tilde
+            norm_difference = torch.norm(w_tilde - self.w_tilde, float("inf"))
+            print(f"||w - w'||_inf: {norm_difference}")
+            self.w_tilde = w_tilde
             iteration += 1
 
     def get_Q_value(self, state: np.ndarray, action: int) -> float:
