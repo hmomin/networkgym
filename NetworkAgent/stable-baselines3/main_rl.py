@@ -230,7 +230,7 @@ def main():
                 * normal_obs_env.observation_space.shape[1]
             )
             num_actions = normal_obs_env.action_space.n
-            agent = agent_class(observation_dim, num_actions)
+            agent = agent_class(observation_dim, num_actions, capped_buffer=False)
         else:
             agent = agent_class.load(model_path)
 

@@ -1,11 +1,17 @@
 import numpy as np
+import os
+import pickle
 import torch
 import torch.nn.functional as F
 
 
 class FastLSPI:
     def __init__(
-        self, observation_dim: int, num_actions: int, capped_buffer: bool = True
+        self,
+        observation_dim: int,
+        num_actions: int,
+        capped_buffer: bool = True,
+        save_folder: str = "saved",
     ):
         self.gamma = 0.99
         self.L = 0
@@ -16,6 +22,12 @@ class FastLSPI:
         print(f"Using {self.device} device...")
         self.initialize_action_feature_map()
         self.initialize_Q_weights()
+        # check if the save_folder path exists
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        save_dir = os.path.join(script_dir, save_folder)
+        if not os.path.isdir(save_dir):
+            os.mkdir(save_dir)
+        self.env_name = os.path.join(save_dir, f"LinearFastLSPI.")
 
     def initialize_action_feature_map(self) -> None:
         action_indices = list(range(self.num_actions))
@@ -29,23 +41,23 @@ class FastLSPI:
         self.batch_size = 1
         while self.batch_size < self.k:
             self.batch_size *= 2
-        self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
+        self.w_tilde = torch.randn((self.k, 1), dtype=torch.float64, device="cuda:0")
 
     def store_to_buffer(
         self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray
     ) -> None:
         tensor_state = torch.tensor(
-            state, dtype=torch.float32, device="cuda:0"
+            state, dtype=torch.float64, device="cuda:0"
         ).unsqueeze(1)
         tensor_action: torch.Tensor = F.one_hot(
             torch.tensor(action, device="cuda:0"),
             num_classes=self.num_actions,
         ).unsqueeze(1)
         tensor_reward = torch.tensor(
-            [reward], dtype=torch.float32, device="cuda:0"
+            [reward], dtype=torch.float64, device="cuda:0"
         ).unsqueeze(1)
         tensor_next_state = torch.tensor(
-            next_state, dtype=torch.float32, device="cuda:0"
+            next_state, dtype=torch.float64, device="cuda:0"
         ).unsqueeze(1)
         if hasattr(self, "states"):
             self.states = torch.cat([self.states, tensor_state], dim=1)
@@ -65,12 +77,12 @@ class FastLSPI:
             self.rewards = self.rewards[:, 1:]
             self.next_states = self.next_states[:, 1:]
             self.L -= 1
-        # print("----- BUFFER SIZES -----")
-        # print(self.states.shape)
-        # print(self.actions.shape)
-        # print(self.rewards.shape)
-        # print(self.next_states.shape)
-        # print("------------------------")
+        print("----- BUFFER SIZES -----")
+        print(self.states.shape)
+        print(self.actions.shape)
+        print(self.rewards.shape)
+        print(self.next_states.shape)
+        print("------------------------")
 
     def predict(
         self, observation: np.ndarray, deterministic: bool = True
@@ -78,7 +90,7 @@ class FastLSPI:
         if self.L >= self.batch_size and deterministic:
             flat_observation = observation.flatten()
             tensor_observation = torch.tensor(
-                flat_observation, dtype=torch.float32, device="cuda:0"
+                flat_observation, dtype=torch.float64, device="cuda:0"
             ).unsqueeze(0)
             actor_action_tensor = self.Q_policy(tensor_observation.T, one_hot=False)
             actor_action = int(actor_action_tensor.item())
@@ -134,10 +146,10 @@ class FastLSPI:
         iteration = 0
         indices = (
             torch.arange(0, self.L, dtype=torch.int64, device=self.device)
-            if self.ring
-            else torch.randint(0, self.L, (self.batch_size,), device=self.device)
+            # if self.ring
+            # else torch.randint(0, self.L, (self.batch_size,), device=self.device)
         )
-        while norm_difference >= 1.0e-6 and iteration < 10:
+        while norm_difference >= 1.0e-6 and iteration < 1:
             phi_tilde = self.construct_phi_matrix(indices)
             phi_prime_tilde = self.construct_phi_prime_matrix(indices)
             batch_rewards = self.rewards[:, indices]
@@ -145,28 +157,45 @@ class FastLSPI:
             b_tilde = phi_tilde.T @ batch_rewards.T
             w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
             # NOTE: if the matrix is rank-deficient, w_tilde will be all NaNs
-            # in this case, do ridge regression
+            # in this case, do something to make A_tilde invertible
             while torch.isnan(w_tilde).any():
                 print(f"A_tilde defective")
-                A_tilde += 1.0e-6 * torch.eye(self.k, device="cuda:0")
+                random_matrix = torch.randint(
+                    0, 2, (self.k, self.k), dtype=torch.float64, device=self.device
+                )
+                rademacher_matrix = 2 * random_matrix - 1
+                regularizer_matrix = (
+                    1.0e-6
+                    * rademacher_matrix
+                    * torch.eye(self.k, dtype=torch.float64, device="cuda:0")
+                )
+                A_tilde += regularizer_matrix
                 w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
                 break
             norm_difference = torch.norm(w_tilde - self.w_tilde, float("inf"))
             print(f"||w - w'||_inf: {norm_difference}")
             self.w_tilde = w_tilde
             iteration += 1
+        if self.L % 1000 == 0:
+            self.save()
 
     def get_Q_value(self, state: np.ndarray, action: int) -> float:
-        with torch.no_grad():
-            state = state.flatten()
-            tensor_state = torch.tensor(
-                state, dtype=torch.float32, device="cuda:0"
-            ).unsqueeze(0)
-            phi_s = tensor_state
-            phi_a = self.action_one_hots[:, action, :]
-            phi_s_a = torch.cat([phi_s, phi_a], dim=1)
-            Q_value = (phi_s_a @ self.w_tilde).item()
-            return Q_value
+        state = state.flatten()
+        tensor_state = torch.tensor(
+            state, dtype=torch.float64, device="cuda:0"
+        ).unsqueeze(0)
+        phi_s = tensor_state
+        phi_a = self.action_one_hots[:, action, :]
+        phi_s_a = torch.cat([phi_s, phi_a], dim=1)
+        Q_value = (phi_s_a @ self.w_tilde).item()
+        return Q_value
+
+    def save(self) -> None:
+        step = self.L
+        max_steps = 1_000_000
+        step_str = str(step).zfill(len(str(max_steps)))
+        name = f"{self.env_name}{step_str}."
+        pickle.dump(self, open(name + "Actor", "wb"))
 
 
 def main() -> None:
