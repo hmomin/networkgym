@@ -119,7 +119,8 @@ def evaluate(
             # FIXME: taking non-deterministic action to see if it helps
             # action, _ = model.predict(obs, deterministic=False)
         new_obs, reward, done, truncated, info = env.step(action)
-        if type(model) == PPO_LSPI or type(model) == FastLSPI:
+        # FIXME: add in FastLSPI for training (clean this up!)
+        if type(model) == PPO_LSPI:
             model.LSTDQ_update(obs, action, reward, new_obs)
         obs = new_obs
 

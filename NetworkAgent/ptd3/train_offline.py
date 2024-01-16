@@ -49,12 +49,14 @@ def main() -> None:
 
     print("Training agent with offline data...")
     for step in range(training_steps):
-        pessimism = step >= training_steps // 2
         should_update_policy = step % policy_delay == 0
-        beta = beta_pessimism if pessimism else 0.0
-        print(f"iteration: {step:5d} | beta_pessimism: {beta}")
+        print(f"iteration: {step:5d} | beta_pessimism: {beta_pessimism}")
         agent.update(
-            mini_batch_size, training_sigma, training_clip, should_update_policy, beta
+            mini_batch_size,
+            training_sigma,
+            training_clip,
+            should_update_policy,
+            beta_pessimism,
         )
         if step % save_step == 0:
             agent.save(step)
