@@ -1,12 +1,12 @@
 NetworkAgent/stable-baselines3/models
 NetworkAgent/stable-baselines3/wandb
 NetworkAgent/*/saved
+NetworkAgent/data
 NetworkAgent/buffers
 *.pyc
 network_gym_accounts.csv
 /docs/_build
 *.pickle
-*.csv
 .vscode
 *logs
 *.png
