@@ -17,7 +17,7 @@ if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then
         agent="system_default_deterministic_walk_PTD3.${padded_value}.64"
         echo "SEED: $seed --- AGENT: $agent"
 
-        python -u NetworkAgent/config_changer.py --test --agent $agent --seed $seed --steps 5000
+        python -u NetworkAgent/config_changer.py --test --agent $agent --seed $seed --steps 3200
         cd NetworkAgent/stable-baselines3
         python -u main_rl.py --env nqos_split --client_id $client_id
         cd ../..
