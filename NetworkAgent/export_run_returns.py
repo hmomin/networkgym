@@ -87,14 +87,18 @@ NOTE: all the run names saved as PPO - check for run_name below
 
 - system_default_deterministic_walk_PTD3 (beta 1.0, pessimism all the way through)
     CREATED_AFTER = datetime(2024, 1, 17, 20, 22, 0)
-    CREATED_BEFORE = datetime(2024, 1, 17, ?, ?, ?)
+    CREATED_BEFORE = datetime(2024, 1, 18, 17, 25, 0)
+
+- system_default_deterministic_walk_PTD3_beta_1.0_alpha_0.999 (new iterative "SGD" scheme for Sigma matrix)
+    CREATED_AFTER = datetime(2024, 1, 18, 18, 30, 0)
+    CREATED_BEFORE = datetime(2024, 1, 18, ?, ?, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
 RUN_NAME = "system_default_deterministic_walk_PTD3"
-CREATED_AFTER = datetime(2024, 1, 14, 20, 53, 0)
-CREATED_BEFORE = datetime(2024, 1, 15, 7, 57, 0)
+CREATED_AFTER = datetime(2024, 1, 17, 20, 22, 0)
+CREATED_BEFORE = datetime(2024, 1, 18, 17, 25, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 TEST_EXPORT = False
 

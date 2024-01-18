@@ -14,7 +14,7 @@ if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then
     while [ $start_value -le 10000 ]
     do
         padded_value=$(printf "%07d" $start_value)
-        agent="system_default_deterministic_walk_PTD3.${padded_value}.64"
+        agent="system_default_deterministic_walk_PTD3_beta_1.0_alpha_0.999_step_${padded_value}"
         echo "SEED: $seed --- AGENT: $agent"
 
         python -u NetworkAgent/config_changer.py --test --agent $agent --seed $seed --steps 3200
