@@ -84,6 +84,10 @@ NOTE: all the run names saved as PPO - check for run_name below
 - system_default_deterministic_walk_PTD3 (beta 10.0, ridge_lambda 1.0e-3)
     CREATED_AFTER = datetime(2024, 1, 14, 20, 53, 0)
     CREATED_BEFORE = datetime(2024, 1, 15, 7, 57, 0)
+
+- system_default_deterministic_walk_PTD3 (beta 1.0, pessimism all the way through)
+    CREATED_AFTER = datetime(2024, 1, 17, 20, 22, 0)
+    CREATED_BEFORE = datetime(2024, 1, 17, ?, ?, ?)
 """
 
 
