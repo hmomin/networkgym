@@ -7,14 +7,14 @@ if [ $# -ne 1 ]; then
 fi
 client_id=$1
 seed=256
-start_value=$((client_id * 100))
+start_value=$((client_id * 200))
 
 # check if client_id is within valid range
 if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then
     while [ $start_value -le 10000 ]
     do
         padded_value=$(printf "%07d" $start_value)
-        agent="system_default_deterministic_walk_PTD3_beta_1.0_alpha_0.999_step_${padded_value}"
+        agent="system_default_deterministic_walk_PTD3_beta_1.0_alpha_0.9995_step_${padded_value}"
         echo "SEED: $seed --- AGENT: $agent"
 
         python -u NetworkAgent/config_changer.py --test --agent $agent --seed $seed --steps 3200
@@ -22,7 +22,7 @@ if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then
         python -u main_rl.py --env nqos_split --client_id $client_id
         cd ../..
 
-        start_value=$((start_value + 800))
+        start_value=$((start_value + 1600))
     done
 else
     echo "ERROR: client_id must be an int between 0 and 7, inclusive. ($client_id provided)"
