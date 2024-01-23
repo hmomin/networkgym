@@ -4,18 +4,21 @@ import os
 import pandas as pd
 from pprint import pprint
 
-DATA_DIR = "2024_01_18_system_default_PTD3_beta_1.0_pessimism_all_the_way_through"
-# DATA_DIR = "2024_01_10_system_default_PTD3_beta_1.0"
+DATA_DIR = "2024_01_22_system_default_PTD3_beta_1.0_alpha_0.9995_diff_seeds"
+# DATA_DIR = "2024_01_22_system_default_PTD3_beta_1.0_alpha_0.9995"
 
 COLOR_MAP = {
     "sys_default": "#4daf4a",
+    "sys_default_seed_256": "#4daf4a",
+    "sys_default_seed_257": "#4a60b0",
     "sys_default_PTD3": "#dd0000",
-    "sys_default_PTD3_full_pess": "#A020F0",
+    "sys_default_PTD3_seed_256": "#dd0000",
+    "sys_default_PTD3_seed_257": "#b2b300",
 }
 
 NUM_STEPS = 3200.0
 
-WARM_START = True
+WARM_START = False
 
 Y_MIN = -2.0
 Y_MAX = -0.4
@@ -39,7 +42,6 @@ def parse_data(df: pd.DataFrame) -> dict[str | float, tuple[float, float]]:
     # NOTE: each column is a key
     for column_key in df:
         step_thingy = parse_key(column_key)
-        print(step_thingy)
         values: list[float] = df[column_key].to_list()
         values = [val / NUM_STEPS for val in values]
         data_dict[step_thingy] = get_mean_std_from_section(values)
@@ -54,13 +56,12 @@ def get_algorithm_name(filename: str) -> str:
 
 
 def parse_key(column_key: float | str) -> str | float:
-    step_thingy_elems = column_key.split(".")[-2:-1]
-    step_thingy_str = ".".join(step_thingy_elems)
+    step_thingy = column_key.split("_")[-1]
     try:
-        float(step_thingy_str)
+        float(step_thingy)
     except ValueError:
-        return step_thingy_str
-    return float(step_thingy_str)
+        return step_thingy
+    return float(step_thingy)
 
 
 def get_mean_std_from_section(values: list[float]) -> tuple[float, float]:
@@ -90,7 +91,7 @@ def process_data_for_plotting(
 
 
 def get_x_vals() -> list[float]:
-    return list(np.arange(0, 10001, 100))
+    return list(np.arange(0, 20001, 200))
 
 
 def plot_data(

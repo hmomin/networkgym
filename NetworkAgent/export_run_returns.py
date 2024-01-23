@@ -73,7 +73,7 @@ NOTE: all the run names saved as PPO - check for run_name below
     CREATED_AFTER = datetime(2023, 12, 4, 18, 1, 0)
     CREATED_BEFORE = datetime(2024, 1, 11, 0, 20, 0)
 
-- system_default
+- system_default (seed 256)
     CREATED_AFTER = datetime(2024, 1, 11, 0, 20, 0)
     CREATED_BEFORE = datetime(2024, 1, 11, 2, 20, 0)
 
@@ -92,14 +92,31 @@ NOTE: all the run names saved as PPO - check for run_name below
 - system_default_deterministic_walk_PTD3_beta_1.0_alpha_0.999 (new iterative "SGD" scheme for Sigma matrix)
     CREATED_AFTER = datetime(2024, 1, 18, 18, 30, 0)
     CREATED_BEFORE = datetime(2024, 1, 19, 1, 11, 0)
+
+- system_default_deterministic_walk_PTD3_beta_1.0_alpha_0.995
+    CREATED_AFTER = datetime(2024, 1, 19, 1, 54, 0)
+    CREATED_BEFORE = datetime(2024, 1, 19, 20, 11, 0)
+
+- system_default_deterministic_walk_PTD3_beta_1.0_alpha_0.9995 (seed 256)
+    CREATED_AFTER = datetime(2024, 1, 21, 7, 34, 0)
+    CREATED_BEFORE = datetime(2024, 1, 22, 1, 57, 0)
+
+- system_default_deterministic_walk_PTD3_beta_1.0_alpha_0.9995 (seed 257)
+    CREATED_AFTER = datetime(2024, 1, 22, 6, 43, 0)
+    CREATED_BEFORE = datetime(2024, 1, 22, 16, 43, 0)
+    
+- system_default_seed_257 (seed 257)
+    CREATED_AFTER = datetime(2024, 1, 22, 19, 42, 0)
+    CREATED_BEFORE = datetime(2024, 1, 22, 19, 44, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "system_default_deterministic_walk_PTD3_beta_1.0_alpha_0.999"
-CREATED_AFTER = datetime(2024, 1, 18, 18, 30, 0)
-CREATED_BEFORE = datetime(2024, 1, 19, 1, 11, 0)
+RUN_NAME = "system_default"
+CREATED_AFTER = datetime(2024, 1, 22, 19, 40, 0)
+CREATED_BEFORE = datetime(2024, 1, 22, 19, 45, 0)
 MIN_RUNTIME = timedelta(minutes=1)
+MAX_STEPS = 3200
 TEST_EXPORT = False
 
 
@@ -124,6 +141,8 @@ def get_returns_from_runs(runs: list, num_runs: int = 0) -> dict[str, list[float
     for idx, run in enumerate(tqdm(runs)):
         history = run.scan_history()
         run_rewards: list[float] = [row["reward"] for row in history]
+        if MAX_STEPS > 0:
+            run_rewards = run_rewards[0 : MAX_STEPS - 1]
         run_return: float = sum(run_rewards)
         run_name: str = run.name
         base_run_name = run_name.split("_seed_")[0]

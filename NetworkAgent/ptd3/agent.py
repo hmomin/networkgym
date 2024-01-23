@@ -307,6 +307,8 @@ class PessimisticTD3:
         )
         self.Sigma = new_Sigma
         self.Sigma_inverse = new_Sigma_inverse
+        if self.current_update_step > 0 and self.current_update_step % 100 == 0:
+            self.ground_inverse_computation()
 
     def compute_uncertainty_estimate(
         self,
@@ -322,6 +324,13 @@ class PessimisticTD3:
         vector_inside_sqrt = torch.diag(matrix_inside_sqrt)
         Gamma = self.beta * torch.mean(torch.sqrt(vector_inside_sqrt))
         return Gamma
+
+    def ground_inverse_computation(self) -> None:
+        true_Sigma_inverse = torch.linalg.inv(self.Sigma)
+        inverse_deviation = true_Sigma_inverse - self.Sigma_inverse
+        frobenius_norm = torch.linalg.matrix_norm(inverse_deviation)
+        print(f"Frobenius norm of Sigma_inverse deviation: {frobenius_norm}")
+        self.Sigma_inverse = true_Sigma_inverse
 
     def update_target_network(self, target_network: MLP, network: MLP):
         with torch.no_grad():
