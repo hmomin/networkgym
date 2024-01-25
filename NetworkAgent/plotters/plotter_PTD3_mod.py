@@ -4,18 +4,17 @@ import os
 import pandas as pd
 from pprint import pprint
 
-DATA_DIR = "2024_01_23_system_default_PTD3_beta_1.0_alpha_1.0"
-# DATA_DIR = "2024_01_22_system_default_PTD3_beta_1.0_alpha_0.999"
-# DATA_DIR = "2024_01_22_system_default_PTD3_beta_1.0_alpha_0.995"
+DATA_DIR = "2024_01_24_system_default_PTD3_beta_1.0_pessimism_all_the_way_through"
 
 COLOR_MAP = {
     "sys_default": "#4daf4a",
     "sys_default_PTD3": "#dd0000",
+    "sys_default_PTD3_full_pess": "#A020F0",
 }
 
 NUM_STEPS = 3200.0
 
-WARM_START = False
+WARM_START = True
 
 Y_MIN = -2.0
 Y_MAX = -0.4
@@ -39,6 +38,7 @@ def parse_data(df: pd.DataFrame) -> dict[str | float, tuple[float, float]]:
     # NOTE: each column is a key
     for column_key in df:
         step_thingy = parse_key(column_key)
+        print(step_thingy)
         values: list[float] = df[column_key].to_list()
         values = [val / NUM_STEPS for val in values]
         data_dict[step_thingy] = get_mean_std_from_section(values)
@@ -53,7 +53,12 @@ def get_algorithm_name(filename: str) -> str:
 
 
 def parse_key(column_key: float | str) -> str | float:
-    step_thingy = column_key.split("_")[-1]
+    if type(column_key) == str and "beta" in column_key:
+        step_thingy = column_key.split("_")[-1]
+    elif type(column_key) == str and "PTD3" in column_key:
+        step_thingy = column_key.split(".")[-2]
+    else:
+        step_thingy = column_key
     try:
         float(step_thingy)
     except ValueError:

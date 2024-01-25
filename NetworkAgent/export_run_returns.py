@@ -108,15 +108,23 @@ NOTE: all the run names saved as PPO - check for run_name below
 - system_default_seed_257 (seed 257)
     CREATED_AFTER = datetime(2024, 1, 22, 19, 42, 0)
     CREATED_BEFORE = datetime(2024, 1, 22, 19, 44, 0)
+    
+- system_default_deterministic_walk_PTD3_beta_1.0_alpha_1.0 (seed 256)
+    CREATED_AFTER = datetime(2024, 1, 23, 5, 55, 0)
+    CREATED_BEFORE = datetime(2024, 1, 23, 16, 36, 0)
+    
+- system_default_deterministic_walk_PTD3_beta_1.0 (pessimism all the way through)
+    CREATED_AFTER = datetime(2024, 1, 24, 4, 29, 0)
+    CREATED_BEFORE = datetime(2024, 1, 24, 19, 27, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "system_default"
-CREATED_AFTER = datetime(2024, 1, 22, 19, 40, 0)
-CREATED_BEFORE = datetime(2024, 1, 22, 19, 45, 0)
+RUN_NAME = "system_default_deterministic_walk_PTD3_beta_1.0"
+CREATED_AFTER = datetime(2024, 1, 24, 4, 29, 0)
+CREATED_BEFORE = datetime(2024, 1, 24, 19, 27, 0)
 MIN_RUNTIME = timedelta(minutes=1)
-MAX_STEPS = 3200
+MAX_STEPS = -1
 TEST_EXPORT = False
 
 
