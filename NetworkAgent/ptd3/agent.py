@@ -20,7 +20,6 @@ from offline_env import OfflineEnv
 def Sherman_Morrison_inverse(
     A_inverse: torch.Tensor, u: torch.Tensor, v: torch.Tensor
 ) -> torch.Tensor:
-    # FIXME LOW: can add a check for invertibility?
     denominator = 1 + v.T @ A_inverse @ u
     numerator = A_inverse @ u @ v.T @ A_inverse
     total_inverse = A_inverse - numerator / denominator
@@ -50,6 +49,7 @@ class PessimisticTD3:
         self.alpha = alpha_fisher
         self.gamma = gamma
         self.tau = tau
+        self.ridge_lambda = 1.0e-9
         self.policy_delay = policy_delay
         self.current_update_step = 0
         # check if the save_folder path exists
@@ -124,8 +124,14 @@ class PessimisticTD3:
     def initialize_Fisher_information_matrix(self) -> None:
         self.d = self.critic1.get_num_parameters()
         print(f"Each critic network has {self.d} parameters...")
-        self.Sigma = torch.eye(self.d, dtype=torch.float64, device=self.device)
-        self.Sigma_inverse = torch.eye(self.d, dtype=torch.float64, device=self.device)
+        self.Sigma = self.ridge_lambda * torch.eye(
+            self.d, dtype=torch.float64, device=self.device
+        )
+        self.Sigma_inverse = (
+            1.0
+            / self.ridge_lambda
+            * torch.eye(self.d, dtype=torch.float64, device=self.device)
+        )
 
     def get_noisy_action(self, state: np.ndarray, sigma: float) -> np.ndarray:
         deterministic_action = self.get_deterministic_action(state)
@@ -297,18 +303,19 @@ class PessimisticTD3:
             self.critic_params, self.critic_buffers, critic_input
         )
         gradient_transpose = self.get_gradient_matrix(gradient_dict)
-        gradient = gradient_transpose.T
-        noisy_gradient = gradient + (1.0e-9) * torch.randn_like(
-            gradient, dtype=torch.float64, device=self.device
-        )
-        new_Sigma = self.alpha * self.Sigma + noisy_gradient @ noisy_gradient.T
-        new_Sigma_inverse = Sherman_Morrison_inverse(
-            self.Sigma_inverse / self.alpha, noisy_gradient, noisy_gradient
-        )
-        self.Sigma = new_Sigma
-        self.Sigma_inverse = new_Sigma_inverse
-        if self.current_update_step > 0 and self.current_update_step % 100 == 0:
-            self.ground_inverse_computation()
+        with torch.no_grad():
+            gradient = gradient_transpose.T
+            noisy_gradient = gradient + self.ridge_lambda * torch.randn_like(
+                gradient, dtype=torch.float64, device=self.device
+            )
+            new_Sigma = self.alpha * self.Sigma + noisy_gradient @ noisy_gradient.T
+            new_Sigma_inverse = Sherman_Morrison_inverse(
+                self.Sigma_inverse / self.alpha, noisy_gradient, noisy_gradient
+            )
+            self.Sigma = new_Sigma
+            self.Sigma_inverse = new_Sigma_inverse
+            if self.current_update_step > 0 and self.current_update_step % 100 == 0:
+                self.ground_inverse_computation()
 
     def compute_uncertainty_estimate(
         self,
