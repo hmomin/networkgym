@@ -65,8 +65,8 @@ def main() -> None:
         agent.update(
             mini_batch_size, training_sigma, training_clip, should_update_policy
         )
-    #     if step % save_step == 0:
-    #         agent.save(step, training_steps)
+        if step % save_step == 0:
+            agent.save(step, training_steps)
     agent.save(training_steps, training_steps)
 
 
