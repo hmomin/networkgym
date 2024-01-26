@@ -27,7 +27,7 @@ def get_args() -> argparse.Namespace:
         action="store_true",
         help="whether to do feature normalization or not",
         required=False,
-        default=False
+        default=False,
     )
     args = parser.parse_args()
     return args

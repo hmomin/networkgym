@@ -67,8 +67,8 @@ def main() -> None:
     print("Training agent with offline data...")
     for step in range(training_steps):
         agent.update(mini_batch_size, training_sigma, training_clip)
-        # if step % save_step == 0:
-        #     agent.save(step)
+        if step % save_step == 0:
+            agent.save(step)
     agent.save(training_steps)
 
 
