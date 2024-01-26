@@ -5,13 +5,13 @@ import sys
 import torch
 import torch.nn as nn
 from copy import deepcopy
-from buffer import CombinedBuffer
-from offline_env import OfflineEnv
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
+from buffer import CombinedBuffer
 from networks.mlp import MLP
+from offline_env import OfflineEnv
 
 
 class Agent:

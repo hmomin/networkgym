@@ -1,5 +1,5 @@
 import argparse
-from td3_bc.agent import Agent
+from agent import Agent
 from tqdm import tqdm
 from offline_env import OfflineEnv
 
@@ -19,7 +19,7 @@ def get_args() -> argparse.Namespace:
         "--env_name",
         help="algorithm with offline buffers to train from",
         required=False,
-        default="system_default",
+        default="system_default_deterministic_walk",
         type=str,
     )
     parser.add_argument(
@@ -27,6 +27,7 @@ def get_args() -> argparse.Namespace:
         action="store_true",
         help="whether to do feature normalization or not",
         required=False,
+        default=False
     )
     args = parser.parse_args()
     return args
@@ -64,8 +65,8 @@ def main() -> None:
         agent.update(
             mini_batch_size, training_sigma, training_clip, should_update_policy
         )
-        if step % save_step == 0:
-            agent.save(step, training_steps)
+    #     if step % save_step == 0:
+    #         agent.save(step, training_steps)
     agent.save(training_steps, training_steps)
 
 
