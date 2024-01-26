@@ -49,7 +49,6 @@ class PessimisticTD3:
         self.alpha = alpha_fisher
         self.gamma = gamma
         self.tau = tau
-        self.ridge_lambda = 1.0e-9
         self.policy_delay = policy_delay
         self.current_update_step = 0
         # check if the save_folder path exists
@@ -75,7 +74,7 @@ class PessimisticTD3:
             pickle.load(open(self.env_name + ".Actor", "rb"))
             if should_load and os.path.exists(self.env_name + ".Actor")
             else MLP(
-                [self.observation_dim, 64, 64, self.action_dim],
+                [self.observation_dim, 400, 300, self.action_dim],
                 nn.ReLU(),
                 nn.Sigmoid(),
                 learning_rate,
@@ -124,14 +123,8 @@ class PessimisticTD3:
     def initialize_Fisher_information_matrix(self) -> None:
         self.d = self.critic1.get_num_parameters()
         print(f"Each critic network has {self.d} parameters...")
-        self.Sigma = self.ridge_lambda * torch.eye(
-            self.d, dtype=torch.float64, device=self.device
-        )
-        self.Sigma_inverse = (
-            1.0
-            / self.ridge_lambda
-            * torch.eye(self.d, dtype=torch.float64, device=self.device)
-        )
+        self.Sigma = torch.eye(self.d, dtype=torch.float64, device=self.device)
+        self.Sigma_inverse = torch.eye(self.d, dtype=torch.float64, device=self.device)
 
     def get_noisy_action(self, state: np.ndarray, sigma: float) -> np.ndarray:
         deterministic_action = self.get_deterministic_action(state)
@@ -305,7 +298,8 @@ class PessimisticTD3:
         gradient_transpose = self.get_gradient_matrix(gradient_dict)
         with torch.no_grad():
             gradient = gradient_transpose.T
-            noisy_gradient = gradient + self.ridge_lambda * torch.randn_like(
+            # NOTE: have to add a little noise to maintain full rank
+            noisy_gradient = gradient + (1.0e-9) * torch.randn_like(
                 gradient, dtype=torch.float64, device=self.device
             )
             new_Sigma = self.alpha * self.Sigma + noisy_gradient @ noisy_gradient.T
