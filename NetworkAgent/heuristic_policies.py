@@ -107,53 +107,13 @@ def utility_logistic_action(obs: np.ndarray) -> list[float]:
         else:
             utility_difference = wifi_utility - lte_utility
             # NOTE: (+inf) - (+inf) = nan, and same for (-inf)
-            new_action = 0.5 if np.isnan(utility_difference) else float(sigmoid(utility_difference))
+            new_action = (
+                0.5
+                if np.isnan(utility_difference)
+                else float(sigmoid(utility_difference))
+            )
             actions.append(new_action)
     return actions
-
-
-def system_default_action(obs: np.ndarray) -> list[float]:
-    # use obs and whatever the current split ratio is to update new split ratio
-    num_users = obs.shape[1]
-    lte_owds = obs[5, :] * 100
-    wifi_owds = obs[6, :] * 100
-    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    print("UE\tWIFI\tLTE\tUPDATE")
-    for user, lte_owd, wifi_owd in zip(range(num_users), lte_owds, wifi_owds):
-        update_to_split_ratio = delay_based_algorithm(user, wifi_owd, lte_owd)
-        print(
-            f"{user}\t{int(round(wifi_owd))}\t{int(round(lte_owd))}\t{update_to_split_ratio}"
-        )
-        CURRENT_SPLIT_RATIO[user] += update_to_split_ratio
-    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    return [x / 32.0 for x in CURRENT_SPLIT_RATIO]
-
-
-def delay_based_algorithm(user: int, wifi_owd: int, lte_owd: int) -> int:
-    last_wifi_index = CURRENT_SPLIT_RATIO[user]
-    wifi_index_change_alpha = WIFI_INDEX_CHANGE_ALPHAS[user]
-    last_decision_wifi_owd = LAST_WIFI_OWDS[user]
-    last_decision_lte_owd = LAST_LTE_OWDS[user]
-    if TOLERANCE_DELAY_BOUND < wifi_owd - lte_owd:
-        if wifi_index_change_alpha >= 0:
-            wifi_index_change_alpha = -1
-        if wifi_owd >= last_decision_wifi_owd and last_wifi_index > 0:
-            last_wifi_index += min(-1, wifi_index_change_alpha + STEP_ALPHA_THRESHOLD)
-            WIFI_INDEX_CHANGE_ALPHAS[user] -= 1
-            last_wifi_index = max(0, last_wifi_index)
-    elif TOLERANCE_DELAY_BOUND < lte_owd - wifi_owd:
-        if wifi_index_change_alpha <= 0:
-            wifi_index_change_alpha = 1
-        if lte_owd >= last_decision_lte_owd and last_wifi_index < 32:
-            last_wifi_index += max(1, wifi_index_change_alpha - STEP_ALPHA_THRESHOLD)
-            WIFI_INDEX_CHANGE_ALPHAS[user] += 1
-            last_wifi_index = min(32, last_wifi_index)
-    else:
-        WIFI_INDEX_CHANGE_ALPHAS[user] = 0
-    LAST_WIFI_OWDS[user] = wifi_owd
-    LAST_LTE_OWDS[user] = lte_owd
-
-    return last_wifi_index - CURRENT_SPLIT_RATIO[user]
 
 
 def argmax_action(obs: np.ndarray) -> list[float]:
@@ -167,10 +127,6 @@ def argmin_action(obs: np.ndarray) -> list[float]:
 def random_action(obs: np.ndarray) -> list[float]:
     num_users = obs.shape[1]
     return list(np.random.random((num_users)))
-
-
-def system_default_proxy_policy(env: Env, config_json: dict) -> None:
-    generic_policy(env, config_json, system_default_action)
 
 
 def delay_increment_policy(env: Env, config_json: dict) -> None:

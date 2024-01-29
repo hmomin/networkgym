@@ -29,7 +29,6 @@ from stable_baselines3.common.noise import NormalActionNoise
 from gymnasium.wrappers.normalize import NormalizeObservation
 
 from NetworkAgent.heuristic_policies import (
-    system_default_proxy_policy,
     argmax_policy,
     argmin_policy,
     delay_increment_policy,
@@ -165,7 +164,6 @@ def main():
         "Random": random_policy,
         "random_discrete_increment": random_discrete_policy,
         "system_default": system_default_policy,
-        "system_default_proxy": system_default_proxy_policy,
         "UtilityFull": utility_argmax_policy,
         "UtilityLogistic": utility_logistic_policy,
     }
@@ -187,7 +185,6 @@ def main():
 
     heuristic_algorithms = [
         "system_default",
-        "system_default_proxy",
         "delay_increment",
         "random_discrete_increment",
         "ArgMax",
