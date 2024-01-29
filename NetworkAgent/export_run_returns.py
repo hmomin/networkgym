@@ -116,13 +116,65 @@ NOTE: all the run names saved as PPO - check for run_name below
 - system_default_deterministic_walk_PTD3_beta_1.0 (pessimism all the way through)
     CREATED_AFTER = datetime(2024, 1, 24, 4, 29, 0)
     CREATED_BEFORE = datetime(2024, 1, 24, 19, 27, 0)
+
+- system_default
+    CREATED_AFTER = datetime(2024, 1, 26, 1, 58, 0)
+    CREATED_BEFORE = datetime(2024, 1, 26, 2, 1, 0)
+
+- ArgMax
+    CREATED_AFTER = datetime(2024, 1, 26, 1, 58, 0)
+    CREATED_BEFORE = datetime(2024, 1, 26, 5, 47, 0)
+
+- ArgMin
+    CREATED_AFTER = datetime(2024, 1, 26, 1, 58, 0)
+    CREATED_BEFORE = datetime(2024, 1, 26, 5, 47, 0)
+
+- Random
+    CREATED_AFTER = datetime(2024, 1, 26, 1, 58, 0)
+    CREATED_BEFORE = datetime(2024, 1, 26, 5, 47, 0)
+
+- system_default_deterministic_td3_bc_10000_alpha_0.000
+    CREATED_AFTER = datetime(2024, 1, 26, 1, 58, 0)
+    CREATED_BEFORE = datetime(2024, 1, 26, 5, 47, 0)
+
+- UtilityLogistic
+    CREATED_AFTER = datetime(2024, 1, 26, 1, 58, 0)
+    CREATED_BEFORE = datetime(2024, 1, 26, 5, 47, 0)
+
+- system_default_deterministic_td3_bc_10000_alpha_0.625
+    CREATED_AFTER = datetime(2024, 1, 26, 6, 16, 0)
+    CREATED_BEFORE = datetime(2024, 1, 27, 17, 8, 0)
+
+- system_default_deterministic_walk_PTD3 (some of them)
+    CREATED_AFTER = datetime(2024, 1, 26, 6, 16, 0)
+    CREATED_BEFORE = datetime(2024, 1, 27, 17, 8, 0)
+
+- system_default_deterministic_walk_PTD3 (all the other runs)
+    CREATED_AFTER = datetime(2024, 1, 29, 2, 47, 0)
+    CREATED_BEFORE = datetime(2024, 1, 29, 17, 10, 0)
+
+- PPO (deterministic)
+    CREATED_AFTER = datetime(2024, 1, 29, 5, 50, 0)
+    CREATED_BEFORE = datetime(2024, 1, 29, 6, 57, 0)
+
+- SAC (deterministic)
+    CREATED_AFTER = datetime(2024, 1, 29, 5, 50, 0)
+    CREATED_BEFORE = datetime(2024, 1, 29, 6, 57, 0)
+
+- PPO (stochastic)
+    CREATED_AFTER = datetime(2024, 1, 29, 17, 35, 0)
+    CREATED_BEFORE = datetime(2024, 1, 29, 18, 9, 0)
+
+- SAC (stochastic)
+    CREATED_AFTER = datetime(2024, 1, 29, 17, 35, 0)
+    CREATED_BEFORE = datetime(2024, 1, 29, 18, 9, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "system_default_deterministic_walk_PTD3_beta_1.0"
-CREATED_AFTER = datetime(2024, 1, 24, 4, 29, 0)
-CREATED_BEFORE = datetime(2024, 1, 24, 19, 27, 0)
+RUN_NAME = "SAC"
+CREATED_AFTER = datetime(2024, 1, 29, 17, 35, 0)
+CREATED_BEFORE = datetime(2024, 1, 29, 18, 9, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 TEST_EXPORT = False

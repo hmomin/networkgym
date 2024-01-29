@@ -2,8 +2,8 @@
 
 set -e
 
-betas=(1.0 0.3 0.1)
-alphas=(0.999 0.9995 0.9999)
+betas=(10.0)
+alphas=(0.999 0.9995 0.9999 1.0)
 
 for beta in "${betas[@]}"; do
     for alpha in "${alphas[@]}"; do
