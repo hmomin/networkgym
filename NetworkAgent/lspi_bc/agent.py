@@ -64,7 +64,7 @@ class LSPI_BC:
         phi_s_layer: nn.Linear = self.actor.layers[-4]
         phi_s_shape = phi_s_layer.bias.shape[0]
         self.k = phi_s_shape + self.num_actions
-        self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
+        self.w_tilde = torch.randn((self.k, 1), dtype=torch.float64, device="cuda:0")
 
     def update(self, mini_batch_size: int, alpha_bc: str = "0.00"):
         self.alpha_str = alpha_bc
@@ -119,8 +119,8 @@ class LSPI_BC:
         return cross_entropy_loss
 
     def compute_LSPI_weights(self) -> None:
-        A_tilde = torch.zeros((self.k, self.k), dtype=torch.float32, device=self.device)
-        b_tilde = torch.zeros((self.k, 1), dtype=torch.float32, device=self.device)
+        A_tilde = torch.zeros((self.k, self.k), dtype=torch.float64, device=self.device)
+        b_tilde = torch.zeros((self.k, 1), dtype=torch.float64, device=self.device)
         rank_A_tilde = 0
         batch_counter = 0
         size_counter = 0
@@ -141,7 +141,7 @@ class LSPI_BC:
             phi_prime_tilde = self.construct_phi_prime_matrix(next_states)
 
             A_tilde += phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
-            b_tilde += phi_tilde.T @ rewards.to(torch.float32)
+            b_tilde += phi_tilde.T @ rewards.to(torch.float64)
             rank_A_tilde = torch.linalg.matrix_rank(A_tilde)
             print(f"Total batch size: {size_counter} - A_tilde rank: {rank_A_tilde}")
             A_norm = torch.linalg.matrix_norm(A_tilde, "fro")
@@ -149,6 +149,7 @@ class LSPI_BC:
             # FIXME LOW: this doesn't work with a large action space that's not
             # adequately explored. The rank can't become high enough, because the
             # actions are represented as one-hot vectors
+            # NOTE: trying torch.float64 to see if it becomes high-enough rank
             if rank_A_tilde == self.k:
                 self.w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
 

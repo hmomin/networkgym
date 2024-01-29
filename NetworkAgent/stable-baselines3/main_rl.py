@@ -117,6 +117,7 @@ def evaluate(
             print("TAKING DETERMINISTIC ACTION")
             action, _ = model.predict(obs, deterministic=True)
             # FIXME: taking non-deterministic action to see if it helps
+            # print("TAKING STOCHASTIC ACTION")
             # action, _ = model.predict(obs, deterministic=False)
         new_obs, reward, done, truncated, info = env.step(action)
         # FIXME: add in FastLSPI for training (clean this up!)

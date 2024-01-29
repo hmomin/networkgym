@@ -43,6 +43,12 @@ def get_args() -> argparse.Namespace:
         help="set rl_config['store_offline'] = true in config.json",
         required=False,
     )
+    parser.add_argument(
+        "--parallel_env",
+        action="store_true",
+        help="set rl_config['parallel_env'] = true in config.json",
+        required=False,
+    )
     args = parser.parse_args()
     return args
 
@@ -62,6 +68,7 @@ def edit_dict(json_dict: dict, args: argparse.Namespace) -> None:
     store_offline: bool = args.store_offline
     steps: int | None = args.steps
     seed: int | None = args.seed
+    parallel_env: bool = args.parallel_env
 
     if agent != None:
         json_dict["rl_config"]["agent"] = agent
@@ -76,6 +83,7 @@ def edit_dict(json_dict: dict, args: argparse.Namespace) -> None:
         json_dict["rl_config"]["train"] = False
 
     json_dict["rl_config"]["store_offline"] = store_offline
+    json_dict["rl_config"]["parallel_env"] = parallel_env
 
     if steps != None:
         json_dict["env_config"]["steps_per_episode"] = steps

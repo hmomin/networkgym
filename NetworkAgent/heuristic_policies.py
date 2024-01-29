@@ -105,7 +105,10 @@ def utility_logistic_action(obs: np.ndarray) -> list[float]:
         elif np.isnan(wifi_utility):
             actions.append(1.0)
         else:
-            actions.append(float(sigmoid(wifi_utility - lte_utility)))
+            utility_difference = wifi_utility - lte_utility
+            # NOTE: (+inf) - (+inf) = nan, and same for (-inf)
+            new_action = 0.5 if np.isnan(utility_difference) else float(sigmoid(utility_difference))
+            actions.append(new_action)
     return actions
 
 

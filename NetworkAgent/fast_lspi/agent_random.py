@@ -65,7 +65,7 @@ class FastLSPI:
 
     def initialize_Q_weights(self) -> None:
         self.k = self.hidden_dims[-1] + self.num_actions
-        self.w_tilde = torch.randn((self.k, 1), device="cuda:0")
+        self.w_tilde = torch.randn((self.k, 1), dtype=torch.float64, device="cuda:0")
         self.full_rank_reached = False
 
     def store_to_buffer(
