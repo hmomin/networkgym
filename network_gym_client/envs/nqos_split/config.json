@@ -1,6 +1,6 @@
 {
     "rl_config": {
-        "agent": "system_default_deterministic_walk_PTD3_beta_1.0_alpha_0.9995_step_0010000",
+        "agent": "system_default_proxy",
         "parallel_env": false,
         "use_discrete_increment_actions": false,
         "use_discrete_ratio_actions": false,
