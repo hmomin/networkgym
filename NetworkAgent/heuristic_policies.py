@@ -6,14 +6,6 @@ from random import randint
 from discrete_action_util import convert_user_increment_to_discrete_increment_action
 from network_gym_client.env import Env
 
-# NOTE: num users is hardcoded here - there's a check for it later...
-CURRENT_SPLIT_RATIO = [32] * 4
-LAST_WIFI_OWDS = [0] * 4
-LAST_LTE_OWDS = [0] * 4
-WIFI_INDEX_CHANGE_ALPHAS = [0] * 4
-STEP_ALPHA_THRESHOLD = 4
-TOLERANCE_DELAY_BOUND = 5
-
 
 def generic_policy(
     env: Env,
@@ -127,6 +119,35 @@ def argmin_action(obs: np.ndarray) -> list[float]:
 def random_action(obs: np.ndarray) -> list[float]:
     num_users = obs.shape[1]
     return list(np.random.random((num_users)))
+
+
+def utility_increment_policy(env: Env, config_json: dict) -> None:
+    generic_policy(env, config_json, utility_increment_action)
+
+
+def utility_increment_action(obs: np.ndarray) -> int:
+    lte_utilities, wifi_utilities = get_utilities(obs)
+    actions: list[int] = []
+    for lte_utility, wifi_utility in zip(lte_utilities, wifi_utilities):
+        update_to_split_ratio = utility_increment(wifi_utility, lte_utility)
+        actions.append(update_to_split_ratio)
+    discrete_action = convert_user_increment_to_discrete_increment_action(actions)
+    return discrete_action   
+
+
+def utility_increment(wifi_utility: float, lte_utility: float) -> int:
+    if np.isnan(wifi_utility) and np.isnan(lte_utility):
+        return 0
+    elif np.isnan(wifi_utility):
+        return +1
+    elif np.isnan(lte_utility):
+        return -1
+    elif wifi_utility > lte_utility:
+        return +1
+    elif lte_utility < wifi_utility:
+        return -1
+    else:
+        return 0
 
 
 def delay_increment_policy(env: Env, config_json: dict) -> None:

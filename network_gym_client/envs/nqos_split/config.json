@@ -1,13 +1,13 @@
 {
     "rl_config": {
-        "agent": "system_default",
+        "agent": "utility_discrete_increment",
         "parallel_env": false,
-        "use_discrete_increment_actions": false,
+        "use_discrete_increment_actions": true,
         "use_discrete_ratio_actions": false,
         "random_action_prob": 0.0,
         "starting_action_std": 1.0,
         "train": false,
-        "store_offline": false,
+        "store_offline": true,
         "load_model_for_training": false,
         "policy": "MlpPolicy",
         "reward_type": "utility"
