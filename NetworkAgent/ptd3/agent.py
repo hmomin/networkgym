@@ -46,6 +46,8 @@ class PessimisticTD3:
         self.low_action_bound = 0
         self.high_action_bound = +1
         self.beta = beta_pessimism
+        if alpha_fisher < 0.0:
+            raise Exception(f"alpha_fisher ({alpha_fisher} passed in) must be >= 0.0")
         self.alpha = alpha_fisher
         self.gamma = gamma
         self.tau = tau
@@ -123,8 +125,11 @@ class PessimisticTD3:
     def initialize_Fisher_information_matrix(self) -> None:
         self.d = self.critic1.get_num_parameters()
         print(f"Each critic network has {self.d} parameters...")
-        self.Sigma = torch.eye(self.d, dtype=torch.float64, device=self.device)
-        self.Sigma_inverse = torch.eye(self.d, dtype=torch.float64, device=self.device)
+        if self.alpha > 0.0:
+            self.Sigma = torch.eye(self.d, dtype=torch.float64, device=self.device)
+            self.Sigma_inverse = torch.eye(
+                self.d, dtype=torch.float64, device=self.device
+            )
 
     def get_noisy_action(self, state: np.ndarray, sigma: float) -> np.ndarray:
         deterministic_action = self.get_deterministic_action(state)
@@ -288,28 +293,40 @@ class PessimisticTD3:
         return gradient_matrix
 
     def update_Fisher_information_matrix(self) -> None:
-        sgd_sample = self.buffer.get_mini_batch(1)
-        state = sgd_sample["states"]
-        action = sgd_sample["actions"]
-        critic_input = torch.hstack([state, action]).float()
+        # NOTE: if alpha is 0, then calculate Sigma using a large-batch estimate.
+        # if alpha > 0.0, then estimate Sigma and Sigma_inverse with incremental
+        # "SGD"-like updates to the Sigma matrix
+        # FIXME LOW: maybe, the large-batch size should be a hyperparameter?
+        sample_size = 1 if self.alpha > 0.0 else 2 ** 14
+        buffer_batch = self.buffer.get_mini_batch(sample_size)
+        states = buffer_batch["states"]
+        actions = buffer_batch["actions"]
+        critic_input = torch.hstack([states, actions]).float()
         gradient_dict = self.batch_gradient_function(
             self.critic_params, self.critic_buffers, critic_input
         )
-        gradient_transpose = self.get_gradient_matrix(gradient_dict)
         with torch.no_grad():
-            gradient = gradient_transpose.T
-            # NOTE: have to add a little noise to maintain full rank
-            noisy_gradient = gradient + (1.0e-9) * torch.randn_like(
-                gradient, dtype=torch.float64, device=self.device
-            )
-            new_Sigma = self.alpha * self.Sigma + noisy_gradient @ noisy_gradient.T
-            new_Sigma_inverse = Sherman_Morrison_inverse(
-                self.Sigma_inverse / self.alpha, noisy_gradient, noisy_gradient
-            )
-            self.Sigma = new_Sigma
-            self.Sigma_inverse = new_Sigma_inverse
-            if self.current_update_step > 0 and self.current_update_step % 100 == 0:
-                self.ground_inverse_computation()
+            gradients_transpose = self.get_gradient_matrix(gradient_dict)
+            gradients = gradients_transpose.T
+            if self.alpha > 0.0:
+                # NOTE: have to add a little noise to maintain full rank
+                noisy_gradient = gradients + (1.0e-9) * torch.randn_like(
+                    gradients, dtype=torch.float64, device=self.device
+                )
+                new_Sigma = self.alpha * self.Sigma + noisy_gradient @ noisy_gradient.T
+                new_Sigma_inverse = Sherman_Morrison_inverse(
+                    self.Sigma_inverse / self.alpha, noisy_gradient, noisy_gradient
+                )
+                self.Sigma = new_Sigma
+                self.Sigma_inverse = new_Sigma_inverse
+                if self.current_update_step > 0 and self.current_update_step % 100 == 0:
+                    self.ground_inverse_computation()
+            else:
+                # FIXME LOW: ridge regression lambda could be a hyperparameter?
+                self.Sigma = gradients @ gradients_transpose + (1.0e-6) * torch.eye(
+                    self.d, dtype=torch.float64, device=self.device
+                )
+                self.Sigma_inverse = torch.linalg.inv(self.Sigma)
 
     def compute_uncertainty_estimate(
         self,

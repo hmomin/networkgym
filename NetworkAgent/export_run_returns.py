@@ -168,13 +168,29 @@ NOTE: all the run names saved as PPO - check for run_name below
 - SAC (stochastic)
     CREATED_AFTER = datetime(2024, 1, 29, 17, 35, 0)
     CREATED_BEFORE = datetime(2024, 1, 29, 18, 9, 0)
+
+- system_default_deterministic_walk_PTD3_beta_10.0_alpha_0.9999_step_0010000
+    CREATED_AFTER = datetime(2024, 1, 30, 5, 1, 0)
+    CREATED_BEFORE = datetime(2024, 1, 30, 5, 5, 0)
+
+- system_default_deterministic_walk_PTD3_beta_10.0_alpha_1.0_step_0010000
+    CREATED_AFTER = datetime(2024, 1, 30, 5, 31, 0)
+    CREATED_BEFORE = datetime(2024, 1, 30, 5, 34, 0)
+
+- system_default_deterministic_walk_PTD3_beta_10.0_alpha_0.999_step_0010000
+    CREATED_AFTER = datetime(2024, 1, 31, 3, 35, 0)
+    CREATED_BEFORE = datetime(2024, 1, 31, 3, 38, 0)
+
+- system_default_deterministic_walk_PTD3_beta_10.0_alpha_0.9995_step_0010000
+    CREATED_AFTER = datetime(2024, 1, 31, 4, 6, 0)
+    CREATED_BEFORE = datetime(2024, 1, 31, 4, 9, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "SAC"
-CREATED_AFTER = datetime(2024, 1, 29, 17, 35, 0)
-CREATED_BEFORE = datetime(2024, 1, 29, 18, 9, 0)
+RUN_NAME = "system_default_deterministic_walk_PTD3_beta_10.0_alpha_0.9995_step_0010000"
+CREATED_AFTER = datetime(2024, 1, 31, 4, 6, 0)
+CREATED_BEFORE = datetime(2024, 1, 31, 4, 9, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 TEST_EXPORT = False
