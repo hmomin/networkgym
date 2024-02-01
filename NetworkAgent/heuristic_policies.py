@@ -127,6 +127,8 @@ def utility_increment_policy(env: Env, config_json: dict) -> None:
 
 def utility_increment_action(obs: np.ndarray) -> int:
     lte_utilities, wifi_utilities = get_utilities(obs)
+    print(f"LTE UTILITIES: {lte_utilities}")
+    print(f"WIFI UTILITIES: {wifi_utilities}")
     actions: list[int] = []
     for lte_utility, wifi_utility in zip(lte_utilities, wifi_utilities):
         update_to_split_ratio = utility_increment(wifi_utility, lte_utility)
@@ -138,13 +140,13 @@ def utility_increment_action(obs: np.ndarray) -> int:
 def utility_increment(wifi_utility: float, lte_utility: float) -> int:
     if np.isnan(wifi_utility) and np.isnan(lte_utility):
         return 0
-    elif np.isnan(wifi_utility):
+    elif np.isnan(wifi_utility) or np.isneginf(wifi_utility):
         return +1
-    elif np.isnan(lte_utility):
+    elif np.isnan(lte_utility) or np.isneginf(lte_utility):
         return -1
     elif wifi_utility > lte_utility:
         return +1
-    elif lte_utility < wifi_utility:
+    elif wifi_utility < lte_utility:
         return -1
     else:
         return 0

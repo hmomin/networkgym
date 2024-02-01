@@ -63,7 +63,7 @@ def initialize_previous_entries(num_users: int) -> None:
             values = [0.0] * num_users
             name_dict[channel_id] = values
     # FIXME HIGH: change this back to 1.0 for accurate values system_default collection
-    PREVIOUS_SPLIT_RATIOS = [1.0] * num_users
+    PREVIOUS_SPLIT_RATIOS = [0.5] * num_users
 
 
 def get_full_observation(df_list: List[pd.DataFrame]) -> List[np.ndarray]:
