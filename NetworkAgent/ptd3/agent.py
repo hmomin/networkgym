@@ -337,10 +337,10 @@ class PessimisticTD3:
         gradients = self.batch_gradient_function(
             self.critic_params, self.critic_buffers, critic_inputs
         )
-        gradient_matrix = self.get_gradient_matrix(gradients)
-        matrix_inside_sqrt = gradient_matrix @ self.Sigma_inverse @ gradient_matrix.T
-        vector_inside_sqrt = torch.diag(matrix_inside_sqrt)
-        Gamma = self.beta * torch.mean(torch.sqrt(vector_inside_sqrt))
+        gradients_transpose = self.get_gradient_matrix(gradients)
+        gradients = gradients_transpose.T
+        inside_sqrt = torch.sum(gradients * (self.Sigma_inverse @ gradients), dim=0)
+        Gamma = self.beta * torch.mean(torch.sqrt(inside_sqrt))
         return Gamma
 
     def ground_inverse_computation(self) -> None:

@@ -15,7 +15,9 @@ def get_buffer_names() -> list[str]:
 
 def get_discrete_increment_actions(buffer: Buffer) -> np.ndarray:
     num_actions = buffer.actions.shape[0]
-    previous_split_ratio = np.ones((4,), dtype=np.float64)
+    starting_split_ratio = 0.5
+    print(f"WARNING: starting_split_ratio chosen to be {starting_split_ratio}")
+    previous_split_ratio = starting_split_ratio * np.ones((4,), dtype=np.float64)
     new_actions = np.array([])
     for idx in range(num_actions):
         current_split_ratio = buffer.actions[idx, :]

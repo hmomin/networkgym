@@ -139,3 +139,17 @@ class CombinedBuffer(Buffer):
             "next_states": self.tensor_next_states[indices, :],
             "dones": dones,
         }
+    
+    def get_batch_from_indices(
+        self, start: int, end: int
+    ) -> dict[str, torch.Tensor]:
+        start_index = max(start, 0)
+        end_index = min(end, self.buffer_size)
+        dones = torch.zeros_like(self.tensor_rewards[start_index:end_index], device=self.device)
+        return {
+            "states": self.tensor_states[start_index:end_index, :],
+            "actions": self.tensor_actions[start_index:end_index, :],
+            "rewards": self.tensor_rewards[start_index:end_index],
+            "next_states": self.tensor_next_states[start_index:end_index, :],
+            "dones": dones,
+        }
