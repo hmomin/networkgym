@@ -134,7 +134,7 @@ def utility_increment_action(obs: np.ndarray) -> int:
         update_to_split_ratio = utility_increment(wifi_utility, lte_utility)
         actions.append(update_to_split_ratio)
     discrete_action = convert_user_increment_to_discrete_increment_action(actions)
-    return discrete_action   
+    return discrete_action
 
 
 def utility_increment(wifi_utility: float, lte_utility: float) -> int:
