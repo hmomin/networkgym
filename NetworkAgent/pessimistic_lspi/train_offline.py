@@ -1,4 +1,5 @@
 import argparse
+import torch
 from agent import PessimisticLSPI
 from offline_env import OfflineEnv
 
@@ -15,7 +16,7 @@ def get_args() -> argparse.Namespace:
         type=str,
     )
     parser.add_argument(
-        "--observation_power",
+        "--obs_power",
         help="maximum power of observation values in state featurization",
         required=False,
         default=1,
@@ -39,15 +40,17 @@ def main() -> None:
     # -------------------------------------------------------------------
     args = get_args()
     env_name: str = args.env_name
-    observation_power: int = args.observation_power
+    obs_power: int = args.obs_power
     beta: int = args.beta
 
     env = OfflineEnv(env_name, buffer_max_size, normalize=False)
 
-    agent = PessimisticLSPI(env, observation_power, num_actions, beta)
-    
+    agent = PessimisticLSPI(env, obs_power, num_actions, beta)
+
     agent.LSTDQ_update()
-    
+    print(f"max value in w_tilde: {torch.max(agent.w_tilde)}")
+    print(f"min value in w_tilde: {torch.min(agent.w_tilde)}")
+    agent.save()
 
 
 if __name__ == "__main__":

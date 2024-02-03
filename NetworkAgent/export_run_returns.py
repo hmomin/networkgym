@@ -196,13 +196,17 @@ NOTE: all the run names saved as PPO - check for run_name below
 - system_default_deterministic_walk_PTD3_beta_..._alpha_0.0_step_0010000
     CREATED_AFTER = datetime(2024, 2, 2, 18, 19, 0)
     CREATED_BEFORE = datetime(2024, 2, 2, 18, 54, 0)
+
+- system_default_deterministic_walk_PTD3_beta_10.0_alpha_0.0_step_0010000
+    CREATED_AFTER = datetime(2024, 2, 2, 23, 36, 0)
+    CREATED_BEFORE = datetime(2024, 2, 2, 23, 40, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "system_default_deterministic_walk_PTD3_beta_..._alpha_0.0_step_0010000"
-CREATED_AFTER = datetime(2024, 2, 2, 18, 19, 0)
-CREATED_BEFORE = datetime(2024, 2, 2, 18, 54, 0)
+RUN_NAME = "system_default_deterministic_walk_PTD3_beta_10.0_alpha_0.0_step_0010000"
+CREATED_AFTER = datetime(2024, 2, 2, 23, 36, 0)
+CREATED_BEFORE = datetime(2024, 2, 2, 23, 40, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 TEST_EXPORT = False
