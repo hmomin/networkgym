@@ -209,4 +209,6 @@ class PessimisticLSPI:
         return Gamma
 
     def save(self) -> None:
+        # NOTE: removing buffer to save space
+        del self.buffer
         pickle.dump(self, open(self.env_name + ".Actor", "wb"))
