@@ -92,7 +92,7 @@ class PessimisticLSPI:
                 flat_observation, dtype=torch.float64, device="cuda:0"
             ).unsqueeze(0)
             actor_action_tensor = self.Q_policy(
-                tensor_observation.T, one_hot=False, pessimistic=True
+                tensor_observation, one_hot=False, pessimistic=True
             )
             actor_action = int(actor_action_tensor.item())
         else:

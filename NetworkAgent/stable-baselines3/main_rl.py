@@ -12,6 +12,7 @@ import sys
 
 sys.path.append(".")
 sys.path.append("../")
+sys.path.append("../pessimistic_lspi")
 sys.path.append("../../")
 
 from network_gym_client import load_config_file
