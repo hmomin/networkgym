@@ -60,6 +60,7 @@ class PessimisticLSPI:
         self.k = (self.observation_dim - 8) * self.observation_power + self.num_actions
         print(f"k = {self.k}")
         self.w_tilde = torch.randn((self.k, 1), dtype=torch.float64, device="cuda:0")
+        self.previous_w_difference_norm = torch.inf
 
     def compute_Sigma_inverse(self) -> None:
         L = self.buffer.buffer_size
@@ -102,8 +103,13 @@ class PessimisticLSPI:
     def LSTDQ_update(self) -> None:
         w_difference_norm = 1.0
         iteration = 0
-        while w_difference_norm >= 1.0e-6:
+        while (
+            w_difference_norm >= 1.0e-6
+            and w_difference_norm != self.previous_w_difference_norm
+        ):
+            self.previous_w_difference_norm = w_difference_norm
             A_tilde, b_tilde = self.compute_least_squares_system()
+            print("Computing w_tilde...")
             w_tilde = torch.linalg.lstsq(A_tilde, b_tilde).solution
             while torch.isnan(w_tilde).any():
                 print(f"WARNING: A_tilde rank-deficient...")
@@ -171,7 +177,8 @@ class PessimisticLSPI:
     ) -> torch.Tensor:
         phi_s_prime = self.state_featurizer(batch_next_states)
         # NOTE: should the policy be pessimistic here? probably not...
-        pi_s_prime = self.Q_policy(batch_next_states, one_hot=True, pessimistic=False)
+        # FIXME LOW: trying pessimism during training (see TD3+BC or PTD3...)
+        pi_s_prime = self.Q_policy(batch_next_states, one_hot=True, pessimistic=True)
         phi_prime_matrix = torch.cat([phi_s_prime, pi_s_prime], dim=1)
         return phi_prime_matrix
 

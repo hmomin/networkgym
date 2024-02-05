@@ -6,7 +6,9 @@ from csv import reader
 # data_folder = "2024_01_27_GOOD_heuristic_and_td3_bc"
 # data_folder = "2024_01_27_GOOD_PTD3"
 # data_folder = "2024_01_27_GOOD_PTD3_beta_10.0"
-data_folder = "2024_01_27_GOOD_PTD3_alpha_0.0"
+# data_folder = "2024_01_27_GOOD_PTD3_alpha_0.0"
+# data_folder = "2024_02_03_PessimisticLSPI_no_pessimism_while_training"
+data_folder = "2024_02_05_random_discrete"
 # data_folder = "2024_01_27_GOOD_online_RL_deterministic"
 # data_folder = "2024_01_27_GOOD_online_RL_stochastic"
 
