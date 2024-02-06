@@ -18,18 +18,16 @@ class PessimisticLSPI:
     def __init__(
         self,
         env: OfflineEnv,
-        observation_power: int,
-        num_actions: int,
+        num_users: int,
         beta: float,
-        large_batch_size: int = 2 ** 14,
+        large_batch_size: int = 2 ** 13,
         save_folder: str = "saved",
     ):
         self.gamma = 0.99
-        self.observation_power = observation_power
         self.beta = beta
         self.buffer: CombinedBuffer = env.buffer
         self.observation_dim = self.buffer.states.shape[1]
-        self.num_actions = num_actions
+        self.num_users = num_users
         self.large_batch_size = large_batch_size
         # check if the save_folder path exists
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -38,29 +36,34 @@ class PessimisticLSPI:
             os.mkdir(save_dir)
         self.env_name = os.path.join(
             save_dir,
-            f"PessimisticLSPI_{env.algo_name}_beta_{self.beta}_obs_power_{self.observation_power}",
+            f"PessimisticLSPI_{env.algo_name}_beta_{self.beta}",
         )
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using {self.device} device...")
-        self.initialize_action_feature_map()
         self.initialize_Q_weights()
+        self.initialize_full_action_map()
         self.compute_Sigma_inverse()
-
-    def initialize_action_feature_map(self) -> None:
-        action_indices = list(range(self.num_actions))
-        self.action_one_hots: torch.Tensor = F.one_hot(
-            torch.tensor(action_indices, device="cuda:0"),
-            num_classes=self.num_actions,
-        ).unsqueeze(0)
 
     def initialize_Q_weights(self) -> None:
         # NOTE: removing the last four elements of observation, because the y-dimension
         # of the UE's stays zero for the whole simulation(s)
         # NOTE: also removing first four elements (LTE max rate never changes)
-        self.k = (self.observation_dim - 8) * self.observation_power + self.num_actions
+        self.pruned_observation_dim = self.observation_dim - 8
+        self.k = self.pruned_observation_dim * (3 * self.num_users)
         print(f"k = {self.k}")
         self.w_tilde = torch.randn((self.k, 1), dtype=torch.float64, device="cuda:0")
         self.previous_w_difference_norm = torch.inf
+
+    def initialize_full_action_map(self) -> None:
+        self.num_actions_per_user = 3
+        self.num_actions = self.num_actions_per_user ** self.num_users
+        self.all_actions = torch.arange(
+            0, self.num_actions, 1, dtype=torch.int64, device=self.device
+        ).unsqueeze(-1)
+        all_user_discretized_actions = self.get_user_discretized_actions_tensor(
+            self.all_actions, self.num_users, self.num_actions_per_user
+        )
+        self.all_action_mask = self.remap_actions_for_phi(all_user_discretized_actions)
 
     def compute_Sigma_inverse(self) -> None:
         L = self.buffer.buffer_size
@@ -70,19 +73,17 @@ class PessimisticLSPI:
             end_index = start_index + self.large_batch_size
             next_batch = self.buffer.get_batch_from_indices(start_index, end_index)
             states = next_batch["states"].to(torch.float64)
-            discrete_actions = next_batch["actions"]
-            flattened_actions = discrete_actions.flatten().to(torch.int64)
-            actions = F.one_hot(flattened_actions, num_classes=self.num_actions)
-            phi_tilde = self.construct_phi_matrix(states, actions)
+            discrete_actions = next_batch["actions"].to(torch.int64)
+            phi_tilde = self.state_action_featurizer(states, discrete_actions)
             Sigma += phi_tilde.T @ phi_tilde
         try:
-            self.Sigma_inverse = torch.linalg.inv(Sigma)
+            self.Sigma_inverse: torch.Tensor = torch.linalg.inv(Sigma)
         except:
-            # try ridge regression if Sigma is non-invertible
+            print("WARNING: Sigma_inverse non-invertible. Trying ridge regression...")
             Sigma += (1.0e-6) * torch.eye(
                 self.k, dtype=torch.float64, device=self.device
             )
-            self.Sigma_inverse = torch.linalg.inv(Sigma)
+            self.Sigma_inverse: torch.Tensor = torch.linalg.inv(Sigma)
 
     def predict(
         self, observation: np.ndarray, deterministic: bool = True
@@ -92,9 +93,7 @@ class PessimisticLSPI:
             tensor_observation = torch.tensor(
                 flat_observation, dtype=torch.float64, device="cuda:0"
             ).unsqueeze(0)
-            actor_action_tensor = self.Q_policy(
-                tensor_observation, one_hot=False, pessimistic=True
-            )
+            actor_action_tensor = self.Q_policy(tensor_observation, pessimistic=True)
             actor_action = int(actor_action_tensor.item())
         else:
             actor_action = np.random.randint(0, self.num_actions)
@@ -131,21 +130,46 @@ class PessimisticLSPI:
         print("Computing least squares system...")
         for start_index in tqdm(range(0, L, self.large_batch_size)):
             end_index = start_index + self.large_batch_size
-            next_batch = self.buffer.get_batch_from_indices(start_index, end_index)
-            states = next_batch["states"].to(torch.float64)
-            discrete_actions = next_batch["actions"]
-            rewards = next_batch["rewards"].to(torch.float64)
-            next_states = next_batch["next_states"].to(torch.float64)
-            flattened_actions = discrete_actions.flatten().to(torch.int64)
-            actions = F.one_hot(flattened_actions, num_classes=self.num_actions)
-            rewards = rewards.unsqueeze(1)
-            phi_tilde = self.construct_phi_matrix(states, actions)
-            phi_prime_tilde = self.construct_phi_prime_matrix(next_states)
-            A_tilde += 1 / L * phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
-            b_tilde += 1 / L * phi_tilde.T @ rewards
+            update_A_tilde, update_b_tilde = self.get_update_to_least_squares_system(
+                L, start_index, end_index
+            )
+            A_tilde += update_A_tilde
+            b_tilde += update_b_tilde
+            # print(f"INDEX: {start_index}")
+            # print(
+            #     "torch.cuda.memory_allocated: %fGB"
+            #     % (torch.cuda.memory_allocated(0) / 1024 / 1024 / 1024)
+            # )
+            # print(
+            #     "torch.cuda.memory_reserved: %fGB"
+            #     % (torch.cuda.memory_reserved(0) / 1024 / 1024 / 1024)
+            # )
+            # print(
+            #     "torch.cuda.max_memory_reserved: %fGB"
+            #     % (torch.cuda.max_memory_reserved(0) / 1024 / 1024 / 1024)
+            # )
         return A_tilde, b_tilde
 
-    def state_featurizer(self, states: torch.Tensor) -> torch.Tensor:
+    def get_update_to_least_squares_system(
+        self, L: int, start_index: int, end_index: int
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        next_batch = self.buffer.get_batch_from_indices(start_index, end_index)
+        states = next_batch["states"].to(torch.float64)
+        discrete_actions = next_batch["actions"].to(torch.int64)
+        rewards = next_batch["rewards"].to(torch.float64)
+        next_states = next_batch["next_states"].to(torch.float64)
+        rewards = rewards.unsqueeze(1)
+        phi_tilde = self.state_action_featurizer(states, discrete_actions)
+        # NOTE: should the policy be pessimistic here?
+        pi_s_prime = self.Q_policy(next_states, pessimistic=True)
+        phi_prime_tilde = self.state_action_featurizer(next_states, pi_s_prime)
+        update_A_tilde = (
+            1 / L * phi_tilde.T @ (phi_tilde - self.gamma * phi_prime_tilde)
+        )
+        update_b_tilde = 1 / L * phi_tilde.T @ rewards
+        return update_A_tilde, update_b_tilde
+
+    def get_augmented_states(self, states: torch.Tensor) -> torch.Tensor:
         augmented_states = states[:, 4:-4]
         # FIXME MED: could run below at beginning to pick out degenerate columns
         # running_identical_tensor = torch.ones_like(augmented_states[0, :], dtype=torch.int64)
@@ -159,51 +183,81 @@ class PessimisticLSPI:
         # for idx in range(states.shape[0]):
         #     print(states[idx, :])
         #     sleep(1)
-        new_states = augmented_states
-        for power in range(2, self.observation_power + 1):
-            polynomial_states = augmented_states ** power
-            new_states = torch.cat([new_states, polynomial_states], dim=1)
-        return new_states
+        return augmented_states
 
-    def construct_phi_matrix(
+    def get_user_discretized_actions_tensor(
+        self, discrete_actions: torch.Tensor, num_users: int, num_actions_per_user: int
+    ) -> torch.Tensor:
+        discrete_actions = discrete_actions.squeeze(-1)
+        user_specific_actions = torch.zeros(
+            (discrete_actions.shape[0], num_users),
+            dtype=torch.int64,
+            device=self.device,
+        )
+        num_possible_actions: int = num_actions_per_user ** num_users
+        running_divisors = discrete_actions
+        running_dividends = num_possible_actions * torch.ones_like(
+            discrete_actions, device=self.device
+        )
+        for user in range(num_users):
+            running_dividends //= num_actions_per_user
+            user_actions = running_divisors // running_dividends
+            running_divisors = running_divisors % running_dividends
+            user_specific_actions[:, user] = user_actions
+        return user_specific_actions
+
+    def state_action_featurizer(
         self, batch_states: torch.Tensor, batch_actions: torch.Tensor
     ) -> torch.Tensor:
-        phi_s = self.state_featurizer(batch_states)
-        phi_matrix = torch.cat([phi_s, batch_actions], dim=1)
+        # featurize with different weights for each individual user action
+        user_discretized_actions = self.get_user_discretized_actions_tensor(
+            batch_actions, self.num_users, self.num_actions_per_user
+        )
+        action_mask = self.remap_actions_for_phi(user_discretized_actions)
+        augmented_states = self.get_augmented_states(batch_states)
+        repeated_states = augmented_states.repeat(
+            [1, self.num_actions_per_user * self.num_users]
+        )
+        phi_matrix = repeated_states * action_mask
         return phi_matrix
 
-    def construct_phi_prime_matrix(
-        self, batch_next_states: torch.Tensor
-    ) -> torch.Tensor:
-        phi_s_prime = self.state_featurizer(batch_next_states)
-        # NOTE: should the policy be pessimistic here? probably not...
-        # FIXME LOW: trying pessimism during training (see TD3+BC or PTD3...)
-        pi_s_prime = self.Q_policy(batch_next_states, one_hot=True, pessimistic=True)
-        phi_prime_matrix = torch.cat([phi_s_prime, pi_s_prime], dim=1)
-        return phi_prime_matrix
+    def remap_actions_for_phi(self, user_actions: torch.Tensor) -> torch.Tensor:
+        batch_size = user_actions.shape[0]
+        action_mask = torch.empty((batch_size, 0), device=self.device)
+        # NOTE: double loop for 12 iterations total (4*3) - any way to speed it up?
+        # does it matter / make a difference?
+        for k in range(self.num_users):
+            individual_actions = user_actions[:, k]
+            for n in range(self.num_actions_per_user):
+                small_action_mask = (
+                    (individual_actions == n).unsqueeze(-1).to(torch.int64)
+                )
+                repeated_mask = small_action_mask.repeat(
+                    (1, self.pruned_observation_dim)
+                )
+                action_mask = torch.cat([action_mask, repeated_mask], dim=1)
+        assert action_mask.shape[1] == self.k
+        return action_mask
 
     def Q_policy(
-        self, observations: torch.Tensor, one_hot: bool = True, pessimistic: bool = True
+        self, observations: torch.Tensor, pessimistic: bool = True
     ) -> torch.Tensor:
         batch_size = observations.shape[0]
-        phi_s = self.state_featurizer(observations)
-        phi_s_repeated = phi_s.unsqueeze(1).repeat(1, self.num_actions, 1)
-        action_features_repeated = self.action_one_hots.repeat(batch_size, 1, 1)
-        phi_matrix = torch.cat([phi_s_repeated, action_features_repeated], dim=2)
-        phi_columns = phi_matrix.permute((0, 2, 1))
+        augmented_states = self.get_augmented_states(observations)
+        repeated_states = augmented_states.unsqueeze(1).repeat(
+            1, self.num_actions, self.num_actions_per_user * self.num_users
+        )
+        # repeated_states shape: (batch_size, num_actions, self.k)
+        action_mask_repeated = self.all_action_mask.repeat(batch_size, 1, 1)
+        phi_matrix = repeated_states * action_mask_repeated
         batch_w_tilde = self.w_tilde.unsqueeze(0).repeat(batch_size, 1, 1)
         Q_values = torch.bmm(phi_matrix, batch_w_tilde)
-        if pessimistic:
+        if pessimistic and self.beta > 0.0:
+            phi_columns = phi_matrix.permute((0, 2, 1))
             Gamma = self.compute_uncertainty_estimate(batch_size, phi_columns)
             Q_values -= Gamma
         optimal_actions = torch.argmax(Q_values, dim=1)
-        if not one_hot:
-            return optimal_actions
-        argmax_indices = torch.squeeze(optimal_actions, 1)
-        optimal_action_one_hots = torch.index_select(
-            self.action_one_hots, dim=1, index=argmax_indices
-        ).squeeze(0)
-        return optimal_action_one_hots
+        return optimal_actions
 
     def compute_uncertainty_estimate(
         self, batch_size: int, phi_columns: torch.Tensor

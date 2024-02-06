@@ -12,15 +12,8 @@ def get_args() -> argparse.Namespace:
         "--env_name",
         help="algorithm with offline buffers to train from",
         required=False,
-        default="utility_discrete_increment_utility",
+        default="random_discrete_increment_utility",
         type=str,
-    )
-    parser.add_argument(
-        "--obs_power",
-        help="maximum power of observation values in state featurization",
-        required=False,
-        default=1,
-        type=int,
     )
     parser.add_argument(
         "--beta",
@@ -36,16 +29,13 @@ def get_args() -> argparse.Namespace:
 def main() -> None:
     # ------------------------- HYPERPARAMETERS -------------------------
     buffer_max_size = 10_000
-    num_actions = 3 ** 4
-    # -------------------------------------------------------------------
     args = get_args()
     env_name: str = args.env_name
-    obs_power: int = args.obs_power
     beta: int = args.beta
 
     env = OfflineEnv(env_name, buffer_max_size, normalize=False)
 
-    agent = PessimisticLSPI(env, obs_power, num_actions, beta)
+    agent = PessimisticLSPI(env, 4, beta)
 
     agent.LSTDQ_update()
     print(f"max value in w_tilde: {torch.max(agent.w_tilde)}")
