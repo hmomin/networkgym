@@ -208,13 +208,17 @@ NOTE: all the run names saved as PPO - check for run_name below
 - random_discrete
     CREATED_AFTER = datetime(2024, 2, 5, 19, 47, 0)
     CREATED_BEFORE = datetime(2024, 2, 5, 22, 38, 0)
+
+- PessimisticLSPI_random
+    CREATED_AFTER = datetime(2024, 2, 7, 5, 36, 0)
+    CREATED_BEFORE = datetime(2024, 2, 7, 16, 59, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "random_discrete_increment"
-CREATED_AFTER = datetime(2024, 2, 5, 19, 47, 0)
-CREATED_BEFORE = datetime(2024, 2, 5, 22, 38, 0)
+RUN_NAME = "PessimisticLSPI_random"
+CREATED_AFTER = datetime(2024, 2, 7, 5, 36, 0)
+CREATED_BEFORE = datetime(2024, 2, 7, 16, 59, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 TEST_EXPORT = False
