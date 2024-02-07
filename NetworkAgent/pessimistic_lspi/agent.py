@@ -3,6 +3,7 @@ import os
 import pickle
 import sys
 import torch
+from time import sleep
 from tqdm import tqdm
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,7 +19,7 @@ class PessimisticLSPI:
         env: OfflineEnv,
         num_users: int,
         beta: float,
-        large_batch_size: int = 2 ** 9,
+        large_batch_size: int = 2 ** 11,
         save_folder: str = "saved",
     ):
         self.gamma = 0.99
@@ -47,7 +48,7 @@ class PessimisticLSPI:
         # of the UE's stays zero for the whole simulation(s)
         # NOTE: also removing first four elements (LTE max rate never changes)
         self.pruned_observation_dim = self.observation_dim - 8
-        self.k = self.pruned_observation_dim * (3 * self.num_users)
+        self.k = 1 + self.pruned_observation_dim * (3 * self.num_users)
         print(f"k = {self.k}")
         self.w_tilde = torch.randn((self.k, 1), dtype=torch.float64, device="cuda:0")
         self.previous_w_difference_norm = torch.inf
@@ -74,16 +75,22 @@ class PessimisticLSPI:
             discrete_actions = next_batch["actions"].to(torch.int64)
             phi_tilde = self.state_action_featurizer(states, discrete_actions)
             Sigma += phi_tilde.T @ phi_tilde
-        try:
-            self.Sigma_inverse: torch.Tensor = torch.linalg.inv(Sigma)
-        except:
-            print("WARNING: Sigma_inverse non-invertible. Trying ridge regression...")
+        minimum_eigenvalue = torch.min(torch.linalg.eigvals(Sigma).real)
+        print(f"min(eigvals(Sigma)): {minimum_eigenvalue}")
+        if minimum_eigenvalue <= 0.0:
+            print(
+                "NOTE: forcing ridge regression on Sigma due to non-positive eigenvalue..."
+            )
             Sigma += (1.0e-6) * torch.eye(
                 self.k, dtype=torch.float64, device=self.device
             )
-            self.Sigma_inverse: torch.Tensor = torch.linalg.inv(Sigma)
-        finally:
-            self.batch_Sigma_inverse = self.Sigma_inverse.unsqueeze(0).repeat(self.large_batch_size, 1, 1)
+        assert torch.min(torch.linalg.eigvals(Sigma).real) > 0.0
+        self.Sigma_inverse: torch.Tensor = torch.linalg.inv(Sigma)
+        assert torch.min(torch.linalg.eigvals(self.Sigma_inverse).real) > 0.0
+        # NOTE: Sigma_inverse is still not symmetric - does it matter?
+        self.batch_Sigma_inverse = self.Sigma_inverse.unsqueeze(0).repeat(
+            self.large_batch_size, 1, 1
+        )
 
     def predict(
         self, observation: np.ndarray, deterministic: bool = True
@@ -205,7 +212,13 @@ class PessimisticLSPI:
         repeated_states = augmented_states.repeat(
             [1, self.num_actions_per_user * self.num_users]
         )
-        phi_matrix = repeated_states * action_mask
+        state_action_featurization = repeated_states * action_mask
+        constant_term = torch.ones(
+            (state_action_featurization.shape[0], 1),
+            dtype=torch.float64,
+            device=self.device,
+        )
+        phi_matrix = torch.cat([constant_term, state_action_featurization], dim=1)
         return phi_matrix
 
     def remap_actions_for_phi(self, user_actions: torch.Tensor) -> torch.Tensor:
@@ -223,7 +236,7 @@ class PessimisticLSPI:
                     (1, self.pruned_observation_dim)
                 )
                 action_mask = torch.cat([action_mask, repeated_mask], dim=1)
-        assert action_mask.shape[1] == self.k
+        assert action_mask.shape[1] == self.k - 1
         return action_mask
 
     def Q_policy(
@@ -236,7 +249,17 @@ class PessimisticLSPI:
         )
         # repeated_states shape: (batch_size, num_actions, self.k)
         action_mask_repeated = self.all_action_mask.repeat(batch_size, 1, 1)
-        phi_matrix = repeated_states * action_mask_repeated
+        state_action_featurization = repeated_states * action_mask_repeated
+        constant_term = torch.ones(
+            (
+                state_action_featurization.shape[0],
+                state_action_featurization.shape[1],
+                1,
+            ),
+            dtype=torch.float64,
+            device=self.device,
+        )
+        phi_matrix = torch.cat([constant_term, state_action_featurization], dim=2)
         batch_w_tilde = self.w_tilde.unsqueeze(0).repeat(batch_size, 1, 1)
         Q_values = torch.bmm(phi_matrix, batch_w_tilde)
         if pessimistic and self.beta > 0.0:
@@ -249,28 +272,16 @@ class PessimisticLSPI:
     def compute_uncertainty_estimate(
         self, batch_size: int, phi_columns: torch.Tensor
     ) -> torch.Tensor:
-        # print(
-        #     "torch.cuda.memory_allocated: %fGB"
-        #     % (torch.cuda.memory_allocated(0) / 1024 / 1024 / 1024)
-        # )
-        # print(
-        #     "torch.cuda.memory_reserved: %fGB"
-        #     % (torch.cuda.memory_reserved(0) / 1024 / 1024 / 1024)
-        # )
-        # print(
-        #     "torch.cuda.max_memory_reserved: %fGB"
-        #     % (torch.cuda.max_memory_reserved(0) / 1024 / 1024 / 1024)
-        # )
         batch_Sigma_inverse = self.batch_Sigma_inverse[:batch_size, :, :]
         Sigma_inverse_phi = torch.bmm(batch_Sigma_inverse, phi_columns)
         inside_sqrt = torch.sum(phi_columns * Sigma_inverse_phi, dim=1)
         inside_sqrt = inside_sqrt.unsqueeze(-1)
+        assert torch.min(inside_sqrt) > 0.0
         Gamma = self.beta * torch.sqrt(inside_sqrt)
         return Gamma
 
     def save(self) -> None:
-        # NOTE: saving space before writing to disk
+        # NOTE: save space before writing to disk
         del self.buffer
-        # FIXME: this doesn't save memory...
-        self.batch_Sigma_inverse = self.batch_Sigma_inverse[self.num_actions, :, :]
+        self.batch_Sigma_inverse = self.batch_Sigma_inverse[0:1, :, :].clone()
         pickle.dump(self, open(self.env_name + ".Actor", "wb"))
