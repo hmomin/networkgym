@@ -3,8 +3,6 @@ import os
 import pickle
 import sys
 import torch
-import torch.nn.functional as F
-from time import sleep
 from tqdm import tqdm
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,7 +18,7 @@ class PessimisticLSPI:
         env: OfflineEnv,
         num_users: int,
         beta: float,
-        large_batch_size: int = 2 ** 13,
+        large_batch_size: int = 2 ** 9,
         save_folder: str = "saved",
     ):
         self.gamma = 0.99
@@ -84,6 +82,8 @@ class PessimisticLSPI:
                 self.k, dtype=torch.float64, device=self.device
             )
             self.Sigma_inverse: torch.Tensor = torch.linalg.inv(Sigma)
+        finally:
+            self.batch_Sigma_inverse = self.Sigma_inverse.unsqueeze(0).repeat(self.large_batch_size, 1, 1)
 
     def predict(
         self, observation: np.ndarray, deterministic: bool = True
@@ -135,19 +135,6 @@ class PessimisticLSPI:
             )
             A_tilde += update_A_tilde
             b_tilde += update_b_tilde
-            # print(f"INDEX: {start_index}")
-            # print(
-            #     "torch.cuda.memory_allocated: %fGB"
-            #     % (torch.cuda.memory_allocated(0) / 1024 / 1024 / 1024)
-            # )
-            # print(
-            #     "torch.cuda.memory_reserved: %fGB"
-            #     % (torch.cuda.memory_reserved(0) / 1024 / 1024 / 1024)
-            # )
-            # print(
-            #     "torch.cuda.max_memory_reserved: %fGB"
-            #     % (torch.cuda.max_memory_reserved(0) / 1024 / 1024 / 1024)
-            # )
         return A_tilde, b_tilde
 
     def get_update_to_least_squares_system(
@@ -262,7 +249,19 @@ class PessimisticLSPI:
     def compute_uncertainty_estimate(
         self, batch_size: int, phi_columns: torch.Tensor
     ) -> torch.Tensor:
-        batch_Sigma_inverse = self.Sigma_inverse.unsqueeze(0).repeat(batch_size, 1, 1)
+        # print(
+        #     "torch.cuda.memory_allocated: %fGB"
+        #     % (torch.cuda.memory_allocated(0) / 1024 / 1024 / 1024)
+        # )
+        # print(
+        #     "torch.cuda.memory_reserved: %fGB"
+        #     % (torch.cuda.memory_reserved(0) / 1024 / 1024 / 1024)
+        # )
+        # print(
+        #     "torch.cuda.max_memory_reserved: %fGB"
+        #     % (torch.cuda.max_memory_reserved(0) / 1024 / 1024 / 1024)
+        # )
+        batch_Sigma_inverse = self.batch_Sigma_inverse[:batch_size, :, :]
         Sigma_inverse_phi = torch.bmm(batch_Sigma_inverse, phi_columns)
         inside_sqrt = torch.sum(phi_columns * Sigma_inverse_phi, dim=1)
         inside_sqrt = inside_sqrt.unsqueeze(-1)
@@ -270,6 +269,8 @@ class PessimisticLSPI:
         return Gamma
 
     def save(self) -> None:
-        # NOTE: removing buffer to save space
+        # NOTE: saving space before writing to disk
         del self.buffer
+        # FIXME: this doesn't save memory...
+        self.batch_Sigma_inverse = self.batch_Sigma_inverse[self.num_actions, :, :]
         pickle.dump(self, open(self.env_name + ".Actor", "wb"))
