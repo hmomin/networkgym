@@ -1,13 +1,20 @@
 #!/bin/bash
 
 agents=(
-    system_default
-	UtilityLogistic
-	ArgMax
-	ArgMin
-	Random
-	system_default_deterministic_td3_bc_10000_alpha_0.000
-	system_default_deterministic_td3_bc_10000_alpha_0.625
+    PessimisticLSPI_random_discrete_increment_utility_beta_0.0
+    PessimisticLSPI_random_discrete_increment_utility_beta_0.1
+    PessimisticLSPI_random_discrete_increment_utility_beta_0.3
+    PessimisticLSPI_random_discrete_increment_utility_beta_1.0
+    PessimisticLSPI_random_discrete_increment_utility_beta_3.0
+    PessimisticLSPI_random_discrete_increment_utility_beta_10.0
+    PessimisticLSPI_random_discrete_increment_utility_beta_30.0
+    PessimisticLSPI_utility_discrete_increment_utility_beta_0.0
+    PessimisticLSPI_utility_discrete_increment_utility_beta_0.1
+    PessimisticLSPI_utility_discrete_increment_utility_beta_0.3
+    PessimisticLSPI_utility_discrete_increment_utility_beta_1.0
+    PessimisticLSPI_utility_discrete_increment_utility_beta_3.0
+    PessimisticLSPI_utility_discrete_increment_utility_beta_10.0
+    PessimisticLSPI_utility_discrete_increment_utility_beta_30.0
 )
 
 # exactly one argument must be provided
