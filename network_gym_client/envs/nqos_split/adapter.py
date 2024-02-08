@@ -204,7 +204,9 @@ class Adapter(network_gym_client.adapter.Adapter):
         max_delay = np.max(df_owd["value"])
 
         reward = 0
-        if self.config_json["rl_config"]["reward_type"] == "utility":
+        if self.config_json["rl_config"]["reward_type"] == "normalized_utility":
+            reward = self.compute_normalized_utility(df)
+        elif self.config_json["rl_config"]["reward_type"] == "utility":
             reward = self.netowrk_util(ave_rate, avg_delay)
         elif self.config_json["rl_config"]["reward_type"] == "throughput":
             reward = ave_rate
@@ -248,3 +250,33 @@ class Adapter(network_gym_client.adapter.Adapter):
         alpha_balanced_metric = np.clip(alpha_balanced_metric, -10, 10)
         
         return alpha_balanced_metric
+    
+    def compute_normalized_utility(self, df: pd.DataFrame) -> float:
+        # NOTE: normalizing the throughput by combining the max throughput
+        # across both channels. Normalizing the delay by dividing by 1000 ms (max delay)
+        
+        gma_df = df[df["source"] == "gma"]
+        lte_df = df[df["source"] == "lte"]
+        wifi_df = df[df["source"] == "wifi"]
+        
+        df_rate = gma_df[gma_df["name"] == "dl::rate"]["value"].values[0]
+        df_owd = gma_df[gma_df["name"] == "dl::owd"]["value"].values[0]
+        df_max_wifi_rate = wifi_df[wifi_df["name"] == "dl::max_rate"]["value"].values[0]
+        df_max_lte_rate = lte_df[lte_df["name"] == "dl::max_rate"]["value"].values[0]
+        df_total_max_rate = np.add(df_max_wifi_rate, df_max_lte_rate)
+        
+        normalized_throughputs = np.divide(df_rate, df_total_max_rate)
+        normalized_delays = np.divide(df_owd, 1000.0)
+        
+        average_throughput = np.mean(normalized_throughputs)
+        average_delay = np.mean(normalized_delays)
+        if average_throughput < 1.0e-9:
+            print("WARNING: average normalized throughput less than 1.0e-9")
+            average_throughput = 1.0e-9
+        if average_delay < 1.0e-9:
+            print("WARNING: average normalized delay less than 1.0e-9")
+            average_delay = 1.0e-9
+        
+        reward = np.log(average_throughput) - np.log(average_delay)
+        print(f"REWARD: {reward}")
+        return reward

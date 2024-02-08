@@ -300,8 +300,8 @@ def arg_parser():
     parser.add_argument(
         "--env",
         type=str,
-        required=True,
         choices=["nqos_split", "qos_steer", "network_slicing"],
+        default="nqos_split",
         help="Select a environment to start Network Gym Client (nqos_split, qos_steer, network_slicing)",
     )
     parser.add_argument(

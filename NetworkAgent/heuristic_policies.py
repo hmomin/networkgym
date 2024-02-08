@@ -57,12 +57,12 @@ def sigmoid(x: np.ndarray) -> np.ndarray:
 
 
 def get_utilities(obs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    lte_rate = obs[3, :]
-    wifi_rate = obs[4, :]
-    lte_owd = obs[5, :]
-    wifi_owd = obs[6, :]
-    lte_utilities = np.log(lte_rate) - np.log(lte_owd)
-    wifi_utilities = np.log(wifi_rate) - np.log(wifi_owd)
+    lte_rate = obs[3, :] * 100
+    wifi_rate = obs[4, :] * 100
+    lte_owd = obs[5, :] * 100
+    wifi_owd = obs[6, :] * 100
+    lte_utilities = np.log(1 + lte_rate) - np.log(1 + lte_owd)
+    wifi_utilities = np.log(1 + wifi_rate) - np.log(1 + wifi_owd)
     return (lte_utilities, wifi_utilities)
 
 
@@ -92,19 +92,9 @@ def utility_logistic_action(obs: np.ndarray) -> list[float]:
     lte_utilities, wifi_utilities = get_utilities(obs)
     actions = []
     for lte_utility, wifi_utility in zip(lte_utilities, wifi_utilities):
-        if np.isnan(lte_utility):
-            actions.append(0.0)
-        elif np.isnan(wifi_utility):
-            actions.append(1.0)
-        else:
-            utility_difference = wifi_utility - lte_utility
-            # NOTE: (+inf) - (+inf) = nan, and same for (-inf)
-            new_action = (
-                0.5
-                if np.isnan(utility_difference)
-                else float(sigmoid(utility_difference))
-            )
-            actions.append(new_action)
+        utility_difference = wifi_utility - lte_utility
+        new_action = float(sigmoid(utility_difference))
+        actions.append(new_action)
     return actions
 
 
