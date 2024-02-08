@@ -19,7 +19,7 @@ def get_args() -> argparse.Namespace:
         "--env_name",
         help="algorithm with offline buffers to train from",
         required=False,
-        default="system_default_deterministic_walk",
+        default="sys_default_norm_utility",
         type=str,
     )
     parser.add_argument(

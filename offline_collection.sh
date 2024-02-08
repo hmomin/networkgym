@@ -1,6 +1,6 @@
 #!/bin/bash
 
-algorithm="random_discrete_increment"
+algorithm="system_default"
 
 # exactly one argument must be provided
 if [ $# -ne 1 ]; then
