@@ -160,15 +160,14 @@ def main():
         "TD3": TD3,
         "A2C": A2C,
         "FastLSPI": FastLSPI,
-        "ArgMax": argmax_policy,
-        "ArgMin": argmin_policy,
+        "throughput_argmax": argmax_policy,
+        "throughput_argmin": argmin_policy,
         "delay_increment": delay_increment_policy,
-        "Random": random_policy,
+        "random": random_policy,
         "random_discrete_increment": random_discrete_policy,
         "utility_discrete_increment": utility_increment_policy,
         "system_default": system_default_policy,
-        "UtilityFull": utility_argmax_policy,
-        "UtilityLogistic": utility_logistic_policy,
+        "utility_logistic": utility_logistic_policy,
     }
 
     # Choose the agent
@@ -191,11 +190,10 @@ def main():
         "delay_increment",
         "random_discrete_increment",
         "utility_discrete_increment",
-        "ArgMax",
-        "ArgMin",
-        "Random",
-        "UtilityFull",
-        "UtilityLogistic",
+        "throughput_argmax",
+        "throughput_argmin",
+        "random",
+        "utility_logistic",
     ]
 
     if rl_alg in heuristic_algorithms:

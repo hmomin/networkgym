@@ -1,20 +1,9 @@
 #!/bin/bash
 
 agents=(
-    PessimisticLSPI_random_discrete_increment_utility_beta_0.0
-    PessimisticLSPI_random_discrete_increment_utility_beta_0.1
-    PessimisticLSPI_random_discrete_increment_utility_beta_0.3
-    PessimisticLSPI_random_discrete_increment_utility_beta_1.0
-    PessimisticLSPI_random_discrete_increment_utility_beta_3.0
-    PessimisticLSPI_random_discrete_increment_utility_beta_10.0
-    PessimisticLSPI_random_discrete_increment_utility_beta_30.0
-    PessimisticLSPI_utility_discrete_increment_utility_beta_0.0
-    PessimisticLSPI_utility_discrete_increment_utility_beta_0.1
-    PessimisticLSPI_utility_discrete_increment_utility_beta_0.3
-    PessimisticLSPI_utility_discrete_increment_utility_beta_1.0
-    PessimisticLSPI_utility_discrete_increment_utility_beta_3.0
-    PessimisticLSPI_utility_discrete_increment_utility_beta_10.0
-    PessimisticLSPI_utility_discrete_increment_utility_beta_30.0
+    sys_default_norm_utility_bc.10000.64.0.625.not_normalized
+    sys_default_norm_utility_PTD3_beta_0.1_alpha_0.999_step_0010000
+    sys_default_norm_utility_PTD3_beta_0.1_alpha_0.9995_step_0010000
 )
 
 # exactly one argument must be provided
