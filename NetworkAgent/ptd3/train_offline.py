@@ -1,4 +1,5 @@
 import argparse
+import torch
 from agent import PessimisticTD3
 from offline_env import OfflineEnv
 
@@ -32,6 +33,23 @@ def get_args() -> argparse.Namespace:
     return args
 
 
+def get_free_device() -> str:
+    if not torch.cuda.is_available():
+        return "cpu"
+    print("COMPARING GPU USAGE")
+    chosen_device = -1
+    chosen_free_memory = -1
+    for device_int in range(torch.cuda.device_count()):
+        free_memory, _ = torch.cuda.mem_get_info(device_int)
+        if free_memory > chosen_free_memory:
+            chosen_free_memory = free_memory
+            chosen_device = device_int
+        print(f"cuda:{device_int} -> {free_memory/1_000_000_000.0} GB free")
+    device_str = f"cuda:{chosen_device}"
+    print(f"{device_str} chosen!")
+    return device_str
+
+
 def main() -> None:
     # ------------------------- HYPERPARAMETERS -------------------------
     buffer_max_size = 10_000
@@ -51,7 +69,9 @@ def main() -> None:
     alpha_fisher: float = args.alpha
     beta_pessimism: float = args.beta
 
-    env = OfflineEnv(env_name, buffer_max_size, normalize=False)
+    device_str = get_free_device()
+
+    env = OfflineEnv(env_name, buffer_max_size, normalize=False, device=device_str)
 
     agent = PessimisticTD3(
         env,
@@ -62,6 +82,7 @@ def main() -> None:
         tau,
         policy_delay,
         resume,
+        device=device_str,
     )
 
     print("Training agent with offline data...")

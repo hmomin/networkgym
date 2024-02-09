@@ -37,6 +37,7 @@ class PessimisticTD3:
         tau: float,
         policy_delay: int,
         should_load: bool = True,
+        device: str | None = None,
         save_folder: str = "saved",
     ):
         self.buffer: CombinedBuffer = env.buffer
@@ -61,7 +62,10 @@ class PessimisticTD3:
         self.env_name = os.path.join(
             save_dir, f"{env.algo_name}_PTD3_beta_{self.beta}_alpha_{self.alpha}"
         )
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if device is not None:
+            self.device = torch.device(device)
+        else:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using {self.device} device...")
         self.training_stats: list[list[float]] = []
         self.initialize_actor_critic_params(learning_rate, should_load)

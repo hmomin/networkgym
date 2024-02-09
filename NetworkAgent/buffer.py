@@ -94,7 +94,11 @@ class Buffer:
 
 class CombinedBuffer(Buffer):
     def __init__(
-        self, buffers: list[Buffer], max_size: int = -1, normalize: bool = True
+        self,
+        buffers: list[Buffer],
+        max_size: int = -1,
+        normalize: bool = True,
+        device: str | None = None,
     ) -> None:
         self.num_buffers = len(buffers)
         super().__init__("this_buffer_doesn't_exist")
@@ -105,7 +109,10 @@ class CombinedBuffer(Buffer):
             self.normalize_states()
         # NOTE: it's possible that calling requires_grad on the full tensor might
         # be too computationally expensive and unnecessary. Verify this...
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if device is not None:
+            self.device = torch.device(device)
+        else:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tensor_states = torch.tensor(self.states, device=self.device)
         self.tensor_actions = torch.tensor(self.actions, device=self.device)
         self.tensor_rewards = torch.tensor(self.rewards, device=self.device)

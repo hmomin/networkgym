@@ -12,10 +12,11 @@ class OfflineEnv:
         algo_name: str = "system_default",
         buffer_max_size: int = -1,
         normalize: bool = True,
+        device: str | None = None,
     ) -> None:
         self.algo_name = algo_name
         buffers = self.get_buffers()
-        self.buffer = CombinedBuffer(buffers, buffer_max_size, normalize)
+        self.buffer = CombinedBuffer(buffers, buffer_max_size, normalize, device)
 
     def get_buffers(self) -> list[Buffer]:
         script_dir = os.path.dirname(os.path.abspath(__file__))
