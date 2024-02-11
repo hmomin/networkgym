@@ -37,7 +37,6 @@ from NetworkAgent.heuristic_policies import (
     random_action,
     random_policy,
     random_discrete_policy,
-    utility_argmax_policy,
     utility_logistic_policy,
 )
 from NetworkAgent.config_lock.client_utils import release_lock
