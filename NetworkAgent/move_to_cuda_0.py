@@ -29,6 +29,7 @@ def move_model_to_device(model: nn.Module, device: str) -> None:
 def main() -> None:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     models_dir = os.path.join(script_dir, FOLDER_NAME)
+    save_dir = os.path.join(script_dir, SAVE_NAME)
     model_basepaths = os.listdir(models_dir)
     for model_basepath in model_basepaths:
         if ".Actor" not in model_basepath:
@@ -36,7 +37,8 @@ def main() -> None:
         model_path = os.path.join(models_dir, model_basepath)
         model = load_model(model_path)
         move_model_to_device(model, "cuda:0")
-        save_model(model, model_path)
+        save_path = os.path.join(save_dir, model_basepath)
+        save_model(model, save_path)
     print("DONE")
 
 
