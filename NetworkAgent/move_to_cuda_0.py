@@ -36,7 +36,7 @@ def main() -> None:
             continue
         model_path = os.path.join(models_dir, model_basepath)
         model = load_model(model_path)
-        move_model_to_device(model, "cuda:0")
+        move_model_to_device(model, "cpu")
         save_path = os.path.join(save_dir, model_basepath)
         save_model(model, save_path)
     print("DONE")
