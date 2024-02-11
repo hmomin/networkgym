@@ -16,7 +16,7 @@ python -u main_rl.py --env nqos_split --client_id 7
 cd ../..
 
 echo "Training PPO"
-python -u NetworkAgent/config_changer.py --train --parallel_env --agent PPO --seed 0 --steps 102402
+python -u NetworkAgent/config_changer.py --train --parallel_env --agent PPO --seed 0 --steps 102000
 cd NetworkAgent/stable-baselines3
 python -u main_rl.py --env nqos_split --client_id 0
 cd ../..
