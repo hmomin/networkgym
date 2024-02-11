@@ -6,21 +6,23 @@ FOLDER_NAME = "saved"
 
 
 def load_model(model_path: str) -> nn.Module:
-    actor = pickle.load(open(model_path, "rb"))
+    with open(model_path, "rb") as model:
+        actor = pickle.load(model)
     return actor
 
 
 def save_model(model: nn.Module, model_path: str) -> None:
-    pickle.dump(model, open(model_path, "wb"))
+    with open(model_path, "wb") as model_file:
+        pickle.dump(model, model_file)
 
 
 def move_model_to_device(model: nn.Module, device: str) -> None:
     print(f"Original device: " + str(model.device))
-    print(f"Original device on cuda: " + str(next(model.parameters()).is_cuda))
+    print(f"Original device on cuda: " + str(next(model.parameters()).get_device()))
     model.to(device)
     model.device = device
     print(f"New device: " + str(model.device))
-    print(f"New device on cuda: " + str(next(model.parameters()).is_cuda))
+    print(f"New device on cuda: " + str(next(model.parameters()).get_device()))
 
 
 def main() -> None:
