@@ -2,7 +2,8 @@ import os
 import pickle
 import torch.nn as nn
 
-FOLDER_NAME = "saved"
+FOLDER_NAME = "ptd3/saved/sys_default_norm_utility"
+SAVE_NAME = "ptd3/saved/sys_default_norm_utility_moved"
 
 
 def load_model(model_path: str) -> nn.Module:
