@@ -28,6 +28,8 @@ def main() -> None:
     models_dir = os.path.join(script_dir, FOLDER_NAME)
     model_basepaths = os.listdir(models_dir)
     for model_basepath in model_basepaths:
+        if ".Actor" not in model_basepath:
+            continue
         model_path = os.path.join(models_dir, model_basepath)
         model = load_model(model_path)
         move_model_to_device(model, "cuda:0")
