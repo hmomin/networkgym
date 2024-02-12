@@ -1,9 +1,10 @@
 import os
 import pickle
+import torch
 import torch.nn as nn
 
-FOLDER_NAME = "ptd3/saved/sys_default_norm_utility"
-SAVE_NAME = "ptd3/saved/sys_default_norm_utility_moved"
+FOLDER_NAME = "ptd3/saved/utility_logistic_norm_utility"
+SAVE_NAME = "ptd3/saved/utility_logistic_norm_utility_moved"
 
 
 def load_model(model_path: str) -> nn.Module:
@@ -14,7 +15,7 @@ def load_model(model_path: str) -> nn.Module:
 
 def save_model(model: nn.Module, model_path: str) -> None:
     with open(model_path, "wb") as model_file:
-        pickle.dump(model, model_file)
+        torch.save(model, model_file)
 
 
 def move_model_to_device(model: nn.Module, device: str) -> None:
@@ -36,7 +37,7 @@ def main() -> None:
             continue
         model_path = os.path.join(models_dir, model_basepath)
         model = load_model(model_path)
-        move_model_to_device(model, "cpu")
+        move_model_to_device(model, "cuda:0")
         save_path = os.path.join(save_dir, model_basepath)
         save_model(model, save_path)
     print("DONE")
