@@ -3,15 +3,11 @@ import os
 from csv import reader
 
 
-# data_folder = "2024_01_27_GOOD_heuristic_and_td3_bc"
-# data_folder = "2024_01_27_GOOD_PTD3"
-# data_folder = "2024_01_27_GOOD_PTD3_beta_10.0"
-# data_folder = "2024_01_27_GOOD_PTD3_alpha_0.0"
-# data_folder = "2024_02_03_PessimisticLSPI_no_pessimism_while_training"
-# data_folder = "2024_02_05_random_discrete"
-data_folder = "2024_02_07_PessimisticLSPI_random"
-# data_folder = "2024_01_27_GOOD_online_RL_deterministic"
-# data_folder = "2024_01_27_GOOD_online_RL_stochastic"
+# data_folder = "2024_02_12_heuristic_algorithms"
+data_folder = "2024_02_12_online_DRL_algorithms"
+# data_folder = "2024_02_12_sys_default_TD3_BC"
+# data_folder = "2024_02_12_sys_default_PTD3"
+# data_folder = "2024_02_12_utility_logistic_TD3_BC"
 
 
 def get_filepaths_from_folder(folder: str) -> list[str]:
