@@ -213,7 +213,16 @@ def main():
             print(
                 f"WARNING: rl_alg ({rl_alg}) not found in alg_map. Trying personal mode..."
             )
-            agent = pickle.load(open(model_path + ".Actor", "rb"))
+            # FIXME MED: control for pickle.load() vs torch.load() -> move everything
+            # to torch.load() / torch.save()
+            try:
+                agent = pickle.load(open(model_path + ".Actor", "rb"))
+            except Exception as e:
+                print("WARNING: exception occurred using pickle to load model.")
+                print(e)
+                print("Trying torch...")
+                agent = torch.load(open(model_path + ".Actor", "rb"), "cuda:0")
+            
             try:
                 normalizers: tuple[torch.Tensor, torch.Tensor] = pickle.load(
                     open(model_path + ".Normalizers", "rb")

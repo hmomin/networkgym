@@ -64,9 +64,9 @@ NOTE (times should be GMT!):
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "SAC"
-CREATED_AFTER = datetime(2024, 2, 12, 23, 11, 0)
-CREATED_BEFORE = datetime(2024, 2, 12, 23, 45, 0)
+RUN_NAME = "utility_logistic_norm_utility_PTD3"
+CREATED_AFTER = datetime(2024, 2, 12, 16, 53, 0)
+CREATED_BEFORE = datetime(2024, 2, 15, 0, 0, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 TEST_EXPORT = False

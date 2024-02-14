@@ -4,10 +4,11 @@ from csv import reader
 
 
 # data_folder = "2024_02_12_heuristic_algorithms"
-data_folder = "2024_02_12_online_DRL_algorithms"
+# data_folder = "2024_02_12_online_DRL_algorithms"
 # data_folder = "2024_02_12_sys_default_TD3_BC"
 # data_folder = "2024_02_12_sys_default_PTD3"
 # data_folder = "2024_02_12_utility_logistic_TD3_BC"
+data_folder = "2024_02_13_utility_logistic_norm_utility_PTD3"
 
 
 def get_filepaths_from_folder(folder: str) -> list[str]:
