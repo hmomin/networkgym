@@ -222,7 +222,7 @@ def main():
                 print(e)
                 print("Trying torch...")
                 agent = torch.load(open(model_path + ".Actor", "rb"), "cuda:0")
-            
+
             try:
                 normalizers: tuple[torch.Tensor, torch.Tensor] = pickle.load(
                     open(model_path + ".Normalizers", "rb")

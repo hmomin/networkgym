@@ -1,7 +1,13 @@
 import argparse
+import numpy as np
+import torch
 from agent import Agent
 from tqdm import tqdm
 from offline_env import OfflineEnv
+
+# NOTE: seed torch and numpy for reproducibility
+torch.manual_seed(0)
+np.random.seed(1)
 
 
 def get_args() -> argparse.Namespace:
