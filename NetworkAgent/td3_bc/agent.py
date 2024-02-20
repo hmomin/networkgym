@@ -45,7 +45,7 @@ class Agent:
         save_dir = os.path.join(script_dir, save_folder)
         if not os.path.isdir(save_dir):
             os.mkdir(save_dir)
-        bc_string = "bc" if self.behavioral_cloning else "normal"
+        bc_string = "td3_bc" if self.behavioral_cloning else "td3_no_bc"
         self.env_name = os.path.join(save_dir, f"{env.algo_name}_{bc_string}.")
         name = self.env_name
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

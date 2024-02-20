@@ -8,7 +8,9 @@ from csv import reader
 # data_folder = "2024_02_12_sys_default_TD3_BC"
 # data_folder = "2024_02_12_sys_default_PTD3"
 # data_folder = "2024_02_12_utility_logistic_TD3_BC"
-data_folder = "2024_02_13_utility_logistic_norm_utility_PTD3"
+# data_folder = "2024_02_16_sys_default_reproducible"
+# data_folder = "2024_02_19_utility_logistic_reproducible"
+data_folder = "2024_02_19_td3_bc_reproducible"
 
 
 def get_filepaths_from_folder(folder: str) -> list[str]:
@@ -68,7 +70,8 @@ def main() -> None:
         run_returns = [x / 3200.0 for x in run_returns]
         mean_run_return = np.mean(run_returns)
         stdev_run_return = np.std(run_returns)
-        print(f"{category}:\n\t{mean_run_return} | {stdev_run_return}\n")
+        standard_error = 1.96 * stdev_run_return / np.sqrt(len(run_returns))
+        print(f"{category}:\n\t{mean_run_return} | {standard_error}\n")
 
 
 if __name__ == "__main__":

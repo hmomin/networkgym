@@ -60,13 +60,29 @@ NOTE (times should be GMT!):
 - SAC (stochastic)
     CREATED_AFTER = datetime(2024, 2, 12, 23, 11, 0)
     CREATED_BEFORE = datetime(2024, 2, 12, 23, 45, 0)
+
+- sys_default_norm_utility_PTD3 (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 14, 21, 6, 0)
+    CREATED_BEFORE = datetime(2024, 2, 19, 22, 11, 0)
+
+- utility_logistic_norm_utility_PTD3 (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 14, 21, 6, 0)
+    CREATED_BEFORE = datetime(2024, 2, 19, 22, 11, 0)
+
+- sys_default_norm_utility_td3_bc (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 19, 23, 30, 0)
+    CREATED_BEFORE = datetime(2024, 2, 20, 1, 6, 0)
+
+- utility_logistic_norm_utility_td3_bc (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 19, 23, 30, 0)
+    CREATED_BEFORE = datetime(2024, 2, 20, 1, 6, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "utility_logistic_norm_utility_PTD3"
-CREATED_AFTER = datetime(2024, 2, 12, 16, 53, 0)
-CREATED_BEFORE = datetime(2024, 2, 15, 0, 0, 0)
+RUN_NAME = "utility_logistic"
+CREATED_AFTER = datetime(2024, 2, 19, 23, 30, 0)
+CREATED_BEFORE = datetime(2024, 2, 20, 1, 6, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 TEST_EXPORT = False
