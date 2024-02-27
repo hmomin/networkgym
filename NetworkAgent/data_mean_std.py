@@ -10,7 +10,11 @@ from csv import reader
 # data_folder = "2024_02_12_utility_logistic_TD3_BC"
 # data_folder = "2024_02_16_sys_default_reproducible"
 # data_folder = "2024_02_19_utility_logistic_reproducible"
-data_folder = "2024_02_19_td3_bc_reproducible"
+# data_folder = "2024_02_19_td3_bc_reproducible"
+# data_folder = "2024_02_26_heuristic_algorithms"
+# data_folder = "2024_02_26_online_DRL_deterministic_reproducible"
+data_folder = "2024_02_26_online_DRL_stochastic_reproducible"
+# data_folder = "2024_02_26_throughput_argmax_norm_utility_PTD3_reproducible"
 
 
 def get_filepaths_from_folder(folder: str) -> list[str]:

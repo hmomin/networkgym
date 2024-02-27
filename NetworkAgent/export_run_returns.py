@@ -9,57 +9,79 @@ from tqdm import tqdm
 
 """
 NOTE (times should be GMT!):
-- throughput_argmax
-    CREATED_AFTER = datetime(2024, 2, 8, 20, 12, 0)
-    CREATED_BEFORE = datetime(2024, 2, 8, 20, 17, 0)
-
-- utility_logistic
-    CREATED_AFTER = datetime(2024, 2, 8, 20, 42, 0)
-    CREATED_BEFORE = datetime(2024, 2, 8, 20, 47, 0)
-
-- system_default
-    CREATED_AFTER = datetime(2024, 2, 8, 21, 13, 0)
-    CREATED_BEFORE = datetime(2024, 2, 8, 23, 57, 0)
-
-- random
-    CREATED_AFTER = datetime(2024, 2, 8, 21, 13, 0)
-    CREATED_BEFORE = datetime(2024, 2, 8, 23, 57, 0)
-
-- throughput_argmin
-    CREATED_AFTER = datetime(2024, 2, 8, 21, 13, 0)
-    CREATED_BEFORE = datetime(2024, 2, 8, 23, 57, 0)
-
-- sys_default_norm_utility_bc
+- sys_default_norm_utility_bc (non-reproducible)
     CREATED_AFTER = datetime(2024, 2, 8, 21, 13, 0)
     CREATED_BEFORE = datetime(2024, 2, 9, 4, 28, 0)
 
-- sys_default_norm_utility_PTD3
+- sys_default_norm_utility_PTD3 (non-reproducible)
     CREATED_AFTER = datetime(2024, 2, 9, 4, 54, 0)
     CREATED_BEFORE = datetime(2024, 2, 12, 19, 13, 0)
 
-- PPO (deterministic)
+- PPO (deterministic) (non-reproducible)
     CREATED_AFTER = datetime(2024, 2, 11, 6, 21, 0)
     CREATED_BEFORE = datetime(2024, 2, 11, 6, 56, 0)
 
-- SAC (deterministic)
+- SAC (deterministic) (non-reproducible)
     CREATED_AFTER = datetime(2024, 2, 11, 6, 21, 0)
     CREATED_BEFORE = datetime(2024, 2, 11, 6, 56, 0)
 
-- utility_logistic_norm_utility_bc
+- utility_logistic_norm_utility_bc (non-reproducible)
     CREATED_AFTER = datetime(2024, 2, 12, 19, 46, 0)
     CREATED_BEFORE = datetime(2024, 2, 12, 19, 50, 0)
 
-- utility_logistic_norm_utility_PTD3
+- utility_logistic_norm_utility_PTD3 (non-reproducible)
     CREATED_AFTER = datetime(2024, 2, 12, 16, 53, 0)
     CREATED_BEFORE = datetime(2024, 2, 15, 0, 0, 0)
 
-- PPO (stochastic)
+- PPO (stochastic) (non-reproducible)
     CREATED_AFTER = datetime(2024, 2, 12, 23, 11, 0)
     CREATED_BEFORE = datetime(2024, 2, 12, 23, 45, 0)
 
-- SAC (stochastic)
+- SAC (stochastic) (non-reproducible)
     CREATED_AFTER = datetime(2024, 2, 12, 23, 11, 0)
     CREATED_BEFORE = datetime(2024, 2, 12, 23, 45, 0)
+
+REPRODUCIBLES start below vvvvv
+
+- throughput_argmax (part 1)
+    CREATED_AFTER = datetime(2024, 2, 8, 20, 12, 0)
+    CREATED_BEFORE = datetime(2024, 2, 8, 20, 16, 0)
+
+- throughput_argmax (part 2)
+    CREATED_AFTER = datetime(2024, 2, 23, 23, 30, 0)
+    CREATED_BEFORE = datetime(2024, 2, 24, 3, 18, 0)
+
+- utility_logistic (part 1)
+    CREATED_AFTER = datetime(2024, 2, 8, 20, 42, 0)
+    CREATED_BEFORE = datetime(2024, 2, 8, 20, 47, 0)
+
+- utility_logistic (part 2)
+    CREATED_AFTER = datetime(2024, 2, 23, 23, 33, 0)
+    CREATED_BEFORE = datetime(2024, 2, 24, 0, 4, 0)
+
+- system_default (part 1)
+    CREATED_AFTER = datetime(2024, 2, 8, 21, 13, 0)
+    CREATED_BEFORE = datetime(2024, 2, 8, 22, 34, 0)
+
+- system_default (part 2)
+    CREATED_AFTER = datetime(2024, 2, 23, 22, 57, 0)
+    CREATED_BEFORE = datetime(2024, 2, 23, 23, 2, 0)
+
+- random (part 1)
+    CREATED_AFTER = datetime(2024, 2, 8, 23, 3, 0)
+    CREATED_BEFORE = datetime(2024, 2, 8, 23, 15, 0)
+
+- random (part 2)
+    CREATED_AFTER = datetime(2024, 2, 23, 22, 25, 0)
+    CREATED_BEFORE = datetime(2024, 2, 23, 22, 29, 0)
+
+- throughput_argmin (part 1)
+    CREATED_AFTER = datetime(2024, 2, 8, 23, 54, 0)
+    CREATED_BEFORE = datetime(2024, 2, 8, 23, 57, 0)
+
+- throughput_argmin (part 2)
+    CREATED_AFTER = datetime(2024, 2, 23, 21, 54, 0)
+    CREATED_BEFORE = datetime(2024, 2, 23, 21, 58, 0)
 
 - sys_default_norm_utility_PTD3 (reproducible)
     CREATED_AFTER = datetime(2024, 2, 14, 21, 6, 0)
@@ -76,15 +98,36 @@ NOTE (times should be GMT!):
 - utility_logistic_norm_utility_td3_bc (reproducible)
     CREATED_AFTER = datetime(2024, 2, 19, 23, 30, 0)
     CREATED_BEFORE = datetime(2024, 2, 20, 1, 6, 0)
+
+- PPO (deterministic) (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 25, 16, 47, 0)
+    CREATED_BEFORE = datetime(2024, 2, 25, 18, 30, 0)
+
+- SAC (deterministic) (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 25, 16, 47, 0)
+    CREATED_BEFORE = datetime(2024, 2, 25, 18, 30, 0)
+
+- throughput_argmax_norm_utility_PTD3 (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 25, 23, 9, 0)
+    CREATED_BEFORE = datetime(2024, 2, 26, 17, 15, 0)
+
+- PPO (stochastic) (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 26, 19, 14, 0)
+    CREATED_BEFORE = datetime(2024, 2, 26, 19, 48, 0)
+
+- SAC (stochastic) (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 26, 20, 15, 0)
+    CREATED_BEFORE = datetime(2024, 2, 26, 20, 50, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "utility_logistic"
-CREATED_AFTER = datetime(2024, 2, 19, 23, 30, 0)
-CREATED_BEFORE = datetime(2024, 2, 20, 1, 6, 0)
+RUN_NAME = "SAC"
+CREATED_AFTER = datetime(2024, 2, 26, 20, 15, 0)
+CREATED_BEFORE = datetime(2024, 2, 26, 20, 50, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
+MIN_SEED = 100
 TEST_EXPORT = False
 
 
@@ -113,7 +156,11 @@ def get_returns_from_runs(runs: list, num_runs: int = 0) -> dict[str, list[float
             run_rewards = run_rewards[0 : MAX_STEPS - 1]
         run_return: float = sum(run_rewards)
         run_name: str = run.name
-        base_run_name = run_name.split("_seed_")[0]
+        split_run_name = run_name.split("_seed_")
+        base_run_name = split_run_name[0]
+        seed = int(split_run_name[1])
+        if seed < MIN_SEED:
+            continue
         if base_run_name not in returns_dict:
             returns_dict[base_run_name] = []
         returns_dict[base_run_name].append(run_return)
@@ -152,10 +199,10 @@ def get_csv_filename() -> str:
 
 def main() -> None:
     runs = get_runs()
-    if TEST_EXPORT:
-        return
     returns_dict = get_returns_from_runs(runs)
     pprint(returns_dict)
+    if TEST_EXPORT:
+        return
     write_to_csv(returns_dict)
 
 
