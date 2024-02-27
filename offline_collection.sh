@@ -1,6 +1,6 @@
 #!/bin/bash
 
-algorithm="utility_logistic"
+algorithm="throughput_argmax"
 
 done_seeds=()
 
@@ -26,10 +26,23 @@ if [ $client_id -ge 0 ] && [ $client_id -le 7 ]; then
         if [[ $seed_done -eq 1 ]]; then
             echo "seed $seed done already."
         else
+            echo "SEED: $seed --- AGENT: $algorithm"
             python -u NetworkAgent/config_changer.py --test --store_offline --seed $seed --agent $algorithm --steps 10000
             cd NetworkAgent/stable-baselines3
+            # time python script time, to determine if it should be reran
+            start_time=$(date +%s)
             python -u main_rl.py --env nqos_split --client_id $client_id
+            end_time=$(date +%s)
+            elapsed_time=$((end_time - start_time))
             cd ../..
+            if [ $elapsed_time -lt 60 ]; then
+                echo "RERUNNING SCRIPT..."
+                python -u NetworkAgent/config_changer.py --test --store_offline --seed $seed --agent $algorithm --steps 10000
+                cd NetworkAgent/stable-baselines3
+                python -u main_rl.py --env nqos_split --client_id $client_id
+                cd ../..
+            fi
+
         fi
     done
 else

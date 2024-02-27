@@ -2,7 +2,6 @@ import argparse
 import numpy as np
 import os
 import pickle
-import random
 import sys
 import time
 
@@ -41,6 +40,9 @@ from NetworkAgent.heuristic_policies import (
 )
 from NetworkAgent.config_lock.client_utils import release_lock
 
+# NOTE: seed torch and numpy for reproducibility
+torch.manual_seed(0)
+np.random.seed(1)
 
 def train(agent, config_json):
     steps_per_episode = int(config_json["env_config"]["steps_per_episode"])
@@ -110,7 +112,7 @@ def evaluate(
             raise Exception(
                 f"mean_state type ({type(mean_state)}) and/or stdev_state type ({type(stdev_state)}) incompatible."
             )
-        if random_action_prob > random.uniform(0, 1):
+        if random_action_prob > np.random.uniform(0, 1):
             print("TAKING RANDOM ACTION")
             action = random_action(obs)
         else:
