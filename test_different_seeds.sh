@@ -1,35 +1,23 @@
 #!/bin/bash
 
 agents=(
-    # throughput_argmax_norm_utility_PTD3_beta_0.3_alpha_0.999_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_0.3_alpha_0.9995_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_0.3_alpha_0.9999_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_0.3_alpha_1.0_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_1.0_alpha_0.999_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_1.0_alpha_0.9995_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_1.0_alpha_0.9999_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_1.0_alpha_1.0_step_0010000
+    # sys_default_norm_utility_PTD3_beta_0.1_alpha_1.0_step_0010000
+    # sys_default_norm_utility_PTD3_beta_0.3_alpha_1.0_step_0010000
+    # sys_default_norm_utility_PTD3_beta_1.0_alpha_1.0_step_0010000
+    # sys_default_norm_utility_PTD3_beta_3.0_alpha_1.0_step_0010000
+    # sys_default_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
 
-    # throughput_argmax_norm_utility_PTD3_beta_3.0_alpha_0.999_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_3.0_alpha_0.9995_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_3.0_alpha_0.9999_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_3.0_alpha_1.0_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_10.0_alpha_0.999_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_10.0_alpha_0.9995_step_0010000
+    # utility_logistic_norm_utility_PTD3_beta_0.1_alpha_1.0_step_0010000
+    utility_logistic_norm_utility_PTD3_beta_0.3_alpha_1.0_step_0010000
+    utility_logistic_norm_utility_PTD3_beta_1.0_alpha_1.0_step_0010000
+    utility_logistic_norm_utility_PTD3_beta_3.0_alpha_1.0_step_0010000
+    utility_logistic_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
 
-    # throughput_argmax_norm_utility_PTD3_beta_10.0_alpha_0.9999_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_0.1_alpha_0.0_step_0010000
-    # throughput_argmax_norm_utility_PTD3_beta_0.3_alpha_0.0_step_0010000
-    
-    throughput_argmax_norm_utility_PTD3_beta_1.0_alpha_0.0_step_0010000
-    throughput_argmax_norm_utility_PTD3_beta_3.0_alpha_0.0_step_0010000
-    throughput_argmax_norm_utility_PTD3_beta_10.0_alpha_0.0_step_0010000
-
-    throughput_argmax_norm_utility_PTD3_beta_0.1_alpha_0.999_step_0010000
-    throughput_argmax_norm_utility_PTD3_beta_0.1_alpha_0.9995_step_0010000
-    throughput_argmax_norm_utility_PTD3_beta_0.1_alpha_0.9999_step_0010000
     throughput_argmax_norm_utility_PTD3_beta_0.1_alpha_1.0_step_0010000
+    throughput_argmax_norm_utility_PTD3_beta_0.3_alpha_1.0_step_0010000
+    throughput_argmax_norm_utility_PTD3_beta_1.0_alpha_1.0_step_0010000
+    throughput_argmax_norm_utility_PTD3_beta_3.0_alpha_1.0_step_0010000
+    throughput_argmax_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
 )
 
 # exactly one argument must be provided
@@ -39,8 +27,8 @@ if [ $# -ne 1 ]; then
 fi
 client_id=$1
 
-let "seed1 = $client_id + 128"
-let "seed2 = $client_id + 128 + 8"
+let "seed1 = $client_id + 128 + 16"
+let "seed2 = $client_id + 128 + 24"
 seeds=(
     $seed1
     $seed2
