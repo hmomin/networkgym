@@ -44,6 +44,7 @@ from NetworkAgent.config_lock.client_utils import release_lock
 torch.manual_seed(0)
 np.random.seed(1)
 
+
 def train(agent, config_json):
     steps_per_episode = int(config_json["env_config"]["steps_per_episode"])
     episodes_per_session = int(config_json["env_config"]["episodes_per_session"])
