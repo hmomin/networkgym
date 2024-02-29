@@ -118,13 +118,33 @@ REPRODUCIBLES start below vvvvv
 - SAC (stochastic) (reproducible)
     CREATED_AFTER = datetime(2024, 2, 26, 20, 15, 0)
     CREATED_BEFORE = datetime(2024, 2, 26, 20, 50, 0)
+
+- throughput_argmax_norm_utility_PTD3_beta_1.0_alpha_1.0 (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 26, 8, 17, 0)
+    CREATED_BEFORE = datetime(2024, 2, 26, 23, 38, 0)
+
+- throughput_argmax_norm_utility_PTD3 (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 27, 0, 7, 0)
+    CREATED_BEFORE = datetime(2024, 2, 28, 0, 10, 0)
+
+- sys_default_norm_utility_PTD3 (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 28, 6, 35, 0)
+    CREATED_BEFORE = datetime(2024, 2, 28, 11, 15, 0)
+
+- utility_logistic_norm_utility_PTD3 (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 28, 11, 36, 0)
+    CREATED_BEFORE = datetime(2024, 2, 29, 2, 57, 0)
+
+- throughput_argmax_norm_utility_PTD3 (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 28, 21, 34, 0)
+    CREATED_BEFORE = datetime(2024, 2, 29, 2, 57, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "SAC"
-CREATED_AFTER = datetime(2024, 2, 26, 20, 15, 0)
-CREATED_BEFORE = datetime(2024, 2, 26, 20, 50, 0)
+RUN_NAME = "throughput_argmax_norm_utility_PTD3"
+CREATED_AFTER = datetime(2024, 2, 28, 21, 34, 0)
+CREATED_BEFORE = datetime(2024, 2, 29, 2, 57, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 MIN_SEED = 100
