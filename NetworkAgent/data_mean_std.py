@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from csv import reader
+from pprint import pprint
 
 
 # data_folder = "2024_02_12_heuristic_algorithms"
@@ -14,7 +15,11 @@ from csv import reader
 # data_folder = "2024_02_26_heuristic_algorithms"
 # data_folder = "2024_02_26_online_DRL_deterministic_reproducible"
 # data_folder = "2024_02_26_online_DRL_stochastic_reproducible"
-data_folder = "2024_02_26_throughput_argmax_norm_utility_PTD3_reproducible"
+# data_folder = "2024_02_26_throughput_argmax_norm_utility_PTD3_reproducible"
+# data_folder = "2024_02_29_sys_default_alpha_1.0_reproducible"
+# data_folder = "2024_02_29_utility_logistic_alpha_1.0_reproducible"
+# data_folder = "2024_02_29_throughput_argmax_alpha_1.0_reproducible"
+data_folder = "2024_03_02_online_DRL_deterministic_more_seeds"
 
 
 def get_filepaths_from_folder(folder: str) -> list[str]:
@@ -61,13 +66,23 @@ def construct_data_dict(
     return data_dict
 
 
+def update_dict(
+    source_dict: dict[str, list[float]], new_dict: dict[str, list[float]]
+) -> None:
+    for key, value in new_dict.items():
+        if key in source_dict:
+            source_dict[key] += value
+        else:
+            source_dict[key] = value
+
+
 def main() -> None:
     filepaths = get_filepaths_from_folder(data_folder)
     full_dict: dict[str, list[float]] = {}
     for filepath in filepaths:
         categories, data = read_csv(filepath)
         data_dict = construct_data_dict(categories, data)
-        full_dict.update(data_dict)
+        update_dict(full_dict, data_dict)
     categories = sorted(list(full_dict.keys()))
     for category in categories:
         run_returns = full_dict[category]
@@ -75,7 +90,9 @@ def main() -> None:
         mean_run_return = np.mean(run_returns)
         stdev_run_return = np.std(run_returns)
         standard_error = 1.96 * stdev_run_return / np.sqrt(len(run_returns))
-        print(f"{category}:\n\t{mean_run_return} | {standard_error}\n")
+        print(
+            f"{category} ({len(run_returns)} runs):\n\t{mean_run_return:.3f} | {standard_error:.3f}\n"
+        )
 
 
 if __name__ == "__main__":

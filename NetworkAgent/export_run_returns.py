@@ -138,13 +138,69 @@ REPRODUCIBLES start below vvvvv
 - throughput_argmax_norm_utility_PTD3 (reproducible)
     CREATED_AFTER = datetime(2024, 2, 28, 21, 34, 0)
     CREATED_BEFORE = datetime(2024, 2, 29, 2, 57, 0)
+
+- sys_default_norm_utility_PTD3 (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 29, 6, 58, 0)
+    CREATED_BEFORE = datetime(2024, 2, 29, 12, 46, 0)
+
+- utility_logistic_norm_utility_PTD3 (reproducible)
+    CREATED_AFTER = datetime(2024, 2, 29, 13, 2, 0)
+    CREATED_BEFORE = datetime(2024, 2, 29, 19, 9, 0)
+
+- throughput_argmax_norm_utility_PTD3 (reproducible)
+    CREATED_AFTER = datetime(2024, 3, 1, 1, 2, 0)
+    CREATED_BEFORE = datetime(2024, 3, 1, 5, 26, 0)
+
+- throughput_argmin (more seeds)
+    CREATED_AFTER = datetime(2024, 3, 1, 6, 30, 0)
+    CREATED_BEFORE = datetime(2024, 3, 1, 7, 2, 0)
+
+- random (more seeds)
+    CREATED_AFTER = datetime(2024, 3, 1, 7, 30, 0)
+    CREATED_BEFORE = datetime(2024, 3, 1, 8, 4, 0)
+
+- system_default (more seeds)
+    CREATED_AFTER = datetime(2024, 3, 1, 8, 32, 0)
+    CREATED_BEFORE = datetime(2024, 3, 1, 9, 6, 0)
+
+- throughput_argmax (more seeds)
+    CREATED_AFTER = datetime(2024, 3, 1, 9, 33, 0)
+    CREATED_BEFORE = datetime(2024, 3, 1, 10, 8, 0)
+
+- utility_logistic (more seeds)
+    CREATED_AFTER = datetime(2024, 3, 1, 10, 35, 0)
+    CREATED_BEFORE = datetime(2024, 3, 1, 11, 10, 0)
+
+- sys_default_norm_utility_td3_bc (more seeds)
+    CREATED_AFTER = datetime(2024, 3, 1, 11, 35, 0)
+    CREATED_BEFORE = datetime(2024, 3, 1, 12, 12, 0)
+
+- utility_logistic_norm_utility_td3_bc (more seeds)
+    CREATED_AFTER = datetime(2024, 3, 1, 12, 36, 0)
+    CREATED_BEFORE = datetime(2024, 3, 1, 13, 14, 0)
+
+- PPO (deterministic - more seeds)
+    CREATED_AFTER = datetime(2024, 3, 1, 13, 36, 0)
+    CREATED_BEFORE = datetime(2024, 3, 1, 14, 15, 0)
+
+- throughput_argmax_norm_utility_PTD3_beta_300.0_alpha_1.0 (more seeds)
+    CREATED_AFTER = datetime(2024, 3, 1, 17, 28, 0)
+    CREATED_BEFORE = datetime(2024, 3, 1, 19, 4, 0)
+
+- throughput_argmax_norm_utility_td3_bc (more seeds)
+    CREATED_AFTER = datetime(2024, 3, 1, 19, 30, 0)
+    CREATED_BEFORE = datetime(2024, 3, 1, 21, 8, 0)
+
+- SAC (deterministic - more seeds)
+    CREATED_AFTER = datetime(2024, 3, 1, 14, 36, 0)
+    CREATED_BEFORE = datetime(2025, 3, 2, 3, 9, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "throughput_argmax_norm_utility_PTD3"
-CREATED_AFTER = datetime(2024, 2, 28, 21, 34, 0)
-CREATED_BEFORE = datetime(2024, 2, 29, 2, 57, 0)
+RUN_NAME = "SAC"
+CREATED_AFTER = datetime(2024, 3, 1, 14, 36, 0)
+CREATED_BEFORE = datetime(2025, 3, 2, 3, 9, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 MIN_SEED = 100
