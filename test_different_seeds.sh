@@ -1,23 +1,18 @@
 #!/bin/bash
 
 agents=(
-    # sys_default_norm_utility_PTD3_beta_0.1_alpha_1.0_step_0010000
-    # sys_default_norm_utility_PTD3_beta_0.3_alpha_1.0_step_0010000
-    # sys_default_norm_utility_PTD3_beta_1.0_alpha_1.0_step_0010000
-    # sys_default_norm_utility_PTD3_beta_3.0_alpha_1.0_step_0010000
-    # sys_default_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
+    # throughput_argmin
+    # random
+    # system_default
+    # throughput_argmax
+    # utility_logistic
+    # sys_default_norm_utility_td3_bc.10000.64.0.625.not_normalized
+    # utility_logistic_norm_utility_td3_bc.10000.64.0.625.not_normalized
+    # PPO
+    # SAC
 
-    # utility_logistic_norm_utility_PTD3_beta_0.1_alpha_1.0_step_0010000
-    utility_logistic_norm_utility_PTD3_beta_0.3_alpha_1.0_step_0010000
-    utility_logistic_norm_utility_PTD3_beta_1.0_alpha_1.0_step_0010000
-    utility_logistic_norm_utility_PTD3_beta_3.0_alpha_1.0_step_0010000
-    utility_logistic_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
-
-    throughput_argmax_norm_utility_PTD3_beta_0.1_alpha_1.0_step_0010000
-    throughput_argmax_norm_utility_PTD3_beta_0.3_alpha_1.0_step_0010000
-    throughput_argmax_norm_utility_PTD3_beta_1.0_alpha_1.0_step_0010000
-    throughput_argmax_norm_utility_PTD3_beta_3.0_alpha_1.0_step_0010000
-    throughput_argmax_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
+    throughput_argmax_norm_utility_PTD3_beta_300.0_alpha_1.0_step_0010000
+    throughput_argmax_norm_utility_td3_bc.10000.64.0.625.not_normalized
 )
 
 # exactly one argument must be provided
@@ -27,11 +22,15 @@ if [ $# -ne 1 ]; then
 fi
 client_id=$1
 
-let "seed1 = $client_id + 128 + 16"
-let "seed2 = $client_id + 128 + 24"
+let "seed1 = $client_id + 128"
+let "seed2 = $client_id + 128 + 8"
+let "seed3 = $client_id + 128 + 16"
+let "seed4 = $client_id + 128 + 24"
 seeds=(
     $seed1
     $seed2
+    $seed3
+    $seed4
 )
 echo "${seeds[@]}"
 
