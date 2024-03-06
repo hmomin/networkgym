@@ -82,18 +82,18 @@
         "max_wait_time_for_action_ms": -1,
         "enb_locations": {
             "x": 40,
-            "y": 0,
+            "y": 40,
             "z": 3
         },
         "ap_locations": [
             {
                 "x": 30,
-                "y": 0,
+                "y": 40,
                 "z": 3
             },
             {
                 "x": 50,
-                "y": 0,
+                "y": 40,
                 "z": 3
             }
         ],
@@ -102,15 +102,15 @@
             "min_speed_m/s": 1,
             "max_speed_m/s": 1,
             "min_direction_gradients": 0.0,
-            "max_direction_gradients": 0.0,
-            "distance_m": 1000000
+            "max_direction_gradients": 6.283184,
+            "distance_m": 40
         },
         "user_location_range": {
             "min_x": 0,
             "max_x": 80,
             "min_y": 0,
-            "max_y": 0,
-            "z": 1.5
+            "max_y": 80,
+            "z": 0
         },
         "measurement_start_time_ms": 1000,
         "transport_protocol": "tcp",
