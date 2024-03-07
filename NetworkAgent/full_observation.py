@@ -85,10 +85,10 @@ def get_full_observation(df_list: List[pd.DataFrame]) -> List[np.ndarray]:
                     print(name)
                     print("VALUES")
                     print(values)
-                    # raise Exception(f"values cardinality not equal to 4!")
+                    raise Exception(f"values cardinality not equal to 4!")
                     # FIXME HIGH: quick fix for SAC_seed_146 something wrong here...
-                    print("WARNING: len(values) != 4")
-                    values.append(26.0)
+                    # print("WARNING: len(values) != 4")
+                    # values.append(26.0)
                 for user, value in enumerate(values):
                     if value >= 0:
                         previous_row[user] = value
