@@ -1,7 +1,6 @@
 import numpy as np
 import os
 from csv import reader
-from pprint import pprint
 
 
 # data_folder = "2024_02_12_heuristic_algorithms"
@@ -19,7 +18,10 @@ from pprint import pprint
 # data_folder = "2024_02_29_sys_default_alpha_1.0_reproducible"
 # data_folder = "2024_02_29_utility_logistic_alpha_1.0_reproducible"
 # data_folder = "2024_02_29_throughput_argmax_alpha_1.0_reproducible"
-data_folder = "2024_03_02_online_DRL_deterministic_more_seeds"
+# data_folder = "2024_03_02_online_DRL_deterministic_more_seeds"
+data_folder = "2024_03_06_online_DRL_stochastic_more_seeds"
+# data_folder = "2024_03_06_heuristic_algorithms_more_seeds"
+# data_folder = "2024_03_06_td3_bc_more_seeds"
 
 
 def get_filepaths_from_folder(folder: str) -> list[str]:

@@ -1,6 +1,6 @@
 {
     "rl_config": {
-        "agent": "throughput_argmax_norm_utility_PTD3_beta_0.3_alpha_0.0_step_0010000",
+        "agent": "system_default",
         "parallel_env": false,
         "use_discrete_increment_actions": false,
         "use_discrete_ratio_actions": false,
@@ -75,9 +75,9 @@
             "gma::wifi::ul::split_ratio",
             "gma::lte::ul::split_ratio"
         ],
-        "steps_per_episode": 3200,
+        "steps_per_episode": 400,
         "episodes_per_session": 1,
-        "random_seed": 141,
+        "random_seed": 41,
         "downlink_traffic": true,
         "max_wait_time_for_action_ms": -1,
         "enb_locations": {

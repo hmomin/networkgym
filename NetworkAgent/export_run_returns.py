@@ -194,13 +194,21 @@ REPRODUCIBLES start below vvvvv
 - SAC (deterministic - more seeds)
     CREATED_AFTER = datetime(2024, 3, 1, 14, 36, 0)
     CREATED_BEFORE = datetime(2025, 3, 2, 3, 9, 0)
+
+- PPO (stochastic - more seeds)
+    CREATED_AFTER = datetime(2024, 3, 6, 22, 21, 0)
+    CREATED_BEFORE = datetime(2025, 3, 6, 23, 58, 0)
+
+- SAC (stochastic - more seeds)
+    CREATED_AFTER = datetime(2024, 3, 6, 22, 21, 0)
+    CREATED_BEFORE = datetime(2025, 3, 6, 23, 58, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
 RUN_NAME = "SAC"
-CREATED_AFTER = datetime(2024, 3, 1, 14, 36, 0)
-CREATED_BEFORE = datetime(2025, 3, 2, 3, 9, 0)
+CREATED_AFTER = datetime(2024, 3, 6, 22, 21, 0)
+CREATED_BEFORE = datetime(2025, 3, 6, 23, 58, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 MIN_SEED = 100
