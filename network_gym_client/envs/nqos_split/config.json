@@ -1,6 +1,6 @@
 {
     "rl_config": {
-        "agent": "checkpoint_BC",
+        "agent": "checkpoint_LB-SAC",
         "parallel_env": false,
         "use_discrete_increment_actions": false,
         "use_discrete_ratio_actions": false,

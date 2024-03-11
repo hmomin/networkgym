@@ -4,8 +4,17 @@ import os
 import pickle
 import sys
 import time
+from pprint import pprint
+
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+
+LOG_STD_MIN = -20.0
+LOG_STD_MAX = 2.0
 
 import torch
+from torch import nn
+from torch.distributions import Normal
 
 import sys
 
@@ -43,6 +52,193 @@ from NetworkAgent.config_lock.client_utils import release_lock
 # NOTE: seed torch and numpy for reproducibility
 torch.manual_seed(0)
 np.random.seed(1)
+
+
+# NOTE: classes for loading other algorithm models...
+class Actor(nn.Module):
+    def __init__(self, state_dim: int, action_dim: int, max_action: float):
+        super(Actor, self).__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(state_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.Linear(256, action_dim),
+            nn.Tanh(),
+        )
+
+        self.max_action = max_action
+
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
+        return self.max_action * self.net(state)
+
+    @torch.no_grad()
+    def act(self, state: np.ndarray, device: str = "cpu") -> np.ndarray:
+        state = torch.tensor(state.reshape(1, -1), device=device, dtype=torch.float32)
+        return self(state).cpu().data.numpy().flatten()
+
+    def predict(
+        self, state: np.ndarray, deterministic: bool = True
+    ) -> tuple[np.ndarray, None]:
+        return (self.act(state) + 1.0) / 2.0, None
+
+
+class LB_Actor(nn.Module):
+    def __init__(
+        self,
+        state_dim: int,
+        action_dim: int,
+        hidden_dim: int,
+        edac_init: bool,
+        max_action: float = 1.0,
+    ):
+        super().__init__()
+        self.trunk = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+        )
+        # with separate layers works better than with Linear(hidden_dim, 2 * action_dim)
+        self.mu = nn.Linear(hidden_dim, action_dim)
+        self.log_sigma = nn.Linear(hidden_dim, action_dim)
+
+        if edac_init:
+            # init as in the EDAC paper
+            for layer in self.trunk[::2]:
+                torch.nn.init.constant_(layer.bias, 0.1)
+
+            torch.nn.init.uniform_(self.mu.weight, -1e-3, 1e-3)
+            torch.nn.init.uniform_(self.mu.bias, -1e-3, 1e-3)
+            torch.nn.init.uniform_(self.log_sigma.weight, -1e-3, 1e-3)
+            torch.nn.init.uniform_(self.log_sigma.bias, -1e-3, 1e-3)
+
+        self.action_dim = action_dim
+        self.max_action = max_action
+
+    def forward(
+        self,
+        state: torch.Tensor,
+        deterministic: bool = False,
+        need_log_prob: bool = False,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        hidden = self.trunk(state)
+        mu, log_sigma = self.mu(hidden), self.log_sigma(hidden)
+
+        # clipping params from EDAC paper, not as in SAC paper (-20, 2)
+        log_sigma = torch.clip(log_sigma, -5, 2)
+        policy_dist = Normal(mu, torch.exp(log_sigma))
+
+        if deterministic:
+            action = mu
+        else:
+            action = policy_dist.rsample()
+
+        tanh_action, log_prob = torch.tanh(action), None
+        if need_log_prob:
+            # change of variables formula (SAC paper, appendix C, eq 21)
+            log_prob = policy_dist.log_prob(action).sum(axis=-1)
+            log_prob = log_prob - torch.log(1 - tanh_action.pow(2) + 1e-6).sum(axis=-1)
+
+        return tanh_action * self.max_action, log_prob
+
+    @torch.no_grad()
+    def act(self, state: np.ndarray, device: str) -> np.ndarray:
+        state = state.flatten()
+        deterministic = True
+        state = torch.tensor(state, device=device, dtype=torch.float32)
+        action = self(state, deterministic=deterministic)[0].cpu().numpy()
+        return action
+
+    def predict(
+        self, state: np.ndarray, deterministic: bool = True
+    ) -> tuple[np.ndarray, None]:
+        return (self.act(state, "cpu") + 1.0) / 2.0, None
+
+
+class Squeeze(nn.Module):
+    def __init__(self, dim=-1):
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x.squeeze(dim=self.dim)
+
+
+class MLP(nn.Module):
+    def __init__(
+        self,
+        dims,
+        activation_fn: Callable[[], nn.Module] = nn.ReLU,
+        output_activation_fn: Callable[[], nn.Module] = None,
+        squeeze_output: bool = False,
+        dropout: Optional[float] = None,
+    ):
+        super().__init__()
+        n_dims = len(dims)
+        if n_dims < 2:
+            raise ValueError("MLP requires at least two dims (input and output)")
+
+        layers = []
+        for i in range(n_dims - 2):
+            layers.append(nn.Linear(dims[i], dims[i + 1]))
+            layers.append(activation_fn())
+
+            if dropout is not None:
+                layers.append(nn.Dropout(dropout))
+
+        layers.append(nn.Linear(dims[-2], dims[-1]))
+        if output_activation_fn is not None:
+            layers.append(output_activation_fn())
+        if squeeze_output:
+            if dims[-1] != 1:
+                raise ValueError("Last dim must be 1 when squeezing")
+            layers.append(Squeeze(-1))
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x)
+
+
+class GaussianPolicy(nn.Module):
+    def __init__(
+        self,
+        state_dim: int,
+        act_dim: int,
+        max_action: float,
+        hidden_dim: int = 256,
+        n_hidden: int = 2,
+    ):
+        super().__init__()
+        self.net = MLP(
+            [state_dim, *([hidden_dim] * n_hidden), act_dim],
+            output_activation_fn=nn.Tanh,
+        )
+        self.log_std = nn.Parameter(torch.zeros(act_dim, dtype=torch.float32))
+        self.max_action = max_action
+
+    def forward(self, obs: torch.Tensor) -> Normal:
+        mean = self.net(obs)
+        std = torch.exp(self.log_std.clamp(LOG_STD_MIN, LOG_STD_MAX))
+        return Normal(mean, std)
+
+    @torch.no_grad()
+    def act(self, state: np.ndarray, device: str = "cpu"):
+        state = torch.tensor(state.reshape(1, -1), device=device, dtype=torch.float32)
+        dist = self(state)
+        action = dist.mean if not self.training else dist.sample()
+        action = torch.clamp(
+            self.max_action * action, -self.max_action, self.max_action
+        )
+        return action.cpu().data.numpy().flatten()
+
+    def predict(
+        self, state: np.ndarray, deterministic: bool = True
+    ) -> tuple[np.ndarray, None]:
+        return (self.act(state) + 1.0) / 2.0, None
 
 
 def train(agent, config_json):
@@ -212,7 +408,22 @@ def main():
     if not train_flag:
         print("Testing model...")
         mean_state, stdev_state = None, None
-        if agent_class is None:
+        if "checkpoint" in rl_alg:
+            state_dict = torch.load(open(model_path + ".pt", "rb"), "cuda:0")
+            if rl_alg == "checkpoint_BC" or rl_alg == "checkpoint_TD3_BC":
+                agent = Actor(56, 4, 1.0)
+                mean_state = state_dict["state_mean"]
+                stdev_state = state_dict["state_std"]
+            elif rl_alg == "checkpoint_IQL":
+                agent = GaussianPolicy(56, 4, 1.0)
+                mean_state = state_dict["state_mean"]
+                stdev_state = state_dict["state_std"]
+            elif rl_alg == "checkpoint_LB-SAC":
+                agent = LB_Actor(56, 4, 256, False, 1.0)
+            else:
+                raise Exception("haven't implemented this actor type yet...")
+            agent.load_state_dict(state_dict["actor"])
+        elif agent_class is None:
             print(
                 f"WARNING: rl_alg ({rl_alg}) not found in alg_map. Trying personal mode..."
             )
