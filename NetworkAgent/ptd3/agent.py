@@ -246,7 +246,9 @@ class PessimisticTD3:
             self.critic_params, self.critic_buffers = self.detach_critic_parameters()
             self.update_Fisher_information_matrix()
             Gamma = self.compute_uncertainty_estimate(states, policy_actions)
-            policy_loss = -(mean_Q_value - Gamma)
+            # FIXME HIGH: change this back! testing BC
+            # policy_loss = -(mean_Q_value - Gamma)
+            policy_loss = Gamma
             print(
                 f"iteration: {self.current_update_step:07d} | mean_Q_value: {mean_Q_value} | mean_Gamma: {Gamma}"
             )
