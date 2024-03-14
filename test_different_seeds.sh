@@ -1,18 +1,7 @@
 #!/bin/bash
 
 agents=(
-    # throughput_argmin
-    # random
-    # system_default
-    # throughput_argmax
-    # utility_logistic
-    # sys_default_norm_utility_td3_bc.10000.64.0.625.not_normalized
-    # utility_logistic_norm_utility_td3_bc.10000.64.0.625.not_normalized
-    # PPO
-    # SAC
-
-    throughput_argmax_norm_utility_PTD3_beta_300.0_alpha_1.0_step_0010000
-    throughput_argmax_norm_utility_td3_bc.10000.64.0.625.not_normalized
+    checkpoint_SAC_N
 )
 
 # exactly one argument must be provided

@@ -202,13 +202,44 @@ REPRODUCIBLES start below vvvvv
 - SAC (stochastic - more seeds)
     CREATED_AFTER = datetime(2024, 3, 6, 22, 21, 0)
     CREATED_BEFORE = datetime(2025, 3, 6, 23, 58, 0)
+
+- checkpoint_BC
+    CREATED_AFTER = datetime(2024, 3, 11, 7, 23, 0)
+    CREATED_BEFORE = datetime(2025, 3, 11, 9, 0, 0)
+
+- checkpoint_IQL
+    CREATED_AFTER = datetime(2024, 3, 11, 9, 25, 0)
+    CREATED_BEFORE = datetime(2025, 3, 11, 15, 17, 0)
+
+- checkpoint_LB-SAC
+    CREATED_AFTER = datetime(2024, 3, 11, 11, 0, 0)
+    CREATED_BEFORE = datetime(2025, 3, 11, 15, 17, 0)
+
+- checkpoint_TD3_BC
+    CREATED_AFTER = datetime(2024, 3, 11, 11, 0, 0)
+    CREATED_BEFORE = datetime(2025, 3, 11, 15, 17, 0)
+
+- checkpoint_CQL
+    CREATED_AFTER = datetime(2024, 3, 11, 15, 57, 0)
+    CREATED_BEFORE = datetime(2025, 3, 11, 17, 33, 0)
+
+- checkpoint_EDAC
+    CREATED_AFTER = datetime(2024, 3, 11, 17, 59, 0)
+    CREATED_BEFORE = datetime(2025, 3, 11, 19, 37, 0)
+
+- checkpoint_BC_not_normalized
+- checkpoint_CQL_not_normalized
+- checkpoint_IQL_not_normalized
+- checkpoint_TD3_BC_not_normalized
+    CREATED_AFTER = datetime(2024, 3, 12, 18, 40, 0)
+    CREATED_BEFORE = datetime(2025, 3, 13, 2, 35, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "SAC"
-CREATED_AFTER = datetime(2024, 3, 6, 22, 21, 0)
-CREATED_BEFORE = datetime(2025, 3, 6, 23, 58, 0)
+RUN_NAME = "checkpoint_TD3_BC_not_normalized"
+CREATED_AFTER = datetime(2024, 3, 12, 18, 40, 0)
+CREATED_BEFORE = datetime(2025, 3, 13, 2, 35, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 MIN_SEED = 100

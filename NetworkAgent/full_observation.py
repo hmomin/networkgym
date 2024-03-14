@@ -42,9 +42,7 @@ def get_previous_action(df: pd.DataFrame) -> List[float]:
 
 
 def turn_df_into_list(df: pd.DataFrame) -> List[pd.DataFrame]:
-    with pd.option_context(
-        "display.max_rows", None, "display.max_columns", None
-    ):
+    with pd.option_context("display.max_rows", None, "display.max_columns", None):
         print(df)
     df_list = [df[df["name"] == name] for name in NAME_MAP]
     return df_list

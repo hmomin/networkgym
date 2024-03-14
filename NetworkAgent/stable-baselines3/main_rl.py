@@ -158,6 +158,74 @@ class LB_Actor(nn.Module):
     ) -> tuple[np.ndarray, None]:
         return (self.act(state, "cpu") + 1.0) / 2.0, None
 
+class SAC_N_Actor(nn.Module):
+    def __init__(
+        self, state_dim: int, action_dim: int, hidden_dim: int, max_action: float = 1.0
+    ):
+        super().__init__()
+        self.trunk = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+        )
+        # with separate layers works better than with Linear(hidden_dim, 2 * action_dim)
+        self.mu = nn.Linear(hidden_dim, action_dim)
+        self.log_sigma = nn.Linear(hidden_dim, action_dim)
+
+        # init as in the EDAC paper
+        for layer in self.trunk[::2]:
+            torch.nn.init.constant_(layer.bias, 0.1)
+
+        torch.nn.init.uniform_(self.mu.weight, -1e-3, 1e-3)
+        torch.nn.init.uniform_(self.mu.bias, -1e-3, 1e-3)
+        torch.nn.init.uniform_(self.log_sigma.weight, -1e-3, 1e-3)
+        torch.nn.init.uniform_(self.log_sigma.bias, -1e-3, 1e-3)
+
+        self.action_dim = action_dim
+        self.max_action = max_action
+
+    def forward(
+        self,
+        state: torch.Tensor,
+        deterministic: bool = False,
+        need_log_prob: bool = False,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        hidden = self.trunk(state)
+        mu, log_sigma = self.mu(hidden), self.log_sigma(hidden)
+
+        # clipping params from EDAC paper, not as in SAC paper (-20, 2)
+        log_sigma = torch.clip(log_sigma, -5, 2)
+        policy_dist = Normal(mu, torch.exp(log_sigma))
+
+        if deterministic:
+            action = mu
+        else:
+            action = policy_dist.rsample()
+
+        tanh_action, log_prob = torch.tanh(action), None
+        if need_log_prob:
+            # change of variables formula (SAC paper, appendix C, eq 21)
+            log_prob = policy_dist.log_prob(action).sum(axis=-1)
+            log_prob = log_prob - torch.log(1 - tanh_action.pow(2) + 1e-6).sum(axis=-1)
+
+        return tanh_action * self.max_action, log_prob
+
+    @torch.no_grad()
+    def act(self, state: np.ndarray, device: str) -> np.ndarray:
+        deterministic = True
+        state = torch.tensor(state, device=device, dtype=torch.float32)
+        action = self(state, deterministic=deterministic)[0].cpu().numpy()
+        return action
+
+    def predict(
+        self, state: np.ndarray, deterministic: bool = True
+    ) -> tuple[np.ndarray, None]:
+        state = state.flatten()
+        return (self.act(state, "cpu") + 1.0) / 2.0, None
+
 
 def init_module_weights(module: torch.nn.Sequential, orthogonal_init: bool = False):
     # Specific orthgonal initialization for inner layers
@@ -622,11 +690,9 @@ def main():
         mean_state, stdev_state = None, None
         if "checkpoint" in rl_alg:
             state_dict = torch.load(open(model_path + ".pt", "rb"), "cuda:0")
-            if rl_alg == "checkpoint_BC" or rl_alg == "checkpoint_TD3_BC":
+            if "checkpoint_BC" in rl_alg or "checkpoint_TD3_BC" in rl_alg:
                 agent = Actor(56, 4, 1.0)
-                mean_state = state_dict["state_mean"]
-                stdev_state = state_dict["state_std"]
-            elif rl_alg == "checkpoint_CQL":
+            elif "checkpoint_CQL" in rl_alg:
                 agent = TanhGaussianPolicy(
                     56,
                     4,
@@ -634,18 +700,21 @@ def main():
                     log_std_multiplier=1.0,
                     orthogonal_init=True,
                 )
-                mean_state = state_dict["state_mean"]
-                stdev_state = state_dict["state_std"]
-            elif rl_alg == "checkpoint_IQL":
+            elif "checkpoint_IQL" in rl_alg:
                 agent = GaussianPolicy(56, 4, 1.0)
-                mean_state = state_dict["state_mean"]
-                stdev_state = state_dict["state_std"]
-            elif rl_alg == "checkpoint_LB-SAC":
+            elif "checkpoint_LB-SAC" in rl_alg:
                 agent = LB_Actor(56, 4, 256, False, 1.0)
-            elif rl_alg == "checkpoint_EDAC":
+            elif "checkpoint_EDAC" in rl_alg:
                 agent = EDAC_Actor(56, 4, 256, 1.0)
+            elif "checkpoint_SAC-N" in rl_alg:
+                agent = SAC_N_Actor(56, 4, 256, 1.0)
             else:
                 raise Exception("haven't implemented this actor type yet...")
+            try:
+                mean_state = state_dict["state_mean"]
+                stdev_state = state_dict["state_std"]
+            except:
+                print("WARNING: no normalizers found for this agent...")
             agent.load_state_dict(state_dict["actor"])
         elif agent_class is None:
             print(

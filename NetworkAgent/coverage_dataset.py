@@ -46,7 +46,7 @@ def compute_population_covariance_matrix(
 ) -> torch.Tensor:
     state_action_rows = torch.cat([states, actions], dim=1)
     state_action_columns = state_action_rows.T
-    L = state_action_columns.shape[0]
+    L = state_action_rows.shape[0]
     population_covariance_matrix = (1 / L) * state_action_columns @ state_action_rows
     return population_covariance_matrix
 
@@ -73,9 +73,10 @@ def main() -> None:
     min_eigenvalue = torch.min(eigenvalues).item()
     max_eigenvalue = torch.max(eigenvalues).item()
     condition_number = torch.linalg.cond(population_covariance_matrix)
-    # print(f"max_eigenvalue: {max_eigenvalue}")
+    print(f"max_eigenvalue: {max_eigenvalue}")
     print(f"min_eigenvalue: {min_eigenvalue}")
     print(f"condition_number: {condition_number}")
+    print(f"min_eig*cond_num: {min_eigenvalue * condition_number}")
 
 
 if __name__ == "__main__":
