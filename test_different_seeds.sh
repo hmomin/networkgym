@@ -1,7 +1,12 @@
 #!/bin/bash
 
 agents=(
-    checkpoint_SAC_N
+    # checkpoint_CQL_utility_logistic
+    checkpoint_EDAC_utility_logistic
+    checkpoint_IQL_utility_logistic
+    checkpoint_LB_SAC_utility_logistic
+    checkpoint_SAC_N_utility_logistic
+    checkpoint_TD3_BC_utility_logistic
 )
 
 # exactly one argument must be provided

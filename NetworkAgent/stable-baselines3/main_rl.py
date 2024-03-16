@@ -526,14 +526,33 @@ def train(agent, config_json):
     steps_per_episode = int(config_json["env_config"]["steps_per_episode"])
     episodes_per_session = int(config_json["env_config"]["episodes_per_session"])
     num_steps = steps_per_episode * episodes_per_session
-
+    agent_name = config_json["rl_config"]["agent"]
     try:
-        model = agent.learn(total_timesteps=num_steps)
+        if agent_name == "SAC":
+            try:
+                agent.load_replay_buffer(
+                    "models/"
+                    + agent_name
+                    + ".ReplayBuffer"
+                )
+                print(f"The loaded_model has {agent.replay_buffer.size()} transitions in its buffer.")
+                model = agent.learn(total_timesteps=num_steps, reset_num_timesteps=True)
+            except:
+                model = agent.learn(total_timesteps=num_steps)
+        else:
+            model = agent.learn(total_timesteps=num_steps)
     finally:
+        if agent_name == "SAC":
+            agent.save_replay_buffer(
+                "models/"
+                + agent_name
+                + time.strftime("_%Y_%m_%d_%H_%M_%S", time.localtime())
+                + ".ReplayBuffer.pkl"
+            )
         # NOTE: adding timestamp to tell different models apart!
         agent.save(
             "models/"
-            + config_json["rl_config"]["agent"]
+            + agent_name
             + time.strftime("_%Y_%m_%d_%H_%M_%S", time.localtime())
         )
 
