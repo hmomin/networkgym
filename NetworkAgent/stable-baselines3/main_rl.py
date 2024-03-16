@@ -158,6 +158,7 @@ class LB_Actor(nn.Module):
     ) -> tuple[np.ndarray, None]:
         return (self.act(state, "cpu") + 1.0) / 2.0, None
 
+
 class SAC_N_Actor(nn.Module):
     def __init__(
         self, state_dim: int, action_dim: int, hidden_dim: int, max_action: float = 1.0

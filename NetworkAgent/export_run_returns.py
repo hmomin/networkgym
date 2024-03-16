@@ -193,53 +193,82 @@ REPRODUCIBLES start below vvvvv
 
 - SAC (deterministic - more seeds)
     CREATED_AFTER = datetime(2024, 3, 1, 14, 36, 0)
-    CREATED_BEFORE = datetime(2025, 3, 2, 3, 9, 0)
+    CREATED_BEFORE = datetime(2024, 3, 2, 3, 9, 0)
 
 - PPO (stochastic - more seeds)
     CREATED_AFTER = datetime(2024, 3, 6, 22, 21, 0)
-    CREATED_BEFORE = datetime(2025, 3, 6, 23, 58, 0)
+    CREATED_BEFORE = datetime(2024, 3, 6, 23, 58, 0)
 
 - SAC (stochastic - more seeds)
     CREATED_AFTER = datetime(2024, 3, 6, 22, 21, 0)
-    CREATED_BEFORE = datetime(2025, 3, 6, 23, 58, 0)
+    CREATED_BEFORE = datetime(2024, 3, 6, 23, 58, 0)
 
 - checkpoint_BC
     CREATED_AFTER = datetime(2024, 3, 11, 7, 23, 0)
-    CREATED_BEFORE = datetime(2025, 3, 11, 9, 0, 0)
+    CREATED_BEFORE = datetime(2024, 3, 11, 9, 0, 0)
 
 - checkpoint_IQL
     CREATED_AFTER = datetime(2024, 3, 11, 9, 25, 0)
-    CREATED_BEFORE = datetime(2025, 3, 11, 15, 17, 0)
+    CREATED_BEFORE = datetime(2024, 3, 11, 15, 17, 0)
 
 - checkpoint_LB-SAC
     CREATED_AFTER = datetime(2024, 3, 11, 11, 0, 0)
-    CREATED_BEFORE = datetime(2025, 3, 11, 15, 17, 0)
+    CREATED_BEFORE = datetime(2024, 3, 11, 15, 17, 0)
 
 - checkpoint_TD3_BC
     CREATED_AFTER = datetime(2024, 3, 11, 11, 0, 0)
-    CREATED_BEFORE = datetime(2025, 3, 11, 15, 17, 0)
+    CREATED_BEFORE = datetime(2024, 3, 11, 15, 17, 0)
 
 - checkpoint_CQL
     CREATED_AFTER = datetime(2024, 3, 11, 15, 57, 0)
-    CREATED_BEFORE = datetime(2025, 3, 11, 17, 33, 0)
+    CREATED_BEFORE = datetime(2024, 3, 11, 17, 33, 0)
 
 - checkpoint_EDAC
     CREATED_AFTER = datetime(2024, 3, 11, 17, 59, 0)
-    CREATED_BEFORE = datetime(2025, 3, 11, 19, 37, 0)
+    CREATED_BEFORE = datetime(2024, 3, 11, 19, 37, 0)
 
 - checkpoint_BC_not_normalized
 - checkpoint_CQL_not_normalized
 - checkpoint_IQL_not_normalized
 - checkpoint_TD3_BC_not_normalized
     CREATED_AFTER = datetime(2024, 3, 12, 18, 40, 0)
-    CREATED_BEFORE = datetime(2025, 3, 13, 2, 35, 0)
+    CREATED_BEFORE = datetime(2024, 3, 13, 2, 35, 0)
+
+- checkpoint_SAC-N
+    CREATED_AFTER = datetime(2024, 3, 14, 16, 34, 0)
+    CREATED_BEFORE = datetime(2024, 3, 14, 18, 29, 0)
+
+- sys_default_norm_utility_PTD3_BC
+- utility_logistic_norm_utility_PTD3_BC
+- throughput_argmax_norm_utility_PTD3_BC
+- BC_sys_default
+- BC_throughput_argmax
+- BC_utility_logistic
+    CREATED_AFTER = datetime(2024, 3, 14, 21, 6, 0)
+    CREATED_BEFORE = datetime(2024, 3, 14, 18, 29, 0)
+
+- PPO (deterministic)
+    CREATED_AFTER = datetime(2024, 3, 15, 3, 23, 0)
+    CREATED_BEFORE = datetime(2024, 3, 15, 5, 0, 0)
+
+- SAC (deterministic)
+    CREATED_AFTER = datetime(2024, 3, 15, 14, 35, 0)
+    CREATED_BEFORE = datetime(2024, 3, 15, 16, 12, 0)
+
+- PPO (stochastic)
+    CREATED_AFTER = datetime(2024, 3, 15, 16, 49, 0)
+    CREATED_BEFORE = datetime(2024, 3, 15, 20, 30, 0)
+
+- SAC (stochastic)
+    CREATED_AFTER = datetime(2024, 3, 15, 14, 35, 0)
+    CREATED_BEFORE = datetime(2024, 3, 15, 16, 12, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "checkpoint_TD3_BC_not_normalized"
-CREATED_AFTER = datetime(2024, 3, 12, 18, 40, 0)
-CREATED_BEFORE = datetime(2025, 3, 13, 2, 35, 0)
+RUN_NAME = "checkpoint_SAC-N"
+CREATED_AFTER = datetime(2024, 3, 14, 16, 34, 0)
+CREATED_BEFORE = datetime(2024, 3, 14, 18, 29, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 MIN_SEED = 100
