@@ -30,7 +30,6 @@ from fast_lspi.agent_linear import FastLSPI
 from stable_baselines3.common.env_checker import check_env
 
 from stable_baselines3 import A2C, DDPG, PPO, SAC, TD3
-from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.noise import NormalActionNoise
@@ -532,12 +531,10 @@ def train(agent, config_json):
     try:
         if agent_name == "SAC":
             try:
-                agent.load_replay_buffer(
-                    "models/"
-                    + agent_name
-                    + ".ReplayBuffer"
+                agent.load_replay_buffer("models/" + agent_name + ".ReplayBuffer")
+                print(
+                    f"The loaded_model has {agent.replay_buffer.size()} transitions in its buffer."
                 )
-                print(f"The loaded_model has {agent.replay_buffer.size()} transitions in its buffer.")
                 model = agent.learn(total_timesteps=num_steps, reset_num_timesteps=True)
             except:
                 model = agent.learn(total_timesteps=num_steps)
@@ -680,20 +677,6 @@ def main():
     # NOTE: disabling normalization
     normal_obs_env = env
     # normal_obs_env = NormalizeObservation(env)
-    
-    # SubprocVecEnv()
-    
-    # vec_env = make_vec_env(
-    #     env_id=NetworkGymEnv,
-    #     n_envs=8,
-    #     seed=0,
-    #     start_index=0,
-    #     env_kwargs={
-    #         "id": 0,
-    #         "config_json": config_json
-    #     },
-    #     vec_env_cls=SubprocVecEnv
-    # )
 
     # It will check your custom environment and output additional warnings if needed
     # only use this function for debug,
