@@ -1,6 +1,6 @@
 import gymnasium as gym
 from .env import Env, load_config_file
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 
 def get_env_0() -> gym.Env:
@@ -52,6 +52,21 @@ def get_env_7() -> gym.Env:
 
 
 class PseudoParallelEnv(DummyVecEnv):
+    def __init__(self):
+        env_functions = [
+            get_env_0,
+            get_env_1,
+            get_env_2,
+            get_env_3,
+            get_env_4,
+            get_env_5,
+            get_env_6,
+            get_env_7,
+        ]
+        super().__init__(env_functions)
+
+
+class ParallelEnv(SubprocVecEnv):
     def __init__(self):
         env_functions = [
             get_env_0,

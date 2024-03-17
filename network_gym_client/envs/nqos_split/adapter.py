@@ -278,5 +278,5 @@ class Adapter(network_gym_client.adapter.Adapter):
             average_delay = 1.0e-9
         
         reward = np.log(average_throughput) - np.log(average_delay)
-        print(f"REWARD: {reward}")
+        # print(f"REWARD: {reward}")
         return reward

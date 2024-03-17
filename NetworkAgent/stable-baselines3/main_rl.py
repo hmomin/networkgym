@@ -4,9 +4,8 @@ import os
 import pickle
 import sys
 import time
-from pprint import pprint
 
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple
 
 
 LOG_STD_MIN = -20.0
@@ -25,7 +24,7 @@ sys.path.append("../../")
 
 from network_gym_client import load_config_file
 from network_gym_client import Env as NetworkGymEnv
-from network_gym_client import PseudoParallelEnv
+from network_gym_client import ParallelEnv
 from ppo_lspi import PPO_LSPI
 from fast_lspi.agent_linear import FastLSPI
 from stable_baselines3.common.env_checker import check_env
@@ -526,7 +525,10 @@ def train(agent, config_json):
     steps_per_episode = int(config_json["env_config"]["steps_per_episode"])
     episodes_per_session = int(config_json["env_config"]["episodes_per_session"])
     num_steps = steps_per_episode * episodes_per_session
-    agent_name = config_json["rl_config"]["agent"]
+    parallel_env: bool = config_json["rl_config"]["parallel_env"]
+    if parallel_env:
+        num_steps *= 8
+    agent_name: str = config_json["rl_config"]["agent"]
     try:
         if agent_name == "SAC":
             try:
@@ -674,10 +676,24 @@ def main():
     # Create the environment
     print("[" + args.env + "] environment selected.")
     # NOTE: can choose parallel env for training
-    env = PseudoParallelEnv() if parallel_env else NetworkGymEnv(client_id, config_json)
+    env = ParallelEnv() if parallel_env else NetworkGymEnv(client_id, config_json)
     # NOTE: disabling normalization
     normal_obs_env = env
     # normal_obs_env = NormalizeObservation(env)
+    
+    # SubprocVecEnv()
+    
+    # vec_env = make_vec_env(
+    #     env_id=NetworkGymEnv,
+    #     n_envs=8,
+    #     seed=0,
+    #     start_index=0,
+    #     env_kwargs={
+    #         "id": 0,
+    #         "config_json": config_json
+    #     },
+    #     vec_env_cls=SubprocVecEnv
+    # )
 
     # It will check your custom environment and output additional warnings if needed
     # only use this function for debug,
@@ -812,7 +828,7 @@ def main():
                 # print("TRAINING PPO WITH MODIFIED STARTING STDEV")
                 # print(policy_kwargs)
                 n_steps = 2048
-                if type(env) == PseudoParallelEnv:
+                if type(env) == ParallelEnv:
                     n_steps //= 8
                 agent = agent_class(
                     rl_config["policy"],
@@ -858,4 +874,4 @@ def arg_parser():
 
 if __name__ == "__main__":
     main()
-    time.sleep(1)
+    time.sleep(5)

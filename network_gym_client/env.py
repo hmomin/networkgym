@@ -267,8 +267,8 @@ class Env(gym.Env):
             # state
             action = get_previous_action(network_stats)
 
-        with np.printoptions(precision=4, suppress=True):
-            print(observation)
+        # with np.printoptions(precision=4, suppress=True):
+        #     print(observation)
 
         #Get reward
         reward = self.adapter.get_reward(network_stats)
