@@ -721,11 +721,11 @@ def main():
                 )
             elif "checkpoint_IQL" in rl_alg:
                 agent = GaussianPolicy(56, 4, 1.0)
-            elif "checkpoint_LB-SAC" in rl_alg:
+            elif "checkpoint_LB-SAC" in rl_alg or "checkpoint_LB_SAC" in rl_alg:
                 agent = LB_Actor(56, 4, 256, False, 1.0)
             elif "checkpoint_EDAC" in rl_alg:
                 agent = EDAC_Actor(56, 4, 256, 1.0)
-            elif "checkpoint_SAC-N" in rl_alg:
+            elif "checkpoint_SAC-N" in rl_alg or "checkpoint_SAC_N" in rl_alg:
                 agent = SAC_N_Actor(56, 4, 256, 1.0)
             else:
                 raise Exception("haven't implemented this actor type yet...")

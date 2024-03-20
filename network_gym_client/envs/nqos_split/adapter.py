@@ -177,7 +177,7 @@ class Adapter(network_gym_client.adapter.Adapter):
             policy1["value"] = action
 
         policy = policy1
-        print('Action --> ' + str(policy))
+        print(f'Action --> {policy1["value"]}')
         return policy
 
     def get_reward(self, df):
