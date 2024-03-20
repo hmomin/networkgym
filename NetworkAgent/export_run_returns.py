@@ -247,28 +247,56 @@ REPRODUCIBLES start below vvvvv
     CREATED_AFTER = datetime(2024, 3, 14, 21, 6, 0)
     CREATED_BEFORE = datetime(2024, 3, 14, 18, 29, 0)
 
-- PPO (deterministic)
+- PPO (deterministic) - dud
     CREATED_AFTER = datetime(2024, 3, 15, 3, 23, 0)
     CREATED_BEFORE = datetime(2024, 3, 15, 5, 0, 0)
 
-- SAC (deterministic)
+- SAC (deterministic) - dud
     CREATED_AFTER = datetime(2024, 3, 15, 14, 35, 0)
     CREATED_BEFORE = datetime(2024, 3, 15, 16, 12, 0)
 
-- PPO (stochastic)
+- PPO (stochastic) - dud
     CREATED_AFTER = datetime(2024, 3, 15, 16, 49, 0)
     CREATED_BEFORE = datetime(2024, 3, 15, 20, 30, 0)
 
-- SAC (stochastic)
+- SAC (stochastic) - dud
     CREATED_AFTER = datetime(2024, 3, 15, 14, 35, 0)
     CREATED_BEFORE = datetime(2024, 3, 15, 16, 12, 0)
+
+- checkpoint_CQL_utility_logistic
+    CREATED_AFTER = datetime(2024, 3, 16, 5, 51, 0)
+    CREATED_BEFORE = datetime(2024, 3, 18, 16, 38, 0)
+
+- checkpoint_EDAC_utility_logistic
+- checkpoint_IQL_utility_logistic
+- checkpoint_LB_SAC_utility_logistic (MISSING)
+- checkpoint_SAC_N_utility_logistic (MISSING)
+    CREATED_AFTER = datetime(2024, 3, 18, 5, 3, 0)
+    CREATED_BEFORE = datetime(2024, 3, 18, 16, 38, 0)
+    
+- checkpoint_TD3_BC_utility_logistic (MISSING)
+    CREATED_AFTER = datetime(2024, 3, 18, 9, 18, 0)
+    CREATED_BEFORE = datetime(2024, 3, 18, 10, 55, 0)
+    
+- PPO (deterministic) (FINALLY FIXED EVERYTHING)
+    CREATED_AFTER = datetime(2024, 3, 18, 11, 17, 0)
+    CREATED_BEFORE = datetime(2024, 3, 18, 12, 57, 0)
+    
+- SAC (deterministic) (FINALLY FIXED EVERYTHING)
+    CREATED_AFTER = datetime(2024, 3, 19, 21, 28, 0)
+    CREATED_BEFORE = datetime(2024, 3, 19, 23, 5, 0)
+    
+- PPO (stochastic) (FINALLY FIXED EVERYTHING)
+- SAC (stochastic) (FINALLY FIXED EVERYTHING)
+    CREATED_AFTER = datetime(2024, 3, 20, 0, 32, 0)
+    CREATED_BEFORE = datetime(2024, 3, 20, 4, 10, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "checkpoint_SAC-N"
-CREATED_AFTER = datetime(2024, 3, 14, 16, 34, 0)
-CREATED_BEFORE = datetime(2024, 3, 14, 18, 29, 0)
+RUN_NAME = "SAC"
+CREATED_AFTER = datetime(2024, 3, 20, 0, 32, 0)
+CREATED_BEFORE = datetime(2024, 3, 20, 4, 10, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 MIN_SEED = 100
