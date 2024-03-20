@@ -269,8 +269,6 @@ REPRODUCIBLES start below vvvvv
 
 - checkpoint_EDAC_utility_logistic
 - checkpoint_IQL_utility_logistic
-- checkpoint_LB_SAC_utility_logistic (MISSING)
-- checkpoint_SAC_N_utility_logistic (MISSING)
     CREATED_AFTER = datetime(2024, 3, 18, 5, 3, 0)
     CREATED_BEFORE = datetime(2024, 3, 18, 16, 38, 0)
     
@@ -290,13 +288,21 @@ REPRODUCIBLES start below vvvvv
 - SAC (stochastic) (FINALLY FIXED EVERYTHING)
     CREATED_AFTER = datetime(2024, 3, 20, 0, 32, 0)
     CREATED_BEFORE = datetime(2024, 3, 20, 4, 10, 0)
+
+- checkpoint_LB-SAC_utility_logistic
+    CREATED_AFTER = datetime(2024, 3, 20, 6, 4, 0)
+    CREATED_BEFORE = datetime(2024, 3, 20, 7, 38, 0)
+
+- checkpoint_SAC-N_utility_logistic
+    CREATED_AFTER = datetime(2024, 3, 20, 8, 4, 0)
+    CREATED_BEFORE = datetime(2024, 3, 20, 10, 4, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "SAC"
-CREATED_AFTER = datetime(2024, 3, 20, 0, 32, 0)
-CREATED_BEFORE = datetime(2024, 3, 20, 4, 10, 0)
+RUN_NAME = "checkpoint_SAC-N_utility_logistic"
+CREATED_AFTER = datetime(2024, 3, 20, 8, 4, 0)
+CREATED_BEFORE = datetime(2024, 3, 20, 10, 4, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 MIN_SEED = 100
