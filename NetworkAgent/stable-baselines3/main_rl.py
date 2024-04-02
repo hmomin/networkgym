@@ -19,21 +19,12 @@ import sys
 
 sys.path.append(".")
 sys.path.append("../")
-sys.path.append("../pessimistic_lspi")
 sys.path.append("../../")
 
 from network_gym_client import load_config_file
 from network_gym_client import Env as NetworkGymEnv
-from network_gym_client import ParallelEnv
-from ppo_lspi import PPO_LSPI
-from fast_lspi.agent_linear import FastLSPI
-from stable_baselines3.common.env_checker import check_env
 
 from stable_baselines3 import A2C, DDPG, PPO, SAC, TD3
-from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.callbacks import CheckpointCallback
-from stable_baselines3.common.noise import NormalActionNoise
-from gymnasium.wrappers.normalize import NormalizeObservation
 
 from NetworkAgent.heuristic_policies import (
     argmax_policy,
@@ -524,9 +515,6 @@ def train(agent, config_json):
     steps_per_episode = int(config_json["env_config"]["steps_per_episode"])
     episodes_per_session = int(config_json["env_config"]["episodes_per_session"])
     num_steps = steps_per_episode * episodes_per_session
-    parallel_env: bool = config_json["rl_config"]["parallel_env"]
-    if parallel_env:
-        num_steps *= 8
     agent_name: str = config_json["rl_config"]["agent"]
     try:
         if agent_name == "SAC":
@@ -600,9 +588,6 @@ def evaluate(
             mean_state = mean_state.cpu().numpy()
             stdev_state = stdev_state.cpu().numpy()
         if type(mean_state) == np.ndarray and type(stdev_state) == np.ndarray:
-            obs = obs.flatten()
-            mean_state = mean_state.flatten()
-            stdev_state = stdev_state.flatten()
             obs = (obs - mean_state) / stdev_state
         elif mean_state is not None or stdev_state is not None:
             raise Exception(
@@ -618,9 +603,6 @@ def evaluate(
             # print("TAKING STOCHASTIC ACTION")
             # action, _ = model.predict(obs, deterministic=False)
         new_obs, reward, done, truncated, info = env.step(action)
-        # FIXME: add in FastLSPI for training (clean this up!)
-        if type(model) == PPO_LSPI:
-            model.LSTDQ_update(obs, action, reward, new_obs)
         obs = new_obs
 
 
@@ -647,16 +629,13 @@ def main():
         rl_config["agent"] = "system_default"
 
     rl_alg = rl_config["agent"]
-    parallel_env: bool = rl_config["parallel_env"]
 
     alg_map = {
         "PPO": PPO,
-        "PPO_LSPI": PPO_LSPI,
         "DDPG": DDPG,
         "SAC": SAC,
         "TD3": TD3,
         "A2C": A2C,
-        "FastLSPI": FastLSPI,
         "throughput_argmax": argmax_policy,
         "throughput_argmin": argmin_policy,
         "delay_increment": delay_increment_policy,
@@ -673,7 +652,7 @@ def main():
     # Create the environment
     print("[" + args.env + "] environment selected.")
     # NOTE: can choose parallel env for training
-    env = ParallelEnv() if parallel_env else NetworkGymEnv(client_id, config_json)
+    env = NetworkGymEnv(client_id, config_json)
     # NOTE: disabling normalization
     normal_obs_env = env
     # normal_obs_env = NormalizeObservation(env)
@@ -756,16 +735,6 @@ def main():
                 mean_state, stdev_state = normalizers
             except:
                 print("No normalizers found for this agent...")
-        elif rl_alg == "PPO_LSPI":
-            # FIXME: num users hardcoded here!
-            agent = agent_class(num_network_users=4)
-        elif rl_alg == "FastLSPI":
-            observation_dim = (
-                normal_obs_env.observation_space.shape[0]
-                * normal_obs_env.observation_space.shape[1]
-            )
-            num_actions = normal_obs_env.action_space.n
-            agent = agent_class(observation_dim, num_actions, capped_buffer=False)
         else:
             agent = agent_class.load(model_path)
 
@@ -811,8 +780,6 @@ def main():
                 # print("TRAINING PPO WITH MODIFIED STARTING STDEV")
                 # print(policy_kwargs)
                 n_steps = 2048
-                if type(env) == ParallelEnv:
-                    n_steps //= 8
                 agent = agent_class(
                     rl_config["policy"],
                     normal_obs_env,

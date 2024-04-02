@@ -29,18 +29,11 @@ class Adapter(network_gym_client.adapter.Adapter):
         super().__init__(config_json)
 
         self.env = Path(__file__).resolve().parent.name
-        self.use_discrete_increment_actions: bool =\
-            config_json["rl_config"]["use_discrete_increment_actions"]
-        self.use_discrete_ratio_actions: bool =\
-            config_json["rl_config"]["use_discrete_ratio_actions"]
-        if self.use_discrete_increment_actions and self.use_discrete_ratio_actions:
-            raise Exception(
-                "ERROR: can't use discrete increment and ratio actions together!"
-            )
-        # FIXME: adding more features is controlled here
+        self.use_discrete_actions: bool =\
+            config_json["rl_config"]["use_discrete_actions"]
+        # FIXME: changing number of features is controlled here
         self.num_features = 14
         self.num_users = int(self.config_json['env_config']['num_users'])
-        self.size_per_feature = int(self.config_json['env_config']['num_users'])
         self.end_ts = 0
 
         if config_json['env_config']['env'] != self.env:
@@ -52,17 +45,12 @@ class Adapter(network_gym_client.adapter.Adapter):
         Returns:
             spaces: action spaces
         """
-        if self.use_discrete_increment_actions:
-            return spaces.Discrete(3**(self.size_per_feature))
-        elif self.use_discrete_ratio_actions:
-            return spaces.Discrete(5**(self.size_per_feature))
-        else:
-            return spaces.Box(
-                low=0,
-                high=1,
-                shape=(self.size_per_feature,),
-                dtype=np.float32
-            )
+        return spaces.Box(
+            low=0,
+            high=1,
+            shape=(1,),
+            dtype=np.float32
+        )
 
     #consistent with the get_observation function.
     def get_observation_space(self):
@@ -72,8 +60,12 @@ class Adapter(network_gym_client.adapter.Adapter):
             spaces: observation spaces
         """
 
-        return spaces.Box(low=0, high=1000,
-                                            shape=(self.num_features, self.size_per_feature), dtype=np.float32)
+        return spaces.Box(
+            low=0,
+            high=1000,
+            shape=(self.num_features,),
+            dtype=np.float32
+        )
     
     def get_observation(self, df):
         """Prepare observation for nqos_split env.
@@ -96,9 +88,9 @@ class Adapter(network_gym_client.adapter.Adapter):
         df_phy_wifi_max_rate = None
         df_phy_lte_max_rate = None
 
-        rate_value = np.empty(self.size_per_feature, dtype=object)
-        wifi_max_rate_value = np.empty(self.size_per_feature, dtype=object)
-        lte_max_rate_value = np.empty(self.size_per_feature, dtype=object)
+        rate_value = np.empty(self.num_users, dtype=object)
+        wifi_max_rate_value = np.empty(self.num_users, dtype=object)
+        lte_max_rate_value = np.empty(self.num_users, dtype=object)
         for index, row in df.iterrows():
             if row['source'] == 'gma':
                 if row['name'] == 'dl::rate':
@@ -154,6 +146,9 @@ class Adapter(network_gym_client.adapter.Adapter):
         # add a check that the size of observation equals the prepared observation space.
         if len(observation) != self.num_features:
             sys.exit("The size of the observation and self.num_features is not the same!!!")
+        print("observation.shape")
+        print(observation.shape)
+        raise Exception("STOP")
         return observation
 
     def get_policy(self, action):
@@ -203,22 +198,26 @@ class Adapter(network_gym_client.adapter.Adapter):
         avg_delay = np.mean(df_owd["value"])
         max_delay = np.max(df_owd["value"])
 
-        reward = 0
         if self.config_json["rl_config"]["reward_type"] == "normalized_utility":
-            reward = self.compute_normalized_utility(df)
-        elif self.config_json["rl_config"]["reward_type"] == "utility":
-            reward = self.netowrk_util(ave_rate, avg_delay)
+            rewards = self.compute_normalized_utility(df)
         elif self.config_json["rl_config"]["reward_type"] == "throughput":
-            reward = ave_rate
+            rewards = df_rate["value"]
         elif self.config_json["rl_config"]["reward_type"] == "delay":
-            reward = -avg_delay
+            rewards = -df_owd["value"]
         else:
             sys.exit("[ERROR] reward type not supported yet")
+        rewards = list(rewards)
 
         self.wandb_log_buffer_append(self.df_to_dict(df_owd))
-        self.wandb_log_buffer_append({"reward": reward, "avg_delay": avg_delay, "max_delay": max_delay})
+        stats_dict = {
+            "avg_delay": avg_delay,
+            "max_delay": max_delay
+        }
+        for idx, reward in enumerate(rewards):
+            stats_dict[f"reward_UE{idx}"] = reward
+        self.wandb_log_buffer_append(stats_dict)
 
-        return reward
+        return rewards
 
     def netowrk_util(self, throughput, delay, alpha=0.5):
         """
@@ -251,7 +250,7 @@ class Adapter(network_gym_client.adapter.Adapter):
         
         return alpha_balanced_metric
     
-    def compute_normalized_utility(self, df: pd.DataFrame) -> float:
+    def compute_normalized_utility(self, df: pd.DataFrame) -> list[float]:
         # NOTE: normalizing the throughput by combining the max throughput
         # across both channels. Normalizing the delay by dividing by 1000 ms (max delay)
         
@@ -268,15 +267,7 @@ class Adapter(network_gym_client.adapter.Adapter):
         normalized_throughputs = np.divide(df_rate, df_total_max_rate)
         normalized_delays = np.divide(df_owd, 1000.0)
         
-        average_throughput = np.mean(normalized_throughputs)
-        average_delay = np.mean(normalized_delays)
-        if average_throughput < 1.0e-9:
-            print("WARNING: average normalized throughput less than 1.0e-9")
-            average_throughput = 1.0e-9
-        if average_delay < 1.0e-9:
-            print("WARNING: average normalized delay less than 1.0e-9")
-            average_delay = 1.0e-9
-        
-        reward = np.log(average_throughput) - np.log(average_delay)
-        # print(f"REWARD: {reward}")
-        return reward
+        rewards = np.log(normalized_throughputs) - np.log(normalized_delays)
+        print(f"UNCLIPPED REWARDS: {rewards}")
+        clipped_rewards = np.clip(rewards, -10, +10)
+        return clipped_rewards
