@@ -1,10 +1,12 @@
 {
     "rl_config": {
-        "agent": "PPO",
-        "use_discrete_actions": false,
+        "agent": "checkpoint_SAC-N_utility_logistic",
+        "parallel_env": false,
+        "use_discrete_increment_actions": false,
+        "use_discrete_ratio_actions": false,
         "random_action_prob": 0.0,
         "starting_action_std": 1.0,
-        "train": true,
+        "train": false,
         "store_offline": false,
         "load_model_for_training": false,
         "policy": "MlpPolicy",

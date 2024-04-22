@@ -4,6 +4,9 @@
 
 import gymnasium as gym
 import numpy as np
+from gymnasium import spaces
+from gymnasium.spaces import Box
+import pandas as pd
 
 # NOTE: importing for buffer and previous action recording
 from NetworkAgent.buffer import Buffer
@@ -72,8 +75,14 @@ class Env(gym.Env):
         """
         super().__init__()
         
-        self.use_discrete_actions: bool =\
-            config_json["rl_config"]["use_discrete_actions"]
+        self.use_discrete_increment_actions: bool =\
+            config_json["rl_config"]["use_discrete_increment_actions"]
+        self.use_discrete_ratio_actions: bool =\
+            config_json["rl_config"]["use_discrete_ratio_actions"]
+        if self.use_discrete_increment_actions and self.use_discrete_ratio_actions:
+            raise Exception(
+                "ERROR: can't use discrete increment and ratio actions together!"
+            )
 
         if config_json['session_name'] == 'test':
             print('***[WARNING]*** You are using the default "test" to connect to the server, which may conflict with the simulations launched by other users.')
@@ -98,7 +107,7 @@ class Env(gym.Env):
 
         self.steps_per_episode = int(config_json['env_config']['steps_per_episode'])
         if self.steps_per_episode < 2:
-            sys.exit('Increase the "steps_per_episode", the min value is 2!')
+            sys.exit('In crease the "steps_per_episode", the min value is 2!')
         self.episodes_per_session = int(config_json['env_config']['episodes_per_session'])
         # NOTE: need to include num_users
         self.num_users = int(config_json['env_config']['num_users'])
@@ -116,7 +125,9 @@ class Env(gym.Env):
         module = importlib.import_module(module_path, package=None)
         self.adapter = module.Adapter(config_json)
 
-        self.enable_rl_agent = config_json['rl_config']['agent'] != "system_default"
+        self.enable_rl_agent = True
+        if config_json['rl_config']['agent']=="system_default":
+            self.enable_rl_agent = False
 
         self.action_space = self.adapter.get_action_space()
         self.observation_space = self.adapter.get_observation_space()
@@ -216,10 +227,14 @@ class Env(gym.Env):
                 a certain timelimit was exceeded, or the physics simulation has entered an invalid state.
         """
         # NOTE: this is to account for the discrete action space
-        if self.use_discrete_actions:
-            raise Exception("Haven't implemented discrete action space yet!")
+        if self.use_discrete_increment_actions:
             action = convert_discrete_increment_action_to_continuous(
                 agent_action, self.previous_split_ratio
+            )
+            self.previous_split_ratio = action
+        elif self.use_discrete_ratio_actions:
+            action = convert_discrete_ratio_action_to_continuous(
+                agent_action, len(self.previous_split_ratio)
             )
             self.previous_split_ratio = action
         else:
@@ -282,7 +297,6 @@ class Env(gym.Env):
         
         # NOTE: storing to buffer
         if self.store_offline:
-            raise Exception("NEED TO IMPLEMENT PROPER BUFFER STORAGE!")
             self.buffer.store(
                 self.previous_state,
                 action,
