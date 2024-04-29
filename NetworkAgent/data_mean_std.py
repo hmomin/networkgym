@@ -29,7 +29,9 @@ from csv import reader
 # data_folder = "2024_03_15_BC_compare"
 # data_folder = "2024_03_19_online_DRL_deterministic_GOOD"
 # data_folder = "2024_03_19_online_DRL_stochastic_GOOD"
-data_folder = "2024_03_19_other_offline_RL_algorithms_utility_logistic"
+# data_folder = "2024_03_19_other_offline_RL_algorithms_utility_logistic"
+# data_folder = "2024_04_27_more_offline_RL_algorithms_utility_logistic"
+data_folder = "2024_04_27_other_offline_RL_algorithms_throughput_argmax"
 
 
 def get_filepaths_from_folder(folder: str) -> list[str]:

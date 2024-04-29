@@ -296,13 +296,36 @@ REPRODUCIBLES start below vvvvv
 - checkpoint_SAC-N_utility_logistic
     CREATED_AFTER = datetime(2024, 3, 20, 8, 4, 0)
     CREATED_BEFORE = datetime(2024, 3, 20, 10, 4, 0)
+
+- checkpoint_BC_utility_logistic_normalize
+- checkpoint_BC_utility_logistic_no_norm
+- checkpoint_CQL_utility_logistic_no_norm
+- checkpoint_IQL_utility_logistic_no_norm
+- checkpoint_TD3_BC_utility_logistic_no_norm
+    CREATED_AFTER = datetime(2024, 4, 23, 19, 12, 0)
+    CREATED_BEFORE = datetime(2024, 4, 27, 12, 18, 0)
+
+(throughput_argmax)
+- checkpoint_BC_thrpt_argmax_no_norm
+- checkpoint_BC_thrpt_argmax_norm
+- checkpoint_CQL_no_norm
+- checkpoint_CQL_norm
+- checkpoint_EDAC
+- checkpoint_IQL_no_norm
+- checkpoint_IQL_norm
+- checkpoint_LB-SAC
+- checkpoint_SAC-N
+- checkpoint_TD3_BC_no_norm
+- checkpoint_TD3_BC_norm
+    CREATED_AFTER = datetime(2024, 4, 23, 19, 12, 0)
+    CREATED_BEFORE = datetime(2024, 4, 27, 12, 18, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "checkpoint_SAC-N_utility_logistic"
-CREATED_AFTER = datetime(2024, 3, 20, 8, 4, 0)
-CREATED_BEFORE = datetime(2024, 3, 20, 10, 4, 0)
+RUN_NAME = "checkpoint_CQL_norm"
+CREATED_AFTER = datetime(2024, 4, 23, 19, 12, 0)
+CREATED_BEFORE = datetime(2024, 4, 27, 12, 18, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 MIN_SEED = 100
