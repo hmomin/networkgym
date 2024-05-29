@@ -1,12 +1,54 @@
 #!/bin/bash
 
 agents=(
-    # checkpoint_CQL_utility_logistic
-    checkpoint_EDAC_utility_logistic
-    checkpoint_IQL_utility_logistic
-    checkpoint_LB_SAC_utility_logistic
-    checkpoint_SAC_N_utility_logistic
-    checkpoint_TD3_BC_utility_logistic
+    # DONE
+    # system_default
+    # utility_logistic
+    # throughput_argmax
+    
+    # sys_default_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
+    # throughput_argmax_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
+    # utility_logistic_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
+
+    # checkpoint_BC_thrpt_argmax_no_norm
+
+    # checkpoint_IQL_sys_default_no_norm
+    # checkpoint_IQL_utility_logistic_no_norm
+    # checkpoint_IQL_thrpt_argmax_no_norm
+
+    # checkpoint_TD3_BC_sys_default_no_norm
+    # checkpoint_TD3_BC_utility_logistic_no_norm
+    # checkpoint_TD3_BC_thrpt_argmax_no_norm
+
+    # checkpoint_BC_sys_default_no_norm
+    # checkpoint_BC_sys_default_norm
+    # checkpoint_BC_utility_logistic_no_norm
+    # checkpoint_BC_utility_logistic_norm
+    # checkpoint_BC_thrpt_argmax_norm
+    # checkpoint_CQL_sys_default_no_norm
+    # checkpoint_CQL_sys_default_norm
+    # checkpoint_CQL_utility_logistic_no_norm
+    # checkpoint_CQL_utility_logistic_norm
+    # checkpoint_CQL_thrpt_argmax_no_norm
+    # checkpoint_CQL_thrpt_argmax_norm
+    # checkpoint_EDAC_sys_default
+    # checkpoint_EDAC_utility_logistic
+    # checkpoint_EDAC_thrpt_argmax
+    # checkpoint_IQL_sys_default_norm
+    # checkpoint_IQL_utility_logistic_norm
+
+    # IN PROGRESS
+    
+    checkpoint_IQL_thrpt_argmax_norm
+    checkpoint_LB-SAC_sys_default
+    checkpoint_LB-SAC_thrpt_argmax
+    checkpoint_LB-SAC_utility_logistic
+    checkpoint_SAC-N_sys_default
+    checkpoint_SAC-N_thrpt_argmax
+    checkpoint_SAC-N_utility_logistic
+    checkpoint_TD3_BC_sys_default_norm
+    checkpoint_TD3_BC_thrpt_argmax_norm
+    checkpoint_TD3_BC_utility_logistic_norm
 )
 
 # exactly one argument must be provided
@@ -16,15 +58,17 @@ if [ $# -ne 1 ]; then
 fi
 client_id=$1
 
-let "seed1 = $client_id + 128"
-let "seed2 = $client_id + 128 + 8"
-let "seed3 = $client_id + 128 + 16"
-let "seed4 = $client_id + 128 + 24"
+# let "seed1 = $client_id + 128"
+# let "seed2 = $client_id + 128 + 8"
+# let "seed3 = $client_id + 128 + 16"
+# let "seed4 = $client_id + 128 + 24"
+let "seed5 = $client_id + 128 + 32"
 seeds=(
-    $seed1
-    $seed2
-    $seed3
-    $seed4
+    # $seed1
+    # $seed2
+    # $seed3
+    # $seed4
+    $seed5
 )
 echo "${seeds[@]}"
 
