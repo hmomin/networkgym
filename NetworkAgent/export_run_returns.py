@@ -319,13 +319,74 @@ REPRODUCIBLES start below vvvvv
 - checkpoint_TD3_BC_norm
     CREATED_AFTER = datetime(2024, 4, 23, 19, 12, 0)
     CREATED_BEFORE = datetime(2024, 4, 27, 12, 18, 0)
+
+(8 more seeds below)
+system_default
+    CREATED_AFTER = datetime(2024, 5, 28, 7, 28, 0)
+    CREATED_BEFORE = datetime(2024, 5, 28, 8, 0, 0)
+utility_logistic
+    CREATED_AFTER = datetime(2024, 5, 28, 8, 0, 0)
+    CREATED_BEFORE = datetime(2024, 5, 28, 8, 31, 0)
+throughput_argmax
+    CREATED_AFTER = datetime(2024, 5, 28, 8, 31, 0)
+    CREATED_BEFORE = datetime(2024, 5, 28, 8, 35, 0)
+
+sys_default_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
+throughput_argmax_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
+utility_logistic_norm_utility_PTD3_beta_10.0_alpha_1.0_step_0010000
+
+checkpoint_IQL_sys_default_no_norm
+checkpoint_IQL_utility_logistic_no_norm
+checkpoint_IQL_thrpt_argmax_no_norm
+
+checkpoint_TD3_BC_sys_default_no_norm
+checkpoint_TD3_BC_utility_logistic_no_norm
+checkpoint_TD3_BC_thrpt_argmax_no_norm
+
+checkpoint_BC_sys_default_no_norm
+checkpoint_BC_sys_default_norm
+checkpoint_BC_utility_logistic_no_norm
+checkpoint_BC_utility_logistic_norm
+checkpoint_BC_thrpt_argmax_no_norm
+checkpoint_BC_thrpt_argmax_norm
+
+checkpoint_CQL_sys_default_no_norm
+checkpoint_CQL_sys_default_norm
+checkpoint_CQL_utility_logistic_no_norm
+checkpoint_CQL_utility_logistic_norm
+checkpoint_CQL_thrpt_argmax_no_norm
+checkpoint_CQL_thrpt_argmax_norm
+
+checkpoint_EDAC_sys_default
+checkpoint_EDAC_utility_logistic
+checkpoint_EDAC_thrpt_argmax
+
+checkpoint_IQL_sys_default_norm
+checkpoint_IQL_utility_logistic_norm
+checkpoint_IQL_thrpt_argmax_norm
+
+checkpoint_LB-SAC_sys_default
+checkpoint_LB-SAC_thrpt_argmax
+checkpoint_LB-SAC_utility_logistic
+
+checkpoint_SAC-N_sys_default
+checkpoint_SAC-N_thrpt_argmax
+checkpoint_SAC-N_utility_logistic
+
+checkpoint_TD3_BC_sys_default_norm
+checkpoint_TD3_BC_thrpt_argmax_norm
+checkpoint_TD3_BC_utility_logistic_norm
+    
+(more seeds)
+    CREATED_AFTER = datetime(2024, 5, 28, 7, 28, 0)
+    CREATED_BEFORE = datetime(2024, 5, 29, 21, 35, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = "checkpoint_CQL_norm"
-CREATED_AFTER = datetime(2024, 4, 23, 19, 12, 0)
-CREATED_BEFORE = datetime(2024, 4, 27, 12, 18, 0)
+RUN_NAME = ".*"
+CREATED_AFTER = datetime(2024, 5, 28, 7, 28, 0)
+CREATED_BEFORE = datetime(2024, 5, 29, 21, 35, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 MIN_SEED = 100
@@ -333,7 +394,7 @@ TEST_EXPORT = False
 
 
 def get_runs() -> list:
-    api = wandb.Api()
+    api = wandb.Api(timeout=100)
     filters = {
         "config.RL_algo": {"$regex": RUN_NAME},
         "createdAt": {
