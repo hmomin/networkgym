@@ -380,13 +380,20 @@ checkpoint_TD3_BC_utility_logistic_norm
 (more seeds)
     CREATED_AFTER = datetime(2024, 5, 28, 7, 28, 0)
     CREATED_BEFORE = datetime(2024, 5, 29, 21, 35, 0)
+(checkpoint_TD3_BC)
+    CREATED_AFTER = datetime(2024, 5, 29, 21, 59, 0)
+    CREATED_BEFORE = datetime(2024, 5, 29, 23, 10, 0)
+PPO
+SAC
+    CREATED_AFTER = datetime(2024, 5, 30, 6, 48, 0)
+    CREATED_BEFORE = datetime(2024, 5, 30, 7, 23, 0)
 """
 
 
 PROJECT_NAME = "hmomin/network_gym_client"
-RUN_NAME = ".*"
-CREATED_AFTER = datetime(2024, 5, 28, 7, 28, 0)
-CREATED_BEFORE = datetime(2024, 5, 29, 21, 35, 0)
+RUN_NAME = "SAC"
+CREATED_AFTER = datetime(2024, 5, 30, 6, 48, 0)
+CREATED_BEFORE = datetime(2024, 5, 30, 7, 23, 0)
 MIN_RUNTIME = timedelta(minutes=1)
 MAX_STEPS = -1
 MIN_SEED = 100
