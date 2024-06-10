@@ -31,7 +31,7 @@ def load_config_file(env_name):
     """Load the environment configuration file
 
     Args:
-        env_name (str): the environment name, e.g., `nqos_split`, `qos_steer`, or `network_slicing`
+        env_name (str): the environment name, e.g., `nqos_split`
 
     Returns:
         json: the configuration paramters
@@ -88,20 +88,20 @@ class Env(gym.Env):
             print('***[WARNING]*** You are using the default "test" to connect to the server, which may conflict with the simulations launched by other users.')
             print('***[WARNING]*** Please change the "session_name" attribute in the common_config.json file to your assigned session name.')
         
-        if 'GMA' in config_json['env_config']:
+        if "gma" in config_json['env_config']:
             #check if the measurement interval for all measurements are the same.
-            if (config_json['env_config']['GMA']['measurement_interval_ms'] + config_json['env_config']['GMA']['measurement_guard_interval_ms']
-                == config_json['env_config']['Wi-Fi']['measurement_interval_ms'] + config_json['env_config']['Wi-Fi']['measurement_guard_interval_ms']
-                == config_json['env_config']['LTE']['measurement_interval_ms'] + config_json['env_config']['LTE']['measurement_guard_interval_ms']):
-                config_json['env_config']['measurement_interval_ms'] = config_json['env_config']['GMA']['measurement_interval_ms']
-                config_json['env_config']['measurement_guard_interval_ms'] = config_json['env_config']['GMA']['measurement_guard_interval_ms']
+            if (config_json['env_config']["gma"]['measurement_interval_ms'] + config_json['env_config']["gma"]['measurement_guard_interval_ms']
+                == config_json['env_config']["wifi"]['measurement_interval_ms'] + config_json['env_config']["wifi"]['measurement_guard_interval_ms']
+                == config_json['env_config']["lte"]['measurement_interval_ms'] + config_json['env_config']["lte"]['measurement_guard_interval_ms']):
+                config_json['env_config']['measurement_interval_ms'] = config_json['env_config']["gma"]['measurement_interval_ms']
+                config_json['env_config']['measurement_guard_interval_ms'] = config_json['env_config']["gma"]['measurement_guard_interval_ms']
             else:
-                print(config_json['env_config']['GMA']['measurement_interval_ms'])
-                print(config_json['env_config']['GMA']['measurement_guard_interval_ms'])
-                print(config_json['env_config']['Wi-Fi']['measurement_interval_ms'])
-                print(config_json['env_config']['Wi-Fi']['measurement_guard_interval_ms'])
-                print(config_json['env_config']['LTE']['measurement_interval_ms'])
-                print(config_json['env_config']['LTE']['measurement_guard_interval_ms'])
+                print(config_json['env_config']["gma"]['measurement_interval_ms'])
+                print(config_json['env_config']["gma"]['measurement_guard_interval_ms'])
+                print(config_json['env_config']["wifi"]['measurement_interval_ms'])
+                print(config_json['env_config']["wifi"]['measurement_guard_interval_ms'])
+                print(config_json['env_config']["lte"]['measurement_interval_ms'])
+                print(config_json['env_config']["lte"]['measurement_guard_interval_ms'])
                 sys.exit('[Error!] The value of GMA, Wi-Fi, and LTE measurement_interval_ms + measurement_guard_interval_ms should be the same!')
 
 
@@ -175,7 +175,7 @@ class Env(gym.Env):
         self.current_step = 1
         self.current_ep += 1
 
-        print("reset() at episode:" + str(self.current_ep) + ", step:" + str(self.current_step))
+        print("----------| reset()\tat episode:" + str(self.current_ep) + ",\tstep:" + str(self.current_step) + "\t|----------")
 
         # if a new simulation starts (first episode) in the reset function, we need to connect to server
         # else a new episode of the same simulation.
@@ -188,10 +188,24 @@ class Env(gym.Env):
 
         network_stats = self.northbound_interface_client.recv()#first measurement
 
+        if network_stats is None:
+            if self.first_episode:
+                # this may happen if the client was force quit, we reconnect again after 1 second.
+                time.sleep(1)
+                self.northbound_interface_client.connect()
+                network_stats = self.northbound_interface_client.recv()#first measurement
+                if network_stats is None:
+                    sys.exit("[Error]: ↑ Scroll up to see the error msgs ↑")
+            else:
+                sys.exit("[Error]: ↑ Scroll up to see the error msgs ↑")
+
+        if self.first_episode:
+            self.adapter.initial_rich_thread() # use rich to render network in terminal
         observation = self.adapter.get_observation(network_stats)
         if (observation.shape != self.adapter.get_observation_space().shape):
-            sys.exit("The shape of the observation and self.get_observation is not the same!")
+            sys.exit("[Error]: The shape of the observation and self.get_observation is not the same!")
         # print(observation.shape)
+        self.adapter.wandb_log()
         # NOTE: need to record previous state
         if self.store_offline:
             self.previous_state = observation.astype(np.float32)
@@ -241,7 +255,7 @@ class Env(gym.Env):
             action = agent_action
         self.current_step += 1
         
-        print("----------| step() at episode:" + str(self.current_ep) + ", step:" + str(self.current_step) + " |----------")
+        print("----------| step()\tat episode:" + str(self.current_ep) + ",\tstep:" + str(self.current_step) + "\t|----------")
 
         #1.) Get action from RL agent and send to network gym server
         if not self.enable_rl_agent or (hasattr(action, "size") and action.size == 0):
@@ -251,7 +265,15 @@ class Env(gym.Env):
         else:
             # TODO: we need to have the same action format... e.g., [0, 1]
             if (hasattr(action, "shape") and action.shape != self.adapter.get_action_space().shape):
-                sys.exit("The shape of the observation and self.get_observation is not the same!")
+                sys.exit("[Error]: The shape of the observation and self.get_observation is not the same!")
+            # NOTE: system_default doesn't always show split_ratio
+            if self.store_offline and self.rl_alg == "system_default":
+                # NOTE: this action should be the previous action based off of the current
+                # state
+                action = get_previous_action(network_stats)
+
+            # with np.printoptions(precision=4, suppress=True):
+            #     print(observation)
             self.last_action = action
             policy = self.adapter.get_policy(action)
             self.northbound_interface_client.send(policy) #send network policy to network gym server
@@ -259,16 +281,13 @@ class Env(gym.Env):
         #2.) Get measurements from gamsim and obs and reward
         network_stats = self.northbound_interface_client.recv()
         
+        if network_stats is None:
+            sys.exit("[Error]: ↑ Scroll up to see the error msgs ↑")
+        
         observation = self.adapter.get_observation(network_stats)
-
-        # NOTE: system_default doesn't always show split_ratio
-        if self.store_offline and self.rl_alg == "system_default":
-            # NOTE: this action should be the previous action based off of the current
-            # state
-            action = get_previous_action(network_stats)
-
-        # with np.printoptions(precision=4, suppress=True):
-        #     print(observation)
+        if (observation.shape != self.adapter.get_observation_space().shape):
+            sys.exit("[Error]: The shape of the observation and self.get_observation is not the same!")
+        # print(observation)
 
         #Get reward
         reward = self.adapter.get_reward(network_stats)
@@ -291,9 +310,8 @@ class Env(gym.Env):
                 self.northbound_interface_client.close()
                 time.sleep(1) # sleep 1 second to let the server disconnect client and env worker. In case the client restart connection right after a env termination.
         #4.) return observation, reward, done, info
-        if terminated or truncated:
-            print("Episode End ---> terminated:" + str(terminated) + " truncated:" + str(truncated))
-        #print("Episode End ---> terminated:" + str(terminated) + " truncated:" + str(truncated))
+        #if terminated or truncated:
+        #    print("Episode End ---> terminated:" + str(terminated) + " truncated:" + str(truncated))
         
         # NOTE: storing to buffer
         if self.store_offline:
