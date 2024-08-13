@@ -12,11 +12,13 @@ import math
 from NetworkAgent.full_observation import *
 
 from pathlib import Path
+from pprint import pprint
 import plotext as plt
 from rich.panel import Panel
 from rich.layout import Layout
 from rich.table import Table
 from rich.columns import Columns
+from typing import Any
 
 class Adapter(network_gym_client.adapter.Adapter):
     """nqos_split env adapter.
@@ -34,26 +36,18 @@ class Adapter(network_gym_client.adapter.Adapter):
         super().__init__(config_json)
 
         self.env = Path(__file__).resolve().parent.name
-        self.use_discrete_increment_actions: bool =\
-            config_json["rl_config"]["use_discrete_increment_actions"]
-        self.use_discrete_ratio_actions: bool =\
-            config_json["rl_config"]["use_discrete_ratio_actions"]
-        if self.use_discrete_increment_actions and self.use_discrete_ratio_actions:
-            raise Exception(
-                "ERROR: can't use discrete increment and ratio actions together!"
-            )
         # FIXME: adding more features is controlled here
         self.num_features = 14
-        self.num_users = int(self.config_json['env_config']['num_users'])
 
         num_users = 0
         for item in self.config_json['env_config']['per_slice_config']['num_users']:
             num_users += item
         self.config_json['env_config']['num_users'] = num_users
         
+        self.num_users = num_users
+        
         self.size_per_feature = int(self.config_json['env_config']['num_users'])
         self.reward = 0
-        self.end_ts = 0
 
         if config_json['env_config']['env'] != self.env:
             sys.exit("[ERROR] wrong environment Adapter. Configured environment: " + str(config_json['env_config']['env']) + " != Launched environment: " + str(self.env))
@@ -64,17 +58,12 @@ class Adapter(network_gym_client.adapter.Adapter):
         Returns:
             spaces: action spaces
         """
-        if self.use_discrete_increment_actions:
-            return spaces.Discrete(3**(self.size_per_feature))
-        elif self.use_discrete_ratio_actions:
-            return spaces.Discrete(5**(self.size_per_feature))
-        else:
-            return spaces.Box(
-                low=0,
-                high=1,
-                shape=(self.size_per_feature,),
-                dtype=np.float32
-            )
+        return spaces.Box(
+            low=0,
+            high=1,
+            shape=(self.size_per_feature * self.num_features,),
+            dtype=np.float32
+        )
 
     #consistent with the get_observation function.
     def get_observation_space(self):
@@ -204,7 +193,7 @@ class Adapter(network_gym_client.adapter.Adapter):
 
         # NOTE: adding more features here
         df_list = turn_df_into_list(df)
-        full_list = get_full_observation(df_list)
+        full_list = get_full_observation(df_list, self.num_users)
         # print_full_observation(full_list)
 
         # NOTE: avoiding normalizing, just dividing by a constant!
@@ -236,7 +225,7 @@ class Adapter(network_gym_client.adapter.Adapter):
             else:
                 user_action[:] = user_action[:]/sumRatio
         policy1 = json.loads(self.action_data_format.to_json())
-        policy1["name"] = "wifi::dl::split_ratio"
+        policy1["name"] = "dl::split_weight"
         if type(action) != list:
             policy1["value"] = action.tolist() #convert to list type
         else:
@@ -269,15 +258,14 @@ class Adapter(network_gym_client.adapter.Adapter):
         avg_delay = np.mean(df_owd["value"])
         max_delay = np.max(df_owd["value"])
 
-        reward = 0
         if self.config_json["rl_config"]["reward_type"] == "normalized_utility":
-            reward = self.compute_normalized_utility(df)
+            self.reward = self.compute_normalized_utility(df)
         elif self.config_json["rl_config"]["reward_type"] == "utility":
-            reward = self.netowrk_util(ave_rate, avg_delay)
+            self.reward = self.netowrk_util(ave_rate, avg_delay)
         elif self.config_json["rl_config"]["reward_type"] == "throughput":
-            reward = ave_rate
+            self.reward = ave_rate
         elif self.config_json["rl_config"]["reward_type"] == "delay":
-            reward = -avg_delay
+            self.reward = -avg_delay
         else:
             sys.exit("[ERROR] reward type not supported yet")
 
@@ -322,22 +310,36 @@ class Adapter(network_gym_client.adapter.Adapter):
     def compute_normalized_utility(self, df: pd.DataFrame) -> float:
         # NOTE: normalizing the throughput by combining the max throughput
         # across both channels. Normalizing the delay by dividing by 1000 ms (max delay)
+        max_delay = 1000.0
         
+        num_users = self.num_users
+
         gma_df = df[df["source"] == "gma"]
         lte_df = df[df["source"] == "lte"]
         wifi_df = df[df["source"] == "wifi"]
         
-        df_rate = gma_df[gma_df["name"] == "dl::rate"]["value"].values[0]
-        df_owd = gma_df[gma_df["name"] == "dl::owd"]["value"].values[0]
-        df_max_wifi_rate = wifi_df[wifi_df["name"] == "dl::max_rate"]["value"].values[0]
-        df_max_lte_rate = lte_df[lte_df["name"] == "dl::max_rate"]["value"].values[0]
+        df_rate = self.get_augmented_list(gma_df, "dl::rate", num_users, 0.0)
+        assert type(df_rate) == list
+        df_owd = self.get_augmented_list(gma_df, "dl::owd", num_users, max_delay)
+        assert type(df_owd) == list
+        df_max_wifi_rate = self.get_augmented_list(wifi_df, "dl::max_rate", num_users, 0.0)
+        assert type(df_max_wifi_rate) == list
+        df_max_lte_rate = self.get_augmented_list(lte_df, "dl::max_rate", num_users, 0.0)
+        assert type(df_max_lte_rate) == list
         df_total_max_rate = np.add(df_max_wifi_rate, df_max_lte_rate)
+        for idx, value in enumerate(df_total_max_rate):
+            if value == 0.0:
+                df_total_max_rate[idx] = np.inf
         
         normalized_throughputs = np.divide(df_rate, df_total_max_rate)
+        print(f"normalized_throughputs: {normalized_throughputs}")
         normalized_delays = np.divide(df_owd, 1000.0)
+        print(f"normalized_delays: {normalized_delays}")
         
         average_throughput = np.mean(normalized_throughputs)
+        print(f"average_throughput: {average_throughput}")
         average_delay = np.mean(normalized_delays)
+        print(f"average_delay: {average_delay}")
         if average_throughput < 1.0e-9:
             print("WARNING: average normalized throughput less than 1.0e-9")
             average_throughput = 1.0e-9
@@ -346,8 +348,25 @@ class Adapter(network_gym_client.adapter.Adapter):
             average_delay = 1.0e-9
         
         reward = np.log(average_throughput) - np.log(average_delay)
-        # print(f"REWARD: {reward}")
+        print(f"REWARD: {reward}")
         return reward
+
+    def get_augmented_list(self, df: pd.DataFrame, name: str, num_users: int, default_value: float) -> list[Any]:
+        pruned_df = df[df["name"] == name]
+        id_array = pruned_df["id"].values
+        ids = id_array[0] if len(id_array) > 0 else []
+        assert type(ids) == list, f"type(ids): {type(ids)}"
+        if len(ids) > 0:
+            assert type(ids[0]) == int, f"type(ids[0]): {type(ids[0])}"
+        value_array = pruned_df["value"].values
+        values = value_array[0] if len(value_array) > 0 else []
+        assert type(values) == list, f"type(values): {type(values)}"
+        if len(values) == num_users:
+            return values
+        new_values = [default_value] * num_users
+        for id, value in zip(ids, values):
+            new_values[id - 1] = value
+        return new_values
     
     def render_network(self, df):
         if self.layout is None:

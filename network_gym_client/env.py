@@ -74,15 +74,6 @@ class Env(gym.Env):
             config_json (json): configuration file
         """
         super().__init__()
-        
-        self.use_discrete_increment_actions: bool =\
-            config_json["rl_config"]["use_discrete_increment_actions"]
-        self.use_discrete_ratio_actions: bool =\
-            config_json["rl_config"]["use_discrete_ratio_actions"]
-        if self.use_discrete_increment_actions and self.use_discrete_ratio_actions:
-            raise Exception(
-                "ERROR: can't use discrete increment and ratio actions together!"
-            )
 
         if config_json['session_name'] == 'test':
             print('***[WARNING]*** You are using the default "test" to connect to the server, which may conflict with the simulations launched by other users.')
@@ -109,8 +100,15 @@ class Env(gym.Env):
         if self.steps_per_episode < 2:
             sys.exit('In crease the "steps_per_episode", the min value is 2!')
         self.episodes_per_session = int(config_json['env_config']['episodes_per_session'])
+        
         # NOTE: need to include num_users
-        self.num_users = int(config_json['env_config']['num_users'])
+        # self.num_users = int(config_json['env_config']['num_users'])
+        num_users = 0
+        for item in config_json['env_config']['per_slice_config']['num_users']:
+            num_users += item
+        config_json['env_config']['num_users'] = num_users
+        
+        self.num_users = num_users
 
         step_length = config_json['env_config']['measurement_interval_ms']
         if 'measurement_guard_interval_ms' in config_json['env_config']:
@@ -213,7 +211,7 @@ class Env(gym.Env):
         self.previous_split_ratio = get_previous_action(network_stats)
         return observation.astype(np.float32), {"network_stats": network_stats}
 
-    def step(self, agent_action):
+    def step(self, action):
         """Run one timestep of the environment's dynamics using the agent actions.
 
         Get action lists from RL agent and send to network gym server
@@ -222,7 +220,7 @@ class Env(gym.Env):
         Return obs,reward,done,info
 
         Args:
-            agent_action (ActType): an action provided by the agent to update the environment state.
+            action (ActType): an action provided by the agent to update the environment state.
 
         Returns:
             observation (ObsType): An element of the environment's `observation_space` as the next observation due to the agent actions.
@@ -240,19 +238,6 @@ class Env(gym.Env):
                 A done signal may be emitted for different reasons: Maybe the task underlying the environment was solved successfully,
                 a certain timelimit was exceeded, or the physics simulation has entered an invalid state.
         """
-        # NOTE: this is to account for the discrete action space
-        if self.use_discrete_increment_actions:
-            action = convert_discrete_increment_action_to_continuous(
-                agent_action, self.previous_split_ratio
-            )
-            self.previous_split_ratio = action
-        elif self.use_discrete_ratio_actions:
-            action = convert_discrete_ratio_action_to_continuous(
-                agent_action, len(self.previous_split_ratio)
-            )
-            self.previous_split_ratio = action
-        else:
-            action = agent_action
         self.current_step += 1
         
         print("----------| step()\tat episode:" + str(self.current_ep) + ",\tstep:" + str(self.current_step) + "\t|----------")

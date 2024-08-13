@@ -64,13 +64,13 @@ def initialize_previous_entries(num_users: int) -> None:
     PREVIOUS_SPLIT_RATIOS = [0.5] * num_users
 
 
-def get_full_observation(df_list: List[pd.DataFrame]) -> List[np.ndarray]:
-    num_users = len(df_list[0]["value"].values[0])
+def get_full_observation(df_list: list[pd.DataFrame], num_users: int) -> list[np.ndarray]:
     if len(PREVIOUS_ENTRIES) == 0:
         initialize_previous_entries(num_users)
     full_observation: List[np.ndarray] = []
     for df, channels in zip(df_list, NAME_MAP.values()):
         names: List[str] = df["name"].values
+        assert len(names) == 1
         name = names[0]
         for channel in channels:
             # start with the previous row by default and overwrite with new information
@@ -78,18 +78,18 @@ def get_full_observation(df_list: List[pd.DataFrame]) -> List[np.ndarray]:
             previous_row = np.array(previous_values)
             row = df[df["source"] == channel]
             if not row.empty:
+                ids: list[int] = row["id"].values[0]
                 values = row["value"].values[0]
-                if len(values) != 4:
-                    print(name)
-                    print("VALUES")
-                    print(values)
-                    raise Exception(f"values cardinality not equal to 4!")
-                    # FIXME HIGH: quick fix for SAC_seed_146 something wrong here...
-                    # print("WARNING: len(values) != 4")
-                    # values.append(26.0)
-                for user, value in enumerate(values):
+                assert type(ids) == list, f"type(ids): {type(ids)}"
+                if len(ids) > 0:
+                    assert type(ids[0]) == int, f"type(ids[0]): {type(ids[0])}"
+                assert type(values) == list, f"type(values): {type(values)}"
+                if len(values) != num_users:
+                    print(f"WARNING: len(ids)={len(ids)} in df_list not equal to num_users={num_users}!")
+                for id, value in zip(ids, values):
+                    user_idx = id - 1
                     if value >= 0:
-                        previous_row[user] = value
+                        previous_row[user_idx] = value
             # NOTE: fix for access point ID being too small relative to other values
             if name == "cell_id":
                 previous_row *= 100
@@ -105,8 +105,13 @@ def repopulate_previous_entries(df_list: List[pd.DataFrame]) -> None:
             channel: str = row["source"]
             if name in PREVIOUS_ENTRIES and channel in PREVIOUS_ENTRIES[name]:
                 previous_values = PREVIOUS_ENTRIES[name][channel]
+                ids = row["id"]
                 values = row["value"]
-                for user, value in enumerate(values):
+                assert type(ids) == list, f"type(ids): {type(ids)}"
+                assert type(values) == list, f"type(values): {type(values)}"
+                assert type(ids[0]) == int, f"type(ids[0]): {type(ids[0])}"
+                for id, value in zip(ids, values):
+                    user = id - 1
                     if value >= 0:
                         previous_values[user] = value
                     # FIXME: toggle fix for rate or traffic ratio being absent

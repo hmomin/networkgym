@@ -4,11 +4,13 @@
 
 from network_gym_client import load_config_file
 from network_gym_client import Env as NetworkGymEnv
+from pprint import pprint
 
 client_id = 0
 env_name = "nqos_split"
 config_json = load_config_file(env_name)
 config_json["rl_config"]["agent"] = "system_default"
+pprint(config_json)
 # Create the environment
 env = NetworkGymEnv(client_id, config_json) # make a network env using pass client id and configure file arguments.
 

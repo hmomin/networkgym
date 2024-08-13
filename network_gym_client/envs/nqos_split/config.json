@@ -1,7 +1,7 @@
 {
   "rl_config":{
     "agent": "",
-    "reward_type" : "utility"
+    "reward_type" : "normalized_utility"
   },
 
   "env_config":{
@@ -35,7 +35,7 @@
 
                               ],
     "steps_per_episode": 10,
-    "episodes_per_session": 100,
+    "episodes_per_session": 1,
     "random_seed": 30,
     "downlink_traffic": true,
     "max_wait_time_for_action_ms": 100000,
@@ -49,33 +49,26 @@
       {"x":250,"y":50,"z":15}
     ],
     "wifi_ap_locations":[
-      {"x":0,"y":25,"z":3},
-      {"x":100,"y":25,"z":3},
-      {"x":200,"y":25,"z":3},
-      {"x":300,"y":25,"z":3},
-      {"x":0,"y":75,"z":3},
-      {"x":100,"y":75,"z":3},
-      {"x":200,"y":75,"z":3},
-      {"x":300,"y":75,"z":3}
+      {"x":0,"y":25,"z":3}
     ],
     "per_slice_config":{
-      "num_users":[1,4],
-      "dedicated_rbg":[0,0],
-      "prioritized_rbg":[0,0],
-      "shared_rbg":[25,25],
-      "packet_size_bytes":[1400,1400],
-      "transport_protocol":["udp","TcpBbr"],
-      "udp_poisson_arrival":[false,false],
-      "min_udp_rate_per_user_mbps":[2, 2],
-      "max_udp_rate_per_user_mbps":[2, 2],
-      "qos_test_duration_ms":[500, 500],
-      "qos_loss_target":[0.01, 1.0],
-      "qos_delay_violation_target":[0.01, 0.01],
-      "qos_delay_requirement_ms":[10, 1000000],
-      "delay_test_1_thresh_ms":[1000000, 1000000],
-      "delay_test_2_thresh_ms":[1000000, 1000000],
-      "downlink_mode":["auto", "auto"],
-      "uplink_mode":["auto", "auto"]
+      "num_users":[4],
+      "dedicated_rbg":[0],
+      "prioritized_rbg":[0],
+      "shared_rbg":[25],
+      "packet_size_bytes":[1400],
+      "transport_protocol":["TcpBbr"],
+      "udp_poisson_arrival":[false],
+      "min_udp_rate_per_user_mbps":[2],
+      "max_udp_rate_per_user_mbps":[2],
+      "qos_test_duration_ms":[500],
+      "qos_loss_target":[1.0],
+      "qos_delay_violation_target":[0.01],
+      "qos_delay_requirement_ms":[1000000],
+      "delay_test_1_thresh_ms":[1000000],
+      "delay_test_2_thresh_ms":[1000000],
+      "downlink_mode":["split"],
+      "uplink_mode":["auto"]
     },
     "user_random_walk":{
       "min_speed_m/s": 1,
