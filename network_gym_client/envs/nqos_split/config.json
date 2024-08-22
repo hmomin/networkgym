@@ -34,22 +34,20 @@
                                 "gma::wifi::ul::split_ratio","gma::lte::ul::split_ratio","gma::nr::ul::split_ratio"
 
                               ],
-    "steps_per_episode": 10,
+    "steps_per_episode": 1000,
     "episodes_per_session": 1,
-    "random_seed": 30,
+    "random_seed": 0,
     "downlink_traffic": true,
-    "max_wait_time_for_action_ms": 100000,
+    "max_wait_time_for_action_ms": -1,
     "lte_enb_locations":{
-      "x":150,
-      "y":50,
-      "z":15
+      "x":40,
+      "y":0,
+      "z":3
     },
-    "nr_gnb_locations":[
-      {"x":50,"y":50,"z":15},
-      {"x":250,"y":50,"z":15}
-    ],
+    "nr_gnb_locations":[],
     "wifi_ap_locations":[
-      {"x":0,"y":25,"z":3}
+      {"x":30,"y":0,"z":3},
+      {"x":50,"y":0,"z":3}
     ],
     "per_slice_config":{
       "num_users":[4],
@@ -57,10 +55,10 @@
       "prioritized_rbg":[0],
       "shared_rbg":[25],
       "packet_size_bytes":[1400],
-      "transport_protocol":["TcpBbr"],
-      "udp_poisson_arrival":[false],
-      "min_udp_rate_per_user_mbps":[2],
-      "max_udp_rate_per_user_mbps":[2],
+      "transport_protocol":["tcp"],
+      "udp_poisson_arrival":[true],
+      "min_udp_rate_per_user_mbps":[6],
+      "max_udp_rate_per_user_mbps":[6],
       "qos_test_duration_ms":[500],
       "qos_loss_target":[1.0],
       "qos_delay_violation_target":[0.01],
@@ -72,16 +70,16 @@
     },
     "user_random_walk":{
       "min_speed_m/s": 1,
-      "max_speed_m/s": 2,
+      "max_speed_m/s": 1,
       "min_direction_gradients": 0.0,
-      "max_direction_gradients": 6.283184,
-      "distance_m": 3
+      "max_direction_gradients": 0.0,
+      "distance_m": 1000000
     },
     "user_location_range":{
       "min_x":0,
-      "max_x":300,
+      "max_x":80,
       "min_y":0,
-      "max_y":100,
+      "max_y":0,
       "z":1.5
     },
     "measurement_start_time_ms": 1000,

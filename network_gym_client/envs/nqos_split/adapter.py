@@ -319,14 +319,19 @@ class Adapter(network_gym_client.adapter.Adapter):
         wifi_df = df[df["source"] == "wifi"]
         
         df_rate = self.get_augmented_list(gma_df, "dl::rate", num_users, 0.0)
+        print(f"df_rate: {df_rate}")
         assert type(df_rate) == list
         df_owd = self.get_augmented_list(gma_df, "dl::owd", num_users, max_delay)
+        print(f"df_owd: {df_owd}")
         assert type(df_owd) == list
         df_max_wifi_rate = self.get_augmented_list(wifi_df, "dl::max_rate", num_users, 0.0)
+        print(f"df_max_wifi_rate: {df_max_wifi_rate}")
         assert type(df_max_wifi_rate) == list
         df_max_lte_rate = self.get_augmented_list(lte_df, "dl::max_rate", num_users, 0.0)
+        print(f"df_max_lte_rate: {df_max_lte_rate}")
         assert type(df_max_lte_rate) == list
         df_total_max_rate = np.add(df_max_wifi_rate, df_max_lte_rate)
+        print(f"df_total_max_rate: {df_total_max_rate}")
         for idx, value in enumerate(df_total_max_rate):
             if value == 0.0:
                 df_total_max_rate[idx] = np.inf

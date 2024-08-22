@@ -265,6 +265,7 @@ class Env(gym.Env):
 
         #2.) Get measurements from gamsim and obs and reward
         network_stats = self.northbound_interface_client.recv()
+        print(network_stats)
         
         if network_stats is None:
             sys.exit("[Error]: ↑ Scroll up to see the error msgs ↑")
